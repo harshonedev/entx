@@ -424,7 +424,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
             onClick={airdrop}
             title="Request 1 devnet SOL to pay for on-chain receipts"
             aria-label="Request devnet SOL airdrop"
-            className="cursor-pointer grid h-11 w-11 place-items-center rounded bg-panel text-muted transition-colors hover:text-text sm:h-9 sm:w-9"
+            className="cursor-pointer grid h-9 w-9 place-items-center rounded bg-panel text-muted transition-colors hover:text-text pointer-coarse:h-11 pointer-coarse:w-11"
           >
             <Droplets size={15} />
           </button>
@@ -541,7 +541,7 @@ function AssetSearch() {
     <div className="relative">
       {/* Phones: an icon-wide field that opens up on focus. sm+: always-open field. The 2px accent ring on the
           wrapper is the focus indicator (the bare input sits inside it, so it never needs its own outline). */}
-      <div className="flex h-11 w-11 items-center gap-2 overflow-hidden rounded bg-panel px-[15px] text-muted ring-1 ring-transparent focus-within:w-44 focus-within:text-text focus-within:ring-2 focus-within:ring-accent motion-safe:transition-[width] motion-safe:duration-200 sm:h-9 sm:w-56 sm:px-3 sm:focus-within:w-56">
+      <div className="flex h-9 w-11 items-center gap-2 overflow-hidden rounded bg-panel px-[15px] text-muted ring-1 ring-transparent focus-within:w-44 focus-within:text-text focus-within:ring-2 focus-within:ring-accent motion-safe:transition-[width] motion-safe:duration-200 sm:w-56 sm:px-3 sm:focus-within:w-56 pointer-coarse:h-11">
         <Search size={14} className="shrink-0" aria-hidden onClick={() => input.current?.focus()} />
         <input
           ref={input}

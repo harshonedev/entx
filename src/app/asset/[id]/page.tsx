@@ -43,7 +43,7 @@ export default function AssetPage() {
 
   return (
     <div className="space-y-4">
-      <Link href="/" className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 text-xs text-muted hover:text-text sm:min-h-0">
+      <Link href="/" className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted hover:text-text pointer-coarse:min-h-11">
         <ArrowLeft size={13} /> Discover
       </Link>
 
@@ -116,7 +116,7 @@ export default function AssetPage() {
                   href={m.oracleTx ? nearTxUrl(m.oracleTx) : nearAccountUrl(NEAR_CONTRACT)}
                   target="_blank"
                   rel="noreferrer"
-                  className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-near hover:underline sm:min-h-6"
+                  className="cursor-pointer inline-flex min-h-6 items-center gap-1 text-near hover:underline pointer-coarse:min-h-11"
                 >
                   Oracle EPI · NEAR <span className="num font-semibold">{oracleEpi.toFixed(1)}</span>
                   <ExternalLink size={11} aria-hidden />
@@ -126,7 +126,7 @@ export default function AssetPage() {
           </p>
           {epiGap !== null && (
             <details className="group mt-1 text-xs">
-              <summary className="cursor-pointer inline-flex min-h-11 list-none items-center text-muted underline decoration-line-2 underline-offset-2 hover:text-text sm:min-h-6">
+              <summary className="cursor-pointer inline-flex min-h-6 list-none items-center text-muted underline decoration-line-2 underline-offset-2 hover:text-text pointer-coarse:min-h-11">
                 <span className="num">
                   {epiGap === 0 ? "Session matches the oracle" : `Session is ${Math.abs(epiGap).toFixed(1)} ${epiGap > 0 ? "higher" : "lower"}`}
                 </span>

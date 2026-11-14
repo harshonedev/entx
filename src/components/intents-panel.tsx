@@ -96,7 +96,7 @@ export function IntentsPanel() {
               setAmount(String(o.amount));
             }}
             className={clsx(
-              "cursor-pointer inline-flex min-h-11 items-center rounded-lg border px-2.5 py-1 text-xs sm:min-h-8",
+              "cursor-pointer inline-flex min-h-8 items-center rounded-lg border px-2.5 py-1 text-xs pointer-coarse:min-h-11",
               origin.id === o.id ? "border-near text-near" : "border-line text-muted hover:text-text",
             )}
           >

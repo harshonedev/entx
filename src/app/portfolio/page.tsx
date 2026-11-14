@@ -15,7 +15,7 @@ import { useNear, useNearNotarize } from "@/lib/near";
 import { nearTxUrl } from "@/lib/near-config";
 import { Poster } from "@/components/poster";
 import { clearProbHistory } from "@/lib/prediction-history";
-import { STACK_CELL as CELL, SimBadge, signTone } from "@/components/ui";
+import { STACK_CELL as CELL, ShowAllRows, SimBadge, signTone, useMobileRowCap } from "@/components/ui";
 
 const BOTS = [
   { name: "reeltrader.sol", ret: 0.412 },
@@ -36,6 +36,8 @@ export default function PortfolioPage() {
   const { accountId: nearAccount } = useNear();
   const ret = v.total / STARTING_CASH - 1;
   const [confirmReset, setConfirmReset] = useState(false);
+  const trades = s.trades.slice(0, 50);
+  const tradeCap = useMobileRowCap(trades.length, "trades");
 
   const isEmpty =
     Object.keys(s.holdings).length === 0 && s.positions.length === 0 && s.settled.length === 0 && s.trades.length === 0;
@@ -307,7 +309,7 @@ export default function PortfolioPage() {
             {s.trades.length === 0 ? (
               <Empty>No trades yet.</Empty>
             ) : (
-              <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[760px]">
+              <table id={tradeCap.tableId} className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[760px]">
                 <thead className="max-sm:hidden">
                   <tr className="text-left text-xs uppercase tracking-wider text-muted">
                     <th className="py-2 pl-4 font-medium">Time</th>
@@ -321,8 +323,8 @@ export default function PortfolioPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {s.trades.slice(0, 50).map((t) => (
-                    <tr key={t.id} className="border-t border-line max-sm:block max-sm:py-2">
+                  {trades.map((t, i) => (
+                    <tr key={t.id} className={clsx("border-t border-line max-sm:py-2", tradeCap.rowClass(i))}>
                       <td data-label="Time" className={clsx("py-2 pl-4 text-xs text-muted", CELL)}>{timeAgo(t.ts)}</td>
                       <td data-label="Side" className={clsx("py-2", CELL)}>
                         <span
@@ -394,6 +396,7 @@ export default function PortfolioPage() {
                 </tbody>
               </table>
             )}
+            <ShowAllRows {...tradeCap.toggle} />
           </div>
           </>
           )}

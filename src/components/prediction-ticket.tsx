@@ -128,7 +128,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
 
       <div className="mt-4 flex items-center justify-between gap-2 text-xs text-muted">
         <label htmlFor="bet-amount">Amount</label>
-        <button className="cursor-pointer inline-flex min-h-11 items-center gap-1 hover:text-text sm:min-h-0" onClick={() => setAmountText(String(maxBet))}>
+        <button className="cursor-pointer inline-flex items-center gap-1 hover:text-text pointer-coarse:min-h-11" onClick={() => setAmountText(String(maxBet))}>
           All your cash: <span className="num">{usd(maxBet, 0)}</span>
         </button>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { pct } from "@/lib/format";
 
 /** Rounds to the shown precision first, so -0.001% reads as a flat 0.00%, not a red loss. */
@@ -80,11 +80,61 @@ export function Sparkline({
  * Below `sm`, table rows stack into cards: put this on each cell (with a `data-label`) and it becomes a
  * "label · value" line. Pair with `max-sm:block max-sm:[&>tbody]:block` on <table>, `max-sm:hidden` on <thead>
  * and `max-sm:block` on every <tr> (including empty-state rows, whose colSpan <td> needs `max-sm:block` too).
- * Cells that must clip a long value should truncate the child element on phones (`max-sm:block max-sm:truncate`),
- * since the cell itself becomes a flex row and its own `truncate` shows no ellipsis.
+ * Long values wrap by default. Add `data-truncate` to a cell to clip its value with an ellipsis instead (the cell
+ * becomes a flex row on phones, so its own `truncate` would clip without one).
  */
 export const STACK_CELL =
-  "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:px-4 max-sm:py-1 max-sm:text-right max-sm:before:shrink-0 max-sm:before:text-xs max-sm:before:text-muted max-sm:before:content-[attr(data-label)] max-sm:wrap-anywhere max-sm:[&>*]:min-w-0";
+  "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:px-4 max-sm:py-1 max-sm:text-right max-sm:before:shrink-0 max-sm:before:text-xs max-sm:before:text-muted max-sm:before:content-[attr(data-label)] max-sm:wrap-anywhere max-sm:[&>*]:min-w-0 max-sm:data-truncate:*:block max-sm:data-truncate:*:truncate";
+
+/** Stacked cards are tall, so phones show this many rows per table until the reader asks for more. */
+export const MOBILE_ROWS = 4;
+
+/**
+ * Phone row cap for a stacked table: put `id={cap.tableId}` on the <table>, `cap.rowClass(i)` on each row
+ * (it replaces the row's `max-sm:block`), and render `<ShowAllRows {...cap.toggle} />` after the table.
+ */
+export function useMobileRowCap(count: number, noun: string) {
+  const [open, setOpen] = useState(false);
+  const tableId = useId();
+  return {
+    tableId,
+    rowClass: (i: number) => (!open && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block"),
+    toggle: { count, noun, open, controls: tableId, onToggle: () => setOpen((v) => !v) },
+  };
+}
+
+/** Phones only: expand a stacked table past its first few rows. */
+export function ShowAllRows({
+  count,
+  noun,
+  open,
+  controls,
+  onToggle,
+}: {
+  count: number;
+  noun: string;
+  open: boolean;
+  controls: string;
+  onToggle: () => void;
+}) {
+  if (count <= MOBILE_ROWS) return null;
+  return (
+    <button
+      onClick={(e) => {
+        // Panels carry scroll-mt-20, so this lands below the sticky header.
+        const panel = e.currentTarget.closest(".panel");
+        onToggle();
+        // Collapsing removes rows above the button; bring the table back into view instead of stranding the reader below it.
+        if (open) requestAnimationFrame(() => panel?.scrollIntoView({ block: "start" }));
+      }}
+      aria-expanded={open}
+      aria-controls={controls}
+      className="cursor-pointer flex h-11 w-full items-center justify-center border-t border-line text-[12.5px] text-muted hover:text-text sm:hidden"
+    >
+      {open ? "Show fewer" : `Show all ${count} ${noun}`}
+    </button>
+  );
+}
 
 /**
  * Labels a section's numbers as simulated. Keep one per section (page header or panel heading), not per number.

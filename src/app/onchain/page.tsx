@@ -20,7 +20,7 @@ import { ASSETS } from "@/lib/assets";
 import { cents, explorerTx, timeAgo } from "@/lib/format";
 import { IntentsPanel } from "@/components/intents-panel";
 import { APP_MARKET_IDS, marketCounts } from "@/components/onchain-epi";
-import { RealBadge, STACK_CELL as CELL } from "@/components/ui";
+import { RealBadge, STACK_CELL as CELL, ShowAllRows, useMobileRowCap } from "@/components/ui";
 import clsx from "clsx";
 
 export default function OnchainPage() {
@@ -31,9 +31,6 @@ export default function OnchainPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // Phones show a few rows per table (stacked cards are tall); the rest is one tap away.
-  const [allAssets, setAllAssets] = useState(false);
-  const [allPools, setAllPools] = useState(false);
-  const [allReceipts, setAllReceipts] = useState(false);
   const local = useMarket((s) => s.markets);
 
   const load = useCallback(async () => {
@@ -79,6 +76,9 @@ export default function OnchainPage() {
       : markets.length === 0
         ? "Reading the NEAR contract…"
         : `No ${noun} from this app's catalogue on the contract yet.`;
+  const assetCap = useMobileRowCap(assets.length, "markets");
+  const poolCap = useMobileRowCap(preds.length, "pools");
+  const receiptCap = useMobileRowCap(receipts.length, "receipts");
   // Where the empty-state CTA sends a visitor: the same spotlight title the home page leads with.
   const spot =
     [...ASSETS].filter((a) => a.status === "In theaters").sort((a, b) => (local[b.id]?.epi ?? 0) - (local[a.id]?.epi ?? 0))[0] ??
@@ -189,7 +189,7 @@ export default function OnchainPage() {
               simulation, which adds up every news event you fire, so the two can drift apart. Your latest oracle
               transaction is linked under &ldquo;Your last report&rdquo;.
             </p>
-            <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[620px]">
+            <table id={assetCap.tableId} className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[620px]">
               <thead className="max-sm:hidden">
                 <tr className="text-left text-xs uppercase tracking-wider text-muted">
                   <th className="py-2 pl-4 font-medium">Market</th>
@@ -212,7 +212,7 @@ export default function OnchainPage() {
                 {assets.map((m, i) => (
                   <tr
                     key={m.id}
-                    className={clsx("border-t border-line max-sm:py-2", !allAssets && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block")}
+                    className={clsx("border-t border-line max-sm:py-2", assetCap.rowClass(i))}
                   >
                     <td className="py-2 pl-4 max-sm:block max-sm:px-4">
                       <Link href={`/asset/${m.id}`} className="cursor-pointer inline-flex items-center gap-1.5 hover:text-accent pointer-coarse:min-h-11">
@@ -243,7 +243,7 @@ export default function OnchainPage() {
                 ))}
               </tbody>
             </table>
-            <ShowAllRows count={assets.length} open={allAssets} onToggle={() => setAllAssets((v) => !v)} noun="markets" />
+            <ShowAllRows {...assetCap.toggle} />
           </div>
 
           <div className="panel scroll-mt-20 overflow-x-auto">
@@ -256,7 +256,7 @@ export default function OnchainPage() {
               touch these pools, and settling a market from Demo controls only settles the simulation: a pool here stays
               Open until the contract&apos;s resolver settles it on-chain.
             </p>
-            <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[620px]">
+            <table id={poolCap.tableId} className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[620px]">
               <thead className="max-sm:hidden">
                 <tr className="text-left text-xs uppercase tracking-wider text-muted">
                   <th className="py-2 pl-4 font-medium">Market</th>
@@ -278,7 +278,7 @@ export default function OnchainPage() {
                   return (
                     <tr
                       key={m.id}
-                      className={clsx("border-t border-line max-sm:py-2", !allPools && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block")}
+                      className={clsx("border-t border-line max-sm:py-2", poolCap.rowClass(i))}
                     >
                       <td className="py-2 pl-4 text-xs max-sm:block max-sm:px-4 sm:max-w-[360px] sm:truncate">
                         <Link href={`/predictions/${m.id}`} className="cursor-pointer inline-flex items-center hover:text-accent pointer-coarse:min-h-11">
@@ -295,7 +295,7 @@ export default function OnchainPage() {
                 })}
               </tbody>
             </table>
-            <ShowAllRows count={preds.length} open={allPools} onToggle={() => setAllPools((v) => !v)} noun="pools" />
+            <ShowAllRows {...poolCap.toggle} />
           </div>
 
           <div className="panel scroll-mt-20 overflow-x-auto">
@@ -319,7 +319,7 @@ export default function OnchainPage() {
                 </Link>
               </div>
             ) : (
-              <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[680px]">
+              <table id={receiptCap.tableId} className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[680px]">
                 <thead className="max-sm:hidden">
                   <tr className="text-left text-xs uppercase tracking-wider text-muted">
                     <th className="py-2 pl-4 font-medium">#</th>
@@ -338,15 +338,15 @@ export default function OnchainPage() {
                     return (
                       <tr
                         key={r.id}
-                        className={clsx("border-t border-line text-xs max-sm:py-2", !allReceipts && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block")}
+                        className={clsx("border-t border-line text-xs max-sm:py-2", receiptCap.rowClass(i))}
                       >
                         <td data-label="#" className={clsx("num py-2 pl-4 text-faint", CELL)}>{r.id}</td>
-                        <td data-label="Trader" className={clsx("num max-w-[160px] truncate py-2 max-sm:max-w-none", CELL)}>
+                        <td data-label="Trader" data-truncate className={clsx("num max-w-[160px] truncate py-2 max-sm:max-w-none", CELL)}>
                           <a
                             href={nearAccountUrl(r.account)}
                             target="_blank"
                             rel="noreferrer"
-                            className="cursor-pointer hover:text-near max-sm:block max-sm:truncate max-sm:leading-[44px]"
+                            className="cursor-pointer hover:text-near max-sm:leading-[44px]"
                           >
                             {r.account}
                           </a>
@@ -373,7 +373,7 @@ export default function OnchainPage() {
                 </tbody>
               </table>
             )}
-            <ShowAllRows count={receipts.length} open={allReceipts} onToggle={() => setAllReceipts((v) => !v)} noun="receipts" />
+            <ShowAllRows {...receiptCap.toggle} />
           </div>
         </div>
 
@@ -430,26 +430,5 @@ function Kpi({
         </Link>
       )}
     </div>
-  );
-}
-
-const MOBILE_ROWS = 4;
-
-/** Phones only: expand a stacked table past its first few rows. */
-function ShowAllRows({ count, open, onToggle, noun }: { count: number; open: boolean; onToggle: () => void; noun: string }) {
-  if (count <= MOBILE_ROWS) return null;
-  return (
-    <button
-      onClick={(e) => {
-        const panel = e.currentTarget.closest(".panel");
-        onToggle();
-        // Collapsing removes rows above the button; bring the table back into view instead of stranding the reader below it.
-        if (open) requestAnimationFrame(() => panel?.scrollIntoView({ block: "start" }));
-      }}
-      aria-expanded={open}
-      className="cursor-pointer flex h-11 w-full items-center justify-center border-t border-line text-[12.5px] text-muted hover:text-text sm:hidden"
-    >
-      {open ? "Show fewer" : `Show all ${count} ${noun}`}
-    </button>
   );
 }

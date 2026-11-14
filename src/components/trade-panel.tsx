@@ -164,7 +164,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
           ))}
         </div>
         <button
-          className="cursor-pointer inline-flex min-h-11 items-center gap-1 hover:text-text sm:min-h-0"
+          className="cursor-pointer inline-flex items-center gap-1 hover:text-text pointer-coarse:min-h-11"
           onClick={() =>
             setQtyText(
               mode === "units"

@@ -66,7 +66,7 @@ export function DemoControls() {
         aria-controls="demo-controls"
         aria-label="Demo controls"
         className={clsx(
-          "cursor-pointer flex h-11 items-center gap-2 rounded px-3 text-[12.5px] font-medium transition-colors sm:h-9",
+          "cursor-pointer flex h-9 items-center gap-2 rounded px-3 text-[12.5px] font-medium transition-colors pointer-coarse:h-11",
           open ? "bg-panel-2 text-text" : "bg-panel text-muted hover:text-text",
         )}
       >
@@ -181,7 +181,7 @@ export function DemoControls() {
                             setArming(null);
                           }}
                           className={clsx(
-                            "cursor-pointer h-11 rounded px-3 font-semibold text-black sm:h-8",
+                            "cursor-pointer h-8 rounded px-3 font-semibold text-black pointer-coarse:h-11",
                             arming.outcome === "YES" ? "bg-up" : "bg-down",
                           )}
                         >
@@ -189,7 +189,7 @@ export function DemoControls() {
                         </button>
                         <button
                           onClick={() => setArming(null)}
-                          className="cursor-pointer h-11 rounded border border-line-2 px-3 sm:h-8"
+                          className="cursor-pointer h-8 rounded border border-line-2 px-3 pointer-coarse:h-11"
                         >
                           Cancel
                         </button>
@@ -202,7 +202,7 @@ export function DemoControls() {
                             key={o}
                             onClick={() => setArming({ id: p.id, outcome: o })}
                             className={clsx(
-                              "cursor-pointer h-11 rounded border border-line-2 px-3 sm:h-8",
+                              "cursor-pointer h-8 rounded border border-line-2 px-3 pointer-coarse:h-11",
                               o === "YES" ? "hover:text-up" : "hover:text-down",
                             )}
                           >

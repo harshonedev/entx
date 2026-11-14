@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               (ENTX contract) · Prediction pools hold testnet NEAR on-chain (no monetary value) · Intents quotes are dry-run only · Not
               a real-money exchange.
               <span className="mt-2 flex items-center gap-2">
-                <a href="https://www.themoviedb.org" target="_blank" rel="noreferrer" className="cursor-pointer inline-flex min-h-11 min-w-11 items-center justify-center font-semibold text-muted hover:text-text sm:min-h-0 sm:min-w-0">
+                <a href="https://www.themoviedb.org" target="_blank" rel="noreferrer" className="cursor-pointer inline-flex items-center justify-center font-semibold text-muted hover:text-text pointer-coarse:min-h-11 pointer-coarse:min-w-11">
                   TMDB
                 </a>
                 This product uses the TMDB API but is not endorsed or certified by TMDB.
