@@ -95,7 +95,17 @@ export function NearProvider({ children }: { children: ReactNode }) {
       const hash = out?.transaction?.hash ?? out?.transaction_outcome?.id;
       // Some wallet executors resolve without signing (e.g. their approval window never opened).
       // No hash means nothing reached the chain, so never report it as recorded.
-      if (!hash) throw new Error("Wallet returned no transaction; nothing was sent");
+      if (!hash) {
+        // Seen with Meteor Web after its near-connect executor updated: the stored session no longer
+        // matches, so signing silently no-ops. Disconnecting clears that storage; a fresh connect works.
+        try {
+          await c.disconnect();
+        } catch {
+          // Best effort: the error below still tells the user to reconnect.
+        }
+        setAccountId(null);
+        throw new Error("Wallet session expired, nothing was sent. Reconnect your wallet and try again");
+      }
       return hash;
     },
     [accountId],
