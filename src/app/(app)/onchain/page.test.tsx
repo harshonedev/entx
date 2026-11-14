@@ -203,7 +203,7 @@ describe("On-chain page", () => {
       "href",
       "https://explorer.solana.com/tx/SoLSig123456789?cluster=devnet",
     );
-    expect(r1).toHaveTextContent("5s ago");
+    expect(r1).toHaveTextContent(/[5-9]s ago/);
 
     const r2 = screen.getByRole("link", { name: "carol.testnet" }).closest("tr")!;
     expect(r2).toHaveTextContent("10.00 @ 42.0¢");

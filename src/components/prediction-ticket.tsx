@@ -240,7 +240,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
 
 function Row({ k, v, strong, tone }: { k: string; v: string; strong?: boolean; tone?: "warn" | "up" }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div>
       <dt className="text-muted">{k}</dt>
       <dd
         className={clsx(

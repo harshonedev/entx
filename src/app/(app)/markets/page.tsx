@@ -123,6 +123,8 @@ export default function Discover() {
           )}
         </div>
         {CHAIN_ON.near && <ContractProofStrip />}
+        {/* The calendar explains why prices move; it fills the board column under the chain proof. */}
+        <ReleaseClock />
         </div>
 
         <div className="space-y-4">
@@ -177,8 +179,6 @@ export default function Discover() {
         </div>
       </section>
 
-      {/* Secondary: the calendar explains why prices move, after the markets themselves. */}
-      <ReleaseClock />
     </div>
   );
 }

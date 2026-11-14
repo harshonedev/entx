@@ -95,19 +95,19 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
           </Link>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-xs text-muted">
-            <span className="rounded bg-ink/[0.07] px-1.5 py-0.5 font-medium text-text/80">{p.category}</span>
+          <Link
+            href={`/predictions/${p.id}`}
+            className="cursor-pointer block text-[15px] font-semibold leading-snug hover:text-accent"
+          >
+            {p.question}
+          </Link>
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted">
+            <span className="border border-line-2 px-1.5 font-medium text-text">{p.category}</span>
             {asset && <span className="font-semibold">{asset.ticker}</span>}
             <span className="ml-auto inline-flex items-center gap-1">
               <Clock size={11} /> {st.resolved ? "Closed" : `${p.closesInDays}d left`}
             </span>
           </div>
-          <Link
-            href={`/predictions/${p.id}`}
-            className="cursor-pointer mt-1.5 block text-[15px] font-semibold leading-snug hover:text-accent"
-          >
-            {p.question}
-          </Link>
         </div>
       </div>
 

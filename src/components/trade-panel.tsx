@@ -351,7 +351,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
 
 function Row({ k, v, hint, strong, tone }: { k: string; v: string; hint?: string; strong?: boolean; tone?: "warn" }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div>
       <dt className="text-muted">
         {k}
         {hint && <span className="block text-xs text-faint">{hint}</span>}

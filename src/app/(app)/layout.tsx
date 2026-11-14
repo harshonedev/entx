@@ -1,7 +1,7 @@
 import { Archivo, Barlow_Condensed, IBM_Plex_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Shell } from "@/components/nav";
-import { TickerTape, Toasts } from "@/components/chrome";
+import { Toasts } from "@/components/chrome";
 import { CHAIN_ON, IS_LIVE } from "@/lib/env";
 export { metadata, viewport } from "@/lib/site-meta";
 import "../globals.css";
@@ -22,7 +22,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <Providers>
           <Shell>
-            <TickerTape />
             <main id="main" tabIndex={-1} className="w-full outline-none max-w-[1480px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
             <footer className="w-full border-t-2 border-ink px-4 py-4 text-xs leading-relaxed text-muted sm:px-6 lg:px-8">
               {IS_LIVE
