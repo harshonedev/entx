@@ -179,7 +179,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
                     onClick={() => setAmount(a)}
                     aria-pressed={amount === a}
                     className={clsx(
-                      "cursor-pointer num min-h-11 rounded border py-1.5 text-xs sm:min-h-8",
+                      "cursor-pointer num min-h-8 rounded border py-1.5 text-xs pointer-coarse:min-h-11",
                       amount === a ? "border-text bg-text text-bg" : "border-line text-muted hover:text-text",
                     )}
                   >
@@ -259,7 +259,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
             {!staking && (
               <button
                 onClick={() => setStaking(true)}
-                className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 font-medium text-near hover:underline sm:min-h-6"
+                className="cursor-pointer inline-flex min-h-6 items-center gap-1.5 font-medium text-near hover:underline pointer-coarse:min-h-11"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-near" aria-hidden /> Stake testnet NEAR on-chain
               </button>
@@ -268,7 +268,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               <button
                 onClick={() => setRules((v) => !v)}
                 aria-expanded={rules}
-                className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 hover:text-text sm:min-h-6"
+                className="cursor-pointer inline-flex min-h-6 items-center gap-1.5 hover:text-text pointer-coarse:min-h-11"
               >
                 <Gavel size={12} /> Rules
               </button>

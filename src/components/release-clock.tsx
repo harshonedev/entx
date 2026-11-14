@@ -54,7 +54,7 @@ export function ReleaseClock() {
   const mask = `linear-gradient(to right, ${edges.start ? "transparent" : "#000"}, #000 ${FADE}, #000 calc(100% - ${FADE}), ${edges.end ? "transparent" : "#000"})`;
 
   const navBtn =
-    "cursor-pointer grid h-11 w-11 place-items-center rounded border border-line-2 text-muted transition-colors hover:text-text disabled:cursor-default disabled:opacity-40 disabled:hover:text-muted sm:h-8 sm:w-8";
+    "cursor-pointer grid h-8 w-8 place-items-center rounded border border-line-2 text-muted transition-colors hover:text-text disabled:cursor-default disabled:opacity-40 disabled:hover:text-muted pointer-coarse:h-11 pointer-coarse:w-11";
 
   return (
     <section aria-labelledby="release-h" className="panel overflow-hidden">

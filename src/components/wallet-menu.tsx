@@ -69,7 +69,7 @@ export function WalletMenu() {
         aria-haspopup="dialog"
         aria-label={count === 0 ? "Connect wallet" : undefined}
         className={clsx(
-          "cursor-pointer flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded px-3 text-[12.5px] font-medium transition-colors sm:h-9",
+          "cursor-pointer flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded px-3 text-[12.5px] font-medium transition-colors pointer-coarse:h-11",
           // Optional: a wallet only signs receipts and stakes NEAR, so the button stays quiet rather than demanding.
           count === 0 ? "bg-panel text-text ring-1 ring-line-2 hover:bg-panel-2" : "bg-panel hover:bg-panel-2",
         )}
