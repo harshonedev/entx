@@ -231,13 +231,13 @@ describe("Discover page", () => {
     expect(strip).not.toHaveTextContent(/\d+ oracle EPI reports/);
   });
 
-  it("only shows the live pulse once the activity feed has events", () => {
+  it("only shows the live marker once the activity feed has events", () => {
     render(<Discover />);
     const feed = panelOf("Market activity");
-    expect(feed.querySelector(".live-dot")).toBeNull();
+    expect(within(feed).queryByText("Live")).toBeNull();
     act(() => {
       useMarket.getState().buy(ASSETS[0].id, 1);
     });
-    expect(feed.querySelector(".live-dot")).not.toBeNull();
+    expect(within(feed).getByText("Live")).toBeInTheDocument();
   });
 });

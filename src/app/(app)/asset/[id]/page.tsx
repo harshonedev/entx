@@ -148,7 +148,7 @@ export default function AssetPage() {
             <h2 className="h-panel">{asset.ticker} / USD</h2>
             <div className="flex items-center gap-3">
               <span className="hidden items-center gap-1.5 text-xs text-muted sm:flex">
-                <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" /> Live simulation · news marked on chart
+                <span className="h-1.5 w-1.5 rounded-full bg-up" /> Live simulation · news marked on chart
               </span>
               <div className="seg" role="group" aria-label="Candle size">
                 {[

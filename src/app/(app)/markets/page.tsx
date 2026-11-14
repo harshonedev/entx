@@ -164,10 +164,10 @@ export default function Discover() {
             <div className="mb-1 flex items-center gap-2">
               <Radio size={14} className="text-muted" />
               <h2 className="h-panel">Market activity</h2>
-              {/* The pulse means "events are arriving"; an empty feed gets no live signal. */}
+              {/* "Live" means events are arriving; an empty feed gets no live signal. */}
               {hasActivity && (
                 <span className="ml-auto flex items-center gap-1.5 text-xs text-muted">
-                  <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
+                  <span className="h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
                   Live
                 </span>
               )}
