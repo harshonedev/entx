@@ -25,7 +25,9 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
   const predict = useMarket((s) => s.predict);
   const receipts = useReceipts();
   const [side, setSide] = useState<"YES" | "NO" | null>(null);
-  const [amount, setAmount] = useState(25);
+  // Until a preset is picked, the bet is $25, or the largest preset cash covers, so the ticket opens ready.
+  const [picked, setAmount] = useState<number | null>(null);
+  const amount = picked ?? (cash >= 25 ? 25 : (AMOUNTS.filter((a) => a <= cash).pop() ?? AMOUNTS[0]));
   // Real-NEAR staking is a second path, mounted only on request so 9 cards don't each poll RPC.
   const [staking, setStaking] = useState(false);
   const [rules, setRules] = useState(false);
@@ -128,7 +130,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
       {st.resolved ? (
         <div
           className={clsx(
-            "mt-4 rounded border p-3 text-center text-sm font-semibold",
+            "mt-4 border p-3 text-center text-sm font-semibold",
             st.resolved === "YES" ? "border-up/30 text-up" : "border-down/30 text-down",
           )}
         >
@@ -138,14 +140,15 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
         <>
           {/* The ticket floats over the grid (popover on md+, bottom sheet on phones), so the card keeps its height. */}
           <div className="relative mt-4">
-          <div ref={sideBtns} className="grid grid-cols-2 gap-2">
+          {/* Two separate tinted picks, not a joined toggle: same 6px gap as the .seg presets. */}
+          <div ref={sideBtns} className="grid grid-cols-2 gap-1.5">
             <button
               data-side="YES"
               onClick={() => setSide(side === "YES" ? null : "YES")}
               aria-pressed={side === "YES"}
               aria-label={`Pick YES at ${(yp * 100).toFixed(1)} cents`}
               className={clsx(
-                "cursor-pointer min-h-11 rounded border py-2.5 text-sm font-semibold transition-colors",
+                "cursor-pointer min-h-11 border py-2.5 text-sm font-semibold transition-colors",
                 side === "YES" ? "border-up bg-up text-on-status" : "border-transparent bg-up/[0.08] text-up hover:bg-up/[0.14]",
               )}
             >
@@ -157,7 +160,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               aria-pressed={side === "NO"}
               aria-label={`Pick NO at ${((1 - yp) * 100).toFixed(1)} cents`}
               className={clsx(
-                "cursor-pointer min-h-11 rounded border py-2.5 text-sm font-semibold transition-colors",
+                "cursor-pointer min-h-11 border py-2.5 text-sm font-semibold transition-colors",
                 side === "NO" ? "border-down bg-down text-on-status" : "border-transparent bg-down/[0.08] text-down hover:bg-down/[0.14]",
               )}
             >
@@ -180,7 +183,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
                     onClick={() => setAmount(a)}
                     aria-pressed={amount === a}
                     className={clsx(
-                      "cursor-pointer num min-h-8 rounded border py-1.5 text-xs pointer-coarse:min-h-11",
+                      "cursor-pointer num min-h-8 border py-1.5 text-xs pointer-coarse:min-h-11",
                       amount === a ? "border-text bg-text text-bg" : "border-line text-muted hover:text-text",
                     )}
                   >
@@ -211,7 +214,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
                 disabled={amount > cash}
                 onClick={place}
                 className={clsx(
-                  "cursor-pointer mt-3 h-10 w-full rounded text-sm font-semibold text-on-status disabled:cursor-not-allowed disabled:bg-panel disabled:font-medium disabled:text-muted",
+                  "cursor-pointer mt-3 h-10 w-full text-sm font-semibold text-on-status disabled:cursor-not-allowed disabled:bg-panel disabled:font-medium disabled:text-muted",
                   side === "YES" ? "bg-up" : "bg-down",
                 )}
               >

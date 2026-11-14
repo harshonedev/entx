@@ -24,17 +24,17 @@ export function AnalystCard({ assetId }: { assetId: string }) {
       <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2">
         <div
           className={clsx(
-            "rounded-lg px-2.5 py-1 text-sm font-semibold",
-            bull ? "bg-up/[0.08] text-up" : bear ? "bg-down/[0.08] text-down" : "bg-ink/[0.07] text-text",
+            "border px-2.5 py-1 text-sm font-semibold",
+            bull ? "border-up text-up" : bear ? "border-down text-down" : "border-ink text-text",
           )}
         >
           {sig.lean ? `Lean ${sig.rating.toLowerCase()}` : sig.rating}
         </div>
         <div
           className="text-xs text-muted"
-          title="The price the EPI alone would justify, ignoring momentum and the prediction crowd"
+          title="The dashed line on the chart: the price the EPI alone would justify, ignoring momentum and the prediction crowd"
         >
-          Fair value from EPI alone <span className="num text-text">{usd(sig.fairValue)}</span>{" "}
+          EPI-implied price <span className="num text-text">{usd(sig.fairValue)}</span>{" "}
           <span
             className={clsx(
               "num",

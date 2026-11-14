@@ -42,7 +42,7 @@ export function Poster({
           <div
             className={clsx(
               "font-semibold leading-[1.05] tracking-tight text-white/95 [text-wrap:balance]",
-              size === "lg" ? "text-sm" : "text-[9px]",
+              size === "lg" ? "text-sm" : "text-xs",
             )}
           >
             {asset.title}

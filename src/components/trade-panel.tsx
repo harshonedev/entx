@@ -18,11 +18,14 @@ const FILLED_MS = 2500;
 
 export function TradePanel({ asset }: { asset: AssetSeed }) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
-  const [qtyText, setQtyText] = useState("25");
+  // null = the visitor hasn't typed yet: the ticket then offers $25, or whatever cash covers if that's less,
+  // so the primary action never opens disabled. It follows cash until the first edit (the store hydrates late).
+  const [typed, setQtyText] = useState<string | null>(null);
   // Fans think in dollars ("$25 of The Odyssey"); traders think in units. Both enter the same order.
   const [mode, setMode] = useState<"units" | "usd">("usd");
   const m = useMarket((s) => s.markets[asset.id]);
   const cash = useMarket((s) => s.cash);
+  const qtyText = typed ?? (cash >= 25 ? "25" : cash >= 1 ? String(Math.floor(cash)) : "");
   const held = useMarket((s) => s.holdings[asset.id]);
   const buy = useMarket((s) => s.buy);
   const sell = useMarket((s) => s.sell);
@@ -48,7 +51,8 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
     return () => clearTimeout(t);
   }, [filled]);
 
-  const entered = Math.max(0, Number(qtyText) || 0);
+  const malformed = qtyText !== "" && !/^\d*\.?\d*$/.test(qtyText);
+  const entered = malformed ? 0 : Math.max(0, Number(qtyText) || 0);
   const price = priceOf(m);
   const units = held?.units ?? 0;
   // Dollar-mode orders keep the exact unit fraction, so "$25" spends $25.00, not $24.91.
@@ -80,11 +84,15 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
   }, [confirming]);
 
   const tooBig = side === "buy" && qty > 0 && !bq.ok;
+  // Asking to sell more than you hold: no figures for an order that can't fill.
+  const oversell = side === "sell" && qty > units + 1e-9;
+  const noQuote = qty <= 0 || tooBig || oversell;
   const invalid =
     qty <= 0 || (side === "buy" ? !bq.ok || bq.cost > cash : qty > units + 1e-9);
-  const reason =
-    qty <= 0
-      ? "Enter a quantity"
+  const reason = malformed
+    ? "Enter a number like 25"
+    : qty <= 0
+      ? mode === "usd" ? "Enter an amount" : "Enter a quantity"
       : tooBig
         ? "Exceeds pool liquidity"
       : side === "buy" && bq.cost > cash
@@ -124,14 +132,14 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
 
   return (
     <div className="panel ticket p-4">
-      <div className="grid grid-cols-2">
+      <div className="side-toggle" role="group" aria-label="Side">
         {(["buy", "sell"] as const).map((s) => (
           <button
             key={s}
             onClick={() => setSide(s)}
             aria-pressed={side === s}
             className={clsx(
-              "cond cursor-pointer h-11 border text-[17px] font-bold uppercase tracking-[0.08em] transition-colors",
+              "cursor-pointer transition-colors",
               side === s
                 ? s === "buy"
                   ? "border-up bg-up text-on-status"
@@ -187,7 +195,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
           </span>
         </button>
       </div>
-      <div className="mt-1.5 flex items-center rounded bg-panel-2 px-4 ring-1 ring-transparent focus-within:ring-2 focus-within:ring-accent">
+      <div className="mt-1.5 flex items-center bg-panel-2 px-4 ring-1 ring-transparent focus-within:ring-2 focus-within:ring-accent">
         {mode === "usd" && <span className="num mr-1 text-[26px] font-medium text-muted">$</span>}
         <input
           ref={amountInput}
@@ -228,21 +236,21 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
 
       <dl className="kv-dotted mt-4 text-xs">
         <Row k="Market price" v={usd(price)} />
-        <Row k="Avg price per unit (incl. fee)" v={qty > 0 && !tooBig ? usd(avg) : "—"} />
+        <Row k="Avg price per unit (incl. fee)" v={noQuote ? "—" : usd(avg)} />
         <Row
           k="Price impact"
           hint="How much this order moves the price"
-          v={qty > 0 && !tooBig ? pct(impact) : "—"}
+          v={noQuote ? "—" : pct(impact)}
           tone={!invalid && Math.abs(impact) > 0.01 ? "warn" : undefined}
         />
-        <Row k={`Fee (${(FEE * 100).toFixed(1)}%)`} v={qty > 0 && !tooBig ? usd(total * FEE) : "—"} />
+        <Row k={`Fee (${(FEE * 100).toFixed(1)}%)`} v={noQuote ? "—" : usd(total * FEE)} />
         <div className="my-2 border-t border-line" />
-        <Row k={side === "buy" ? "Total cost" : "You receive"} v={tooBig ? "—" : usd(total)} strong />
+        <Row k={side === "buy" ? "Total cost" : "You receive"} v={noQuote ? "—" : usd(total)} strong />
       </dl>
 
       {confirming && !invalid ? (
         <div
-          className="mt-4 rounded border border-line-2 p-3"
+          className="mt-4 border border-line-2 p-3"
           role="group"
           aria-labelledby="review-h"
           onKeyDown={(e) => {
@@ -266,7 +274,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
             <button
               onClick={() => setConfirming(false)}
               aria-keyshortcuts="Escape"
-              className="cursor-pointer h-11 rounded bg-panel-2 text-[13px] font-medium hover:bg-ink/[0.07]"
+              className="cursor-pointer h-11 bg-panel-2 text-[13px] font-medium hover:bg-ink/[0.07]"
             >
               Cancel
             </button>
@@ -283,7 +291,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
         <button
           disabled
           data-static
-          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-1.5 rounded bg-up/[0.08] text-[13.5px] font-semibold text-up"
+          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-1.5 bg-up/[0.08] text-[13.5px] font-semibold text-up"
         >
           <Check size={15} aria-hidden />
           <span className="num">{justFilled}</span>
@@ -302,23 +310,31 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
       {fillId && <FillReceipt tradeId={fillId} unit={asset.ticker} quoted={quotedQty} onDone={clearFill} />}
       {!justFilled && invalid && side === "buy" && qty > 0 && (
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-          {maxBuy > 0 ? (
+          {(mode === "usd" ? maxUsd >= 1 : maxBuy > 0) ? (
             <button
-              className="cursor-pointer text-text underline underline-offset-2"
-              onClick={() =>
-                setQtyText(mode === "units" ? String(maxBuy) : String(maxUsd))
-              }
+              className="cursor-pointer text-text underline underline-offset-2 pointer-coarse:min-h-11"
+              onClick={() => setQtyText(mode === "units" ? String(maxBuy) : String(maxUsd))}
             >
               Your cash covers {mode === "units" ? `${maxBuy} units` : usd(maxUsd, 0)} · use that
             </button>
           ) : (
-            <span>Not enough cash for one unit.</span>
+            <span>{mode === "units" ? "Not enough cash for one unit. Switch to Dollars to buy a fraction." : "Not enough cash for this order."}</span>
           )}
           {units > 0 && (
-            <button className="cursor-pointer text-text underline underline-offset-2" onClick={() => setSide("sell")}>
+            <button className="cursor-pointer text-text underline underline-offset-2 pointer-coarse:min-h-11" onClick={() => setSide("sell")}>
               You hold {num(units, units % 1 ? 2 : 0)} {asset.ticker} · Sell?
             </button>
           )}
+        </div>
+      )}
+      {!justFilled && oversell && units > 0 && (
+        <div className="mt-2 text-xs text-muted">
+          <button
+            className="cursor-pointer text-text underline underline-offset-2 pointer-coarse:min-h-11"
+            onClick={() => setQtyText(mode === "units" ? String(units) : String(Math.floor(quoteSell(m.pool, units).proceeds)))}
+          >
+            Sell all {num(units, units % 1 ? 2 : 0)} {asset.ticker}
+          </button>
         </div>
       )}
 

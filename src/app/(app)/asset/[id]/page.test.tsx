@@ -67,9 +67,30 @@ describe("Asset page", () => {
   it("labels the session EPI as simulated and the headline metric's source", () => {
     render(<AssetPage />);
     const header = screen.getByRole("heading", { level: 1 }).closest("section") as HTMLElement;
-    expect(header).toHaveTextContent(/EPI [\d.]+ \(this session, simulated\)/);
+    expect(header).toHaveTextContent(/EPI · this session[\d.]+simulated/);
     expect(header).toHaveTextContent(`${withPreds.metric.label}`);
     expect(header).toHaveTextContent(/TMDB/);
+  });
+
+  it("puts this title's latest news on the oracle wire, with its NEAR report linked", () => {
+    const now = Date.now();
+    useMarket.setState({
+      feed: [
+        { id: "c1", ts: now, type: "chain", tone: "neutral", refId: withPreds.id, href: "https://testnet.nearblocks.io/txns/abc", text: "Oracle EPI · NEAR" },
+        { id: "n1", ts: now - 1000, type: "oracle", tone: "up", refId: withPreds.id, text: "NEWS · Trailer crosses 60M views · App EPI 80.0 → 85.0" },
+        { id: "n0", ts: now - 2000, type: "oracle", tone: "up", refId: "someone-else", text: "NEWS · Other title" },
+      ],
+    });
+    render(<AssetPage />);
+    const wire = screen.getByText("Oracle wire").closest(".wire") as HTMLElement;
+    expect(wire).toHaveTextContent("Trailer crosses 60M views · App EPI 80.0 → 85.0");
+    expect(wire).not.toHaveTextContent("NEWS ·");
+    expect(within(wire).getByRole("link", { name: /Signed on NEAR/ })).toHaveAttribute("href", "https://testnet.nearblocks.io/txns/abc");
+  });
+
+  it("says plainly when there is no news on the title yet", () => {
+    render(<AssetPage />);
+    expect(screen.getByText("Oracle wire").closest(".wire")).toHaveTextContent(`No news on ${withPreds.ticker} this session`);
   });
 
   it("shows the oracle EPI from NEAR with its gap to the session EPI", async () => {
@@ -80,10 +101,10 @@ describe("Asset page", () => {
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response(JSON.stringify({ result: { result } })));
     render(<AssetPage />);
-    const link = await screen.findByRole("link", { name: /Oracle EPI · NEAR/ });
+    const link = await screen.findByRole("link", { name: /oracle report/ });
     expect(link).toHaveTextContent(oracle.toFixed(1));
     expect(screen.getByText(/Session is \d+\.\d lower/)).toBeInTheDocument();
-    expect(screen.getByText(/the oracle value is the last report on NEAR/)).toBeInTheDocument();
+    expect(screen.getByText(/the NEAR value is the last report the trusted/)).toBeInTheDocument();
     fetchMock.mockRestore();
   });
 

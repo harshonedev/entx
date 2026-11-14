@@ -31,7 +31,7 @@ describe("AnalystCard", () => {
     expect(screen.getByText(usd(sig.fairValue))).toBeInTheDocument();
     expect(screen.getByText(`${sig.confidence}%`)).toBeInTheDocument();
     expect(screen.getByText(`${sig.confidence}%`).parentElement).toHaveTextContent(/^Analyst conviction/);
-    expect(screen.getByText(/Fair value from EPI alone/)).toBeInTheDocument();
+    expect(screen.getByText(/EPI-implied price/)).toBeInTheDocument();
     expect(screen.getByText(sig.summary)).toBeInTheDocument();
     expect(sig.summary).toContain(asset.ticker);
   });

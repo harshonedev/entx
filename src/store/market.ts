@@ -277,7 +277,13 @@ async function publishToNear(assetId: string, eventId: string) {
     const hash = json.hash;
     const href = nearTxUrl(hash);
     const epi = json.epi ?? 0;
-    const move = json.from != null ? `${json.from.toFixed(1)} → ${epi.toFixed(1)}` : epi.toFixed(1);
+    // A report that lands on the same value (e.g. already at the 100 cap) says so instead of "100.0 → 100.0".
+    const move =
+      json.from == null
+        ? epi.toFixed(1)
+        : json.from.toFixed(1) === epi.toFixed(1)
+          ? `${epi.toFixed(1)} (unchanged)`
+          : `${json.from.toFixed(1)} → ${epi.toFixed(1)}`;
     const a = ASSET_BY_ID[assetId];
     const st = useMarket.getState();
     useMarket.setState({

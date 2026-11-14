@@ -29,7 +29,7 @@ beforeEach(() => {
 const input = () => screen.getByRole("textbox") as HTMLInputElement;
 const submitBtn = () => screen.getByRole("button", { name: /^(Buy|Sell) \d.*ODYSS ·/ });
 const actionBtn = () =>
-  screen.getByRole("button", { name: /^(Buy \d|Sell \d|Enter a quantity|Not enough cash|You hold)/ });
+  screen.getByRole("button", { name: /^(Buy \d|Sell \d|Enter an amount|Enter a quantity|Enter a number|Not enough cash|You hold)/ });
 
 async function setAmount(v: string) {
   await userEvent.clear(input());
@@ -95,10 +95,17 @@ describe("TradePanel", () => {
     expect(input().value).toBe("12.5");
   });
 
-  it("asks for a quantity when the amount is empty", async () => {
+  it("defaults to an amount cash covers, so the ticket never opens disabled", () => {
+    useMarket.setState({ cash: 10.98 });
+    render(<TradePanel asset={asset} />);
+    expect(input().value).toBe("10");
+    expect(submitBtn()).toBeEnabled();
+  });
+
+  it("asks for an amount when the amount is empty", async () => {
     render(<TradePanel asset={asset} />);
     await setAmount("");
-    expect(screen.getByRole("button", { name: "Enter a quantity" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Enter an amount" })).toBeDisabled();
   });
 
   it("applies presets and marks the active one", async () => {

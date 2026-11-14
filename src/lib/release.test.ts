@@ -54,6 +54,11 @@ describe("nextCatalyst", () => {
     expect(nextCatalyst(a, [], at("2026-11-11T10:00:00Z"))).toEqual({ label: "Opening day", days: 4 });
   });
 
+  it("a film weeks from opening never gets a box office report as its catalyst", () => {
+    const a = base({ releaseDate: "2026-12-16", status: "Upcoming" });
+    expect(nextCatalyst(a, [], sat)).toEqual({ label: "Opening day", days: 32 });
+  });
+
   it("in-theaters movie gets weekend box office report", () => {
     const a = base({ status: "In theaters", releaseDate: "2026-10-01" });
     expect(nextCatalyst(a, [], sat)).toEqual({ label: "Weekend box office report", days: 1 });

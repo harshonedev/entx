@@ -160,8 +160,17 @@ describe("PredictionCard", () => {
     const user = userEvent.setup();
     render(<PredictionCard p={p} />);
     await user.click(yesBtn());
-    const btn = screen.getByRole("button", { name: "Not enough cash · need $20.00 more" });
+    // Below every preset, the smallest one is offered and the button says how far short it is.
+    const btn = screen.getByRole("button", { name: "Not enough cash · need $5.00 more" });
     expect(btn).toBeDisabled();
+  });
+
+  it("defaults the bet to the largest preset cash covers", async () => {
+    useMarket.setState({ cash: 12 });
+    const user = userEvent.setup();
+    render(<PredictionCard p={p} />);
+    await user.click(yesBtn());
+    expect(screen.getByRole("button", { name: /^(Bet \$10 on YES|Confirm · \$10 on YES)/ })).toBeEnabled();
   });
 
   describe("large bet review (>10% of cash)", () => {
