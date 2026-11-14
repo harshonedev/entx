@@ -25,7 +25,7 @@ export function AnalystCard({ assetId }: { assetId: string }) {
         <div
           className={clsx(
             "rounded-lg px-2.5 py-1 text-sm font-semibold",
-            bull ? "bg-up/15 text-up" : bear ? "bg-down/15 text-down" : "bg-ink/[0.07] text-text",
+            bull ? "bg-up/[0.08] text-up" : bear ? "bg-down/[0.08] text-down" : "bg-ink/[0.07] text-text",
           )}
         >
           {sig.lean ? `Lean ${sig.rating.toLowerCase()}` : sig.rating}

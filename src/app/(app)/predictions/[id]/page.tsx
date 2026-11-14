@@ -183,12 +183,12 @@ export default function PredictionMarketPage() {
                   onClick={() => window.dispatchEvent(new CustomEvent(PICK_SIDE_EVENT, { detail: s }))}
                   aria-label={`Bet ${s === "YES" ? "Yes" : "No"} at ${cents(s === "YES" ? yp : 1 - yp)}`}
                   className={clsx(
-                    "cursor-pointer num inline-flex h-11 shrink-0 items-center gap-1.5 rounded px-3.5 text-sm font-semibold text-black",
+                    "cursor-pointer num inline-flex h-11 shrink-0 items-center gap-1.5 rounded px-3.5 text-sm font-semibold text-on-status",
                     s === "YES" ? "bg-up" : "bg-down",
                   )}
                 >
                   {s === "YES" ? "Yes" : "No"}
-                  <span className="font-normal opacity-80">{cents(s === "YES" ? yp : 1 - yp)}</span>
+                  <span className="font-normal">{cents(s === "YES" ? yp : 1 - yp)}</span>
                 </a>
               ))}
             </div>
@@ -217,7 +217,7 @@ function YourPosition({ p, yp, resolved }: { p: PredictionSeed; yp: number; reso
                 <span
                   className={clsx(
                     "rounded-sm px-1.5 py-0.5 text-xs font-semibold",
-                    x.side === "YES" ? "bg-up/15 text-up" : "bg-down/15 text-down",
+                    x.side === "YES" ? "bg-up/[0.08] text-up" : "bg-down/[0.08] text-down",
                   )}
                 >
                   {x.side}

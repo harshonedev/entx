@@ -146,10 +146,10 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               aria-label={`Pick YES at ${(yp * 100).toFixed(1)} cents`}
               className={clsx(
                 "cursor-pointer min-h-11 rounded border py-2.5 text-sm font-semibold transition-colors",
-                side === "YES" ? "border-up bg-up text-black" : "border-transparent bg-up/[0.08] text-up hover:bg-up/[0.14]",
+                side === "YES" ? "border-up bg-up text-on-status" : "border-transparent bg-up/[0.08] text-up hover:bg-up/[0.14]",
               )}
             >
-              Yes <span className="num font-normal opacity-80">{cents(yp)}</span>
+              Yes <span className="num font-normal">{cents(yp)}</span>
             </button>
             <button
               data-side="NO"
@@ -158,10 +158,10 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               aria-label={`Pick NO at ${((1 - yp) * 100).toFixed(1)} cents`}
               className={clsx(
                 "cursor-pointer min-h-11 rounded border py-2.5 text-sm font-semibold transition-colors",
-                side === "NO" ? "border-down bg-down text-black" : "border-transparent bg-down/[0.08] text-down hover:bg-down/[0.14]",
+                side === "NO" ? "border-down bg-down text-on-status" : "border-transparent bg-down/[0.08] text-down hover:bg-down/[0.14]",
               )}
             >
-              No <span className="num font-normal opacity-80">{cents(1 - yp)}</span>
+              No <span className="num font-normal">{cents(1 - yp)}</span>
             </button>
           </div>
 
@@ -211,7 +211,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
                 disabled={amount > cash}
                 onClick={place}
                 className={clsx(
-                  "cursor-pointer mt-3 h-10 w-full rounded text-sm font-semibold text-black disabled:cursor-not-allowed disabled:bg-panel disabled:font-medium disabled:text-muted",
+                  "cursor-pointer mt-3 h-10 w-full rounded text-sm font-semibold text-on-status disabled:cursor-not-allowed disabled:bg-panel disabled:font-medium disabled:text-muted",
                   side === "YES" ? "bg-up" : "bg-down",
                 )}
               >

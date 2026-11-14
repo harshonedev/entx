@@ -63,7 +63,7 @@ export default function EpiPage() {
                 <th className="w-10 py-2.5 pl-4 font-medium sm:w-12">#</th>
                 <th className="py-2.5 pr-4 font-medium sm:min-w-[200px]">Title</th>
                 <th className="py-2.5 pl-4 text-right font-medium">EPI</th>
-                <th className="py-2.5 pl-4 text-right font-medium">24h</th>
+                <th className="py-2.5 pl-4 pr-4 text-right font-medium sm:pr-0">24h</th>
                 {KEYS.map((k) => (
                   <th key={k} title={EPI_LABELS[k]} className="hidden whitespace-nowrap py-2.5 pl-4 font-medium lg:table-cell">
                     {EPI_SHORT_LABELS[k]}
@@ -91,7 +91,7 @@ export default function EpiPage() {
                       </Link>
                     </td>
                     <td className="num py-2.5 pl-4 text-right text-base font-semibold">{m.epi.toFixed(1)}</td>
-                    <td className="py-2.5 pl-4 text-right text-xs">
+                    <td className="py-2.5 pl-4 pr-4 text-right text-xs sm:pr-0">
                       <Change value={m.epi / ref - 1} />
                     </td>
                     {KEYS.map((k) => (
@@ -115,7 +115,7 @@ export default function EpiPage() {
           </table>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <div className="panel p-4">
             <h2 className="h-panel">Methodology</h2>
             <div className="num mt-3 rounded bg-bg p-3 text-xs leading-relaxed text-muted">

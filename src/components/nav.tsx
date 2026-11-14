@@ -312,14 +312,14 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
 /** Dateline strip under the top bar: environment, market-wide stats, receipt toggles and portfolio value. */
 function Dateline() {
   return (
-    <div className="@container hidden h-10 shrink-0 items-center gap-4 border-b border-ink bg-bg px-6 text-[12px] md:flex">
+    <section aria-label="Market status" className="@container hidden h-10 shrink-0 items-center gap-4 border-b border-ink bg-bg px-6 text-[12px] md:flex">
       <ModeBadge />
       <StatChips />
       <div className="ml-auto flex h-full shrink-0 items-center gap-4">
         <ReceiptToggles inline />
         <AccountFigure />
       </div>
-    </div>
+    </section>
   );
 }
 

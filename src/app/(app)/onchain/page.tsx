@@ -134,7 +134,7 @@ export default function OnchainPage() {
                 >
                   <span className="inline-flex items-center gap-1 rounded bg-ink/[0.07] px-1.5 py-0.5">
                     {o}
-                    {role && <span className="font-sans text-faint">· {role}</span>}
+                    {role && <span className="font-sans text-muted">· {role}</span>}
                     <ExternalLink size={10} aria-hidden />
                   </span>
                 </a>
@@ -377,7 +377,7 @@ export default function OnchainPage() {
           </div>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <section aria-label="Funding and chains" className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <IntentsPanel />
           {CHAIN_ON.solana && (
           <div className="panel p-4 text-xs leading-relaxed text-muted">
@@ -388,7 +388,7 @@ export default function OnchainPage() {
             records.
           </div>
           )}
-        </aside>
+        </section>
       </section>
     </div>
   );

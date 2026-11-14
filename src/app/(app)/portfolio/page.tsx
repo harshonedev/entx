@@ -90,7 +90,7 @@ export default function PortfolioPage() {
                 clearProbHistory();
                 setConfirmReset(false);
               }}
-              className="cursor-pointer inline-flex min-h-8 items-center rounded-lg bg-down px-3 font-semibold text-black pointer-coarse:min-h-11"
+              className="cursor-pointer inline-flex min-h-8 items-center rounded-lg bg-down px-3 font-semibold text-on-status pointer-coarse:min-h-11"
             >
               Confirm reset
             </button>
@@ -203,7 +203,7 @@ export default function PortfolioPage() {
                         <td data-label="Price" className={clsx("num py-2.5 text-right", CELL)}>{usd(p)}</td>
                         <td data-label="Value" className={clsx("num py-2.5 text-right font-medium", CELL)}>{usd(val)}</td>
                         <td data-label="P&L" className={clsx("num py-2.5 text-right", CELL, signTone(pnl / h.cost, 0.005))}>
-                          <span>{usd(pnl)} <span className="text-xs opacity-70">({pct(pnl / h.cost, 1)})</span></span>
+                          <span>{usd(pnl)} <span className="text-xs">({pct(pnl / h.cost, 1)})</span></span>
                         </td>
                         <td className="py-2.5 pl-4 pr-4 text-right max-sm:block max-sm:pt-2">
                           <button
@@ -242,7 +242,7 @@ export default function PortfolioPage() {
                       <span
                         className={clsx(
                           "rounded px-1.5 py-0.5 text-xs font-semibold",
-                          p.side === "YES" ? "bg-up/15 text-up" : "bg-down/15 text-down",
+                          p.side === "YES" ? "bg-up/[0.08] text-up" : "bg-down/[0.08] text-down",
                         )}
                       >
                         {p.side}
@@ -280,7 +280,7 @@ export default function PortfolioPage() {
                       <span
                         className={clsx(
                           "rounded px-1.5 py-0.5 text-xs font-semibold",
-                          x.side === "YES" ? "bg-up/15 text-up" : "bg-down/15 text-down",
+                          x.side === "YES" ? "bg-up/[0.08] text-up" : "bg-down/[0.08] text-down",
                         )}
                       >
                         {x.side}
@@ -407,7 +407,7 @@ export default function PortfolioPage() {
           )}
         </div>
 
-        <aside className="panel h-fit p-4">
+        <section aria-label="Leaderboard" className="panel h-fit p-4">
           <div className="flex items-center gap-2">
             <Trophy size={14} className="text-muted" />
             <h2 className="h-panel">Leaderboard vs bots</h2>
@@ -434,7 +434,7 @@ export default function PortfolioPage() {
               </li>
             ))}
           </ol>
-        </aside>
+        </section>
       </section>
     </div>
   );

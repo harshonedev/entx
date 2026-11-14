@@ -122,7 +122,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
               onClick={() =>
                 run("claim", () => call("claim", { market_id: marketId }, "0", 50), "Payout claimed")
               }
-              className="cursor-pointer ml-1 rounded bg-near px-2 py-1 font-semibold text-black disabled:opacity-50"
+              className="cursor-pointer ml-1 rounded bg-near px-2 py-1 font-semibold text-on-status disabled:opacity-50"
             >
               {busy === "claim" ? "Claiming…" : `Claim ${yoctoToNear(claimable, 3)} NEAR`}
             </button>
@@ -170,8 +170,8 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
                     "cursor-pointer min-h-9 rounded px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-11",
                     pending === side
                       ? side === "YES"
-                        ? "bg-up text-black"
-                        : "bg-down text-black"
+                        ? "bg-up text-on-status"
+                        : "bg-down text-on-status"
                       : side === "YES"
                         ? "bg-up/[0.12] text-up hover:bg-up/[0.2]"
                         : "bg-down/[0.12] text-down hover:bg-down/[0.2]",
@@ -309,7 +309,7 @@ function StakePreview({
         onClick={onSign}
         disabled={busy}
         className={clsx(
-          "cursor-pointer mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60",
+          "cursor-pointer mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded text-sm font-semibold text-on-status disabled:cursor-not-allowed disabled:opacity-60",
           side === "YES" ? "bg-up" : "bg-down",
         )}
       >

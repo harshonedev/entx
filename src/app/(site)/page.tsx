@@ -225,8 +225,8 @@ export default function Landing() {
               </div>
               <p className="hero__proof">Built for NEAR Hackathon 2026. Pools stake testnet NEAR; prices are simulated.</p>
             </div>
-            <div className="hero__art span-6 start-7" role="img" aria-label={`The ENTX board ranked by EPI with each title\u2019s price trend, and the price chart of ${lead.title}`}>
-              <div className="ly-piece ly-piece--main hw" aria-hidden="true">
+            <div className="hero__art span-6 start-7" data-ui-pause-host="">
+              <div className="ly-piece ly-piece--main hw" role="img" aria-label={`The ENTX board ranked by EPI with each title\u2019s price trend, and the price chart of ${lead.title}`}>
                 <div className="bd">
                   <div className="bd__mast">
                     <strong>The board</strong>
@@ -333,10 +333,11 @@ export default function Landing() {
                   data-subject="TMDB poster"
                 />
               </figure>
-              <div className="epi-gauge" data-m-loop="" role="img" aria-label={`${heart.title}'s EPI of ${one(epiOf(heart))}, built from ${WEIGHTS.map(([k, label, , w]) => `${label} ${one((heart.epiParts[k] * w) / 100)} points`).join(", ")}`}>
-                <span className="pc-kicker">EPI · {heart.ticker}</span>
-                <strong>{one(epiOf(heart))}</strong>
-                <div className="epi-gauge__body">
+              <div className="epi-gauge" data-m-loop="">
+                <span className="sr-only">{`${heart.title}'s EPI of ${one(epiOf(heart))}, built from ${WEIGHTS.map(([k, label, , w]) => `${label} ${one((heart.epiParts[k] * w) / 100)} points`).join(", ")}`}</span>
+                <span className="pc-kicker" aria-hidden="true">EPI · {heart.ticker}</span>
+                <strong aria-hidden="true">{one(epiOf(heart))}</strong>
+                <div className="epi-gauge__body" aria-hidden="true">
                   <div className="epi-gauge__bar">
                     {WEIGHTS.map(([k, , , w], i) => (
                       <div key={k} className={`epi-gauge__seg s${i}`} style={{ ["--p" as string]: `${(heart.epiParts[k] * w) / 100}%` }} />
