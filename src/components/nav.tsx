@@ -32,6 +32,7 @@ import { DemoControls } from "./demo-controls";
 import { ModeBadge, SettingsMenu } from "./settings-menu";
 import { CHAIN, CHAIN_LABEL, CHAIN_NAMES, CHAIN_ON, IS_DEMO, MULTICHAIN } from "@/lib/env";
 import { Change, Dim, signTone } from "./ui";
+import { LogoMark, Wordmark } from "./logo";
 
 type NavLink = { href: string; label: string; icon: LucideIcon };
 
@@ -242,11 +243,12 @@ function Sidebar({
           href="/"
           onClick={onNavigate}
           aria-label="ENTX home"
-          className="cursor-pointer flex items-center gap-2.5 rounded"
+          className="cursor-pointer relative flex h-7 items-center rounded text-text"
           {...tipProps("Home")}
         >
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-text text-[13px] font-semibold text-bg">E</span>
-          <span className={clsx(fade, "text-[15px] font-medium tracking-[-0.01em]")}>ENTX</span>
+          {/* The bare E overlays the wordmark's own E, so collapsing reads as "NTX" fading away. */}
+          <LogoMark className={clsx("absolute left-0 h-3.5 w-auto", animate && "motion-safe:transition-opacity motion-safe:duration-150", collapsed ? "opacity-100" : "opacity-0")} />
+          <Wordmark className={clsx(fade, "h-3.5 w-auto")} />
         </Link>
       </div>
 
@@ -417,8 +419,8 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
       >
         <Menu size={16} />
       </button>
-      <Link href="/" className="cursor-pointer inline-flex min-h-11 min-w-11 items-center text-[15px] font-medium tracking-[-0.01em] md:hidden">
-        ENTX
+      <Link href="/" className="cursor-pointer inline-flex min-h-11 min-w-11 items-center text-[15px] font-medium tracking-[-0.01em] md:hidden" aria-label="ENTX home">
+        <Wordmark className="h-3 w-auto" />
       </Link>
       <StatChips />
       <div className="ml-auto flex shrink-0 items-center gap-2">
