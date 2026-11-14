@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ASSET_BY_ID } from "@/lib/assets";
-import { quoteBuy } from "@/lib/engine";
+import { quoteBuy, unitsForDollars } from "@/lib/engine";
 import { usd } from "@/lib/format";
 import { STARTING_CASH, priceOf, useMarket } from "@/store/market";
 import { TradePanel } from "./trade-panel";
@@ -36,7 +36,7 @@ async function setAmount(v: string) {
 describe("TradePanel", () => {
   it("starts on a $25 buy in dollar mode", () => {
     render(<TradePanel asset={asset} />);
-    expect(screen.getByRole("button", { name: "buy" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Buy" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Dollars" })).toHaveAttribute("aria-pressed", "true");
     expect(input()).toHaveAccessibleName(`Dollars of ${asset.title}`);
     expect(input().value).toBe("25");
@@ -59,6 +59,31 @@ describe("TradePanel", () => {
     expect(screen.getByText(new RegExp(`^${h.units.toFixed(2)} ODYSS$`))).toBeInTheDocument();
     // no receipts when no wallet is connected
     expect(receipts.record).not.toHaveBeenCalled();
+  });
+
+  it("confirms the fill on the button, then clears the ticket and refocuses the amount", async () => {
+    render(<TradePanel asset={asset} />);
+    await userEvent.click(submitBtn());
+    const done = screen.getByRole("button", { name: /^Filled · [\d.]+ ODYSS · \$2\d\.\d\d$/ });
+    expect(done).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent(/simulated/);
+    expect(input().value).toBe("");
+    expect(input()).toHaveFocus();
+    // Picking a new amount ends the confirmation early.
+    await userEvent.click(screen.getByRole("button", { name: "$10" }));
+    expect(screen.queryByRole("button", { name: /^Filled/ })).toBeNull();
+    expect(submitBtn()).toBeEnabled();
+  });
+
+  it("explains what a unit is next to the amount", () => {
+    render(<TradePanel asset={asset} />);
+    expect(input()).toHaveAccessibleDescription(/isn't a share of the film/);
+  });
+
+  it("doesn't flag price impact on an order that can't be placed", async () => {
+    render(<TradePanel asset={asset} />);
+    await setAmount("5000");
+    expect(screen.getByText("Price impact").nextElementSibling).not.toHaveClass("text-warn");
   });
 
   it("strips non-numeric characters from the amount", async () => {
@@ -105,15 +130,15 @@ describe("TradePanel", () => {
     expect(btn).toBeDisabled();
     expect(btn).toHaveAccessibleName(/^Not enough cash · need \$[\d,]+\.\d\d more$/);
 
-    const maxBuy = Math.floor((STARTING_CASH / priceOf(initial.markets[asset.id])) * 0.98);
-    await userEvent.click(screen.getByRole("button", { name: `Buy the most you can (${maxBuy} units)` }));
+    const maxBuy = Math.floor(unitsForDollars(initial.markets[asset.id].pool, STARTING_CASH, "buy"));
+    await userEvent.click(screen.getByRole("button", { name: `Your cash covers ${maxBuy} units · use that` }));
     expect(input().value).toBe(String(maxBuy));
   });
 
   it("Max fills the largest affordable dollar amount", async () => {
     render(<TradePanel asset={asset} />);
-    await userEvent.click(screen.getByRole("button", { name: /^Max:/ }));
-    expect(input().value).toBe(String(Math.floor(STARTING_CASH * 0.98)));
+    await userEvent.click(screen.getByRole("button", { name: /^All your cash:/ }));
+    expect(input().value).toBe(String(Math.floor(STARTING_CASH)));
   });
 
   it("requires a review for buys over 10% of cash, ignoring a double-click", async () => {
@@ -153,10 +178,21 @@ describe("TradePanel", () => {
     expect(screen.queryByText("Review large order")).toBeNull();
   });
 
+  it("Escape cancels the review and returns focus to the amount", async () => {
+    render(<TradePanel asset={asset} />);
+    await setAmount("200");
+    await userEvent.click(submitBtn());
+    expect(screen.getByRole("button", { name: "Confirm buy" })).toHaveFocus();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByText("Review large order")).toBeNull();
+    expect(input()).toHaveFocus();
+    expect(useMarket.getState().cash).toBe(STARTING_CASH);
+  });
+
   it("can't sell what you don't hold", async () => {
     render(<TradePanel asset={asset} />);
-    await userEvent.click(screen.getByRole("button", { name: "sell" }));
-    expect(screen.getByRole("button", { name: "sell" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Sell" }));
+    expect(screen.getByRole("button", { name: "Sell" })).toHaveAttribute("aria-pressed", "true");
     expect(actionBtn()).toBeDisabled();
     expect(actionBtn()).toHaveAccessibleName("You hold 0 units");
     expect(screen.getByText("You receive")).toBeInTheDocument();
@@ -168,7 +204,7 @@ describe("TradePanel", () => {
     });
     const afterBuy = useMarket.getState().cash;
     render(<TradePanel asset={asset} />);
-    await userEvent.click(screen.getByRole("button", { name: "sell" }));
+    await userEvent.click(screen.getByRole("button", { name: "Sell" }));
     await userEvent.click(screen.getByRole("button", { name: "Units" }));
     await setAmount("4");
     const btn = submitBtn();
@@ -185,12 +221,12 @@ describe("TradePanel", () => {
       useMarket.getState().buy(asset.id, 3);
     });
     render(<TradePanel asset={asset} />);
-    await userEvent.click(screen.getByRole("button", { name: "sell" }));
+    await userEvent.click(screen.getByRole("button", { name: "Sell" }));
     await userEvent.click(screen.getByRole("button", { name: "Units" }));
     await setAmount("3");
     await userEvent.click(submitBtn());
     expect(useMarket.getState().holdings[asset.id]).toBeUndefined();
-    expect(input().value).toBe("0");
+    expect(input().value).toBe("");
   });
 
   it("offers to switch to selling when a buy is unaffordable but units are held", async () => {
@@ -200,7 +236,7 @@ describe("TradePanel", () => {
     render(<TradePanel asset={asset} />);
     await setAmount("5000");
     await userEvent.click(screen.getByRole("button", { name: "You hold 5 ODYSS · Sell?" }));
-    expect(screen.getByRole("button", { name: "sell" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Sell" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("shows price, fee and total consistent with the AMM quote (units mode)", async () => {
@@ -209,7 +245,7 @@ describe("TradePanel", () => {
     await setAmount("10");
     const q = quoteBuy(initial.markets[asset.id].pool, 10);
     expect(screen.getByText("Total cost").nextElementSibling).toHaveTextContent(usd(q.cost));
-    expect(screen.getByText("Avg price per unit").nextElementSibling).toHaveTextContent(usd(q.avg));
+    expect(screen.getByText("Avg price per unit (incl. fee)").nextElementSibling).toHaveTextContent(usd(q.avg));
     expect(screen.getByText("Market price").nextElementSibling).toHaveTextContent(usd(priceOf(initial.markets[asset.id])));
     expect(screen.getByText("Fee (0.3%)").nextElementSibling).toHaveTextContent(usd(q.cost * 0.003));
   });

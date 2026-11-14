@@ -71,6 +71,14 @@ describe("DemoControls", () => {
     expect((screen.getByLabelText("Title") as HTMLSelectElement).value).toBe(ASSETS[3].id);
   });
 
+  it("defaults to the linked title on a /predictions/[id] route", async () => {
+    const pred = PREDICTIONS.find((p) => p.assetId && p.assetId !== ASSETS[0].id)!;
+    pathname = `/predictions/${pred.id}`;
+    render(<DemoControls />);
+    await openPanel();
+    expect((screen.getByLabelText("Title") as HTMLSelectElement).value).toBe(pred.assetId);
+  });
+
   it("ignores an unknown asset id in the route", async () => {
     pathname = "/asset/does-not-exist";
     render(<DemoControls />);
@@ -116,11 +124,21 @@ describe("DemoControls", () => {
     const linked = PREDICTIONS.filter((p) => p.assetId === pred.assetId);
     render(<DemoControls />);
     await openPanel();
+    // News is the default group; settling sits behind its own segment.
+    expect(screen.queryByText("Settle a prediction early")).toBeNull();
+    const settleTab = screen.getByRole("button", { name: `Settle early (${linked.length})` });
+    expect(settleTab).toHaveAttribute("aria-pressed", "false");
+    await userEvent.click(settleTab);
+    expect(settleTab).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: /Trailer goes viral/ })).toBeNull();
     expect(screen.getByText("Settle a prediction early")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Settle YES" })).toHaveLength(linked.length);
 
     const item = screen.getByText(pred.question).closest("li")!;
     await userEvent.click(within(item).getByRole("button", { name: "Settle NO" }));
+    // First click only arms it; nothing settles until the explicit confirm.
+    expect(useMarket.getState().predictions[pred.id].resolved).toBeNull();
+    await userEvent.click(within(item).getByRole("button", { name: "Confirm settle NO" }));
     expect(useMarket.getState().predictions[pred.id].resolved).toBe("NO");
     expect(screen.queryByText(pred.question)).toBeNull();
   });
@@ -132,5 +150,18 @@ describe("DemoControls", () => {
     render(<DemoControls />);
     await openPanel();
     expect(screen.queryByText("Settle a prediction early")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Settle early/ })).toBeNull();
+  });
+
+  it("groups news events by whether they lift or drop EPI", async () => {
+    render(<DemoControls />);
+    await openPanel();
+    const lifts = screen.getByRole("group", { name: "Lifts EPI" });
+    const drops = screen.getByRole("group", { name: "Drops EPI" });
+    expect(within(lifts).getByRole("button", { name: /Box office beats forecast/ })).toBeInTheDocument();
+    expect(within(drops).getByRole("button", { name: /Reviews disappoint/ })).toBeInTheDocument();
+    expect(within(lifts).getAllByRole("button").length + within(drops).getAllByRole("button").length).toBe(
+      ORACLE_EVENTS.length,
+    );
   });
 });

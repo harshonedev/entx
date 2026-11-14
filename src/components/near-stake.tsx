@@ -2,13 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import clsx from "clsx";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2, X } from "lucide-react";
 import { useNear } from "@/lib/near";
 import {
+  NEAR_CONTRACT,
+  NEAR_NETWORK,
+  nearAccountUrl,
   nearToYocto,
   nearTxUrl,
   nearView,
   resolvedOutcome,
+  stakingClosed,
   yoctoToNear,
   type NearMarket,
   type NearStake,
@@ -16,6 +20,7 @@ import {
 import { useMarket } from "@/store/market";
 
 const AMOUNTS = [0.1, 0.5, 1];
+const STAKE_GAS_TGAS = 30;
 
 /** Real parimutuel staking with testnet NEAR on the ENTX contract. */
 export function NearStakePanel({ marketId }: { marketId: string }) {
@@ -26,6 +31,8 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
   const [amount, setAmount] = useState(0.1);
   const [busy, setBusy] = useState<string | null>(null);
   const [lastTx, setLastTx] = useState<string | null>(null);
+  // Picking a side opens a preview of the exact call; nothing is sent to the wallet until "Sign".
+  const [pending, setPending] = useState<"YES" | "NO" | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -56,6 +63,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
     try {
       const hash = await fn();
       setLastTx(hash);
+      setPending(null);
       toast({ title: ok, body: `NEAR testnet · ${hash.slice(0, 10)}…`, tone: "up", href: hash ? nearTxUrl(hash) : undefined });
       setTimeout(load, 1500);
     } catch (e) {
@@ -66,7 +74,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
   };
 
   if (!m) {
-    return <div className="mt-3 rounded-xl border border-near/20 p-3 text-xs text-faint">Loading on-chain pool…</div>;
+    return <div className="mt-3 flex items-center gap-2 border-t border-line pt-3 text-xs text-muted" role="status"><Loader2 size={12} className="animate-spin" /> Reading the NEAR pool…</div>;
   }
 
   const yes = BigInt(m.yes_pool);
@@ -86,8 +94,8 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
   }
 
   return (
-    <div className="mt-3 rounded border border-line-2 bg-bg p-3">
-      <div className="flex items-center justify-between text-[11px]">
+    <div className="mt-3 border-t border-line pt-3">
+      <div className="flex items-center justify-between text-xs">
         <span className="inline-flex items-center gap-1.5 font-semibold text-near">
           <span className="h-1.5 w-1.5 rounded-full bg-near" /> On-chain pool · NEAR testnet
         </span>
@@ -96,10 +104,14 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
       <div className="mt-2 flex h-1 overflow-hidden bg-down/40">
         <div className="h-full bg-up" style={{ width: `${yesShare}%` }} />
       </div>
-      <div className="num mt-1 flex justify-between text-[11px] text-muted">
+      <div className="num mt-1 flex justify-between text-xs text-muted">
         <span>YES {yoctoToNear(yes, 2)} Ⓝ</span>
         <span>NO {yoctoToNear(no, 2)} Ⓝ</span>
       </div>
+      <p className="mt-1.5 text-xs leading-relaxed text-faint">
+        Pool: all stakes on this market. When it settles, the winning side splits the whole pool in proportion to
+        each stake. Separate from the simulated odds above.
+      </p>
 
       {outcome !== null ? (
         <div className="mt-2 text-xs">
@@ -110,7 +122,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
               onClick={() =>
                 run("claim", () => call("claim", { market_id: marketId }, "0", 50), "Payout claimed")
               }
-              className="cursor-pointer ml-1 rounded-md bg-near px-2 py-1 font-semibold text-black disabled:opacity-50"
+              className="cursor-pointer ml-1 rounded bg-near px-2 py-1 font-semibold text-black disabled:opacity-50"
             >
               {busy === "claim" ? "Claiming…" : `Claim ${yoctoToNear(claimable, 3)} NEAR`}
             </button>
@@ -120,55 +132,80 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
             <span className="text-muted">No payout for this stake.</span>
           ) : null}
         </div>
+      ) : stakingClosed(m) ? (
+        <div className="mt-2 text-xs text-muted">Staking closed. Awaiting on-chain resolution.</div>
       ) : !accountId ? (
         <button
           onClick={connect}
           disabled={!ready}
-          className="cursor-pointer mt-2 w-full rounded-lg border border-near/40 py-1.5 text-xs font-semibold text-near hover:bg-near/10"
+          className="cursor-pointer mt-2 h-9 w-full rounded border border-near/40 py-1.5 text-xs font-semibold text-near hover:bg-near/10"
         >
-          Connect NEAR to stake real testnet NEAR
+          Connect a NEAR wallet to stake (testnet, no real value)
         </button>
       ) : (
-        <div className="mt-2 flex items-center gap-1.5">
-          {AMOUNTS.map((a) => (
-            <button
-              key={a}
-              onClick={() => setAmount(a)}
-              className={clsx(
-                "cursor-pointer num rounded-md border px-2 py-1 text-[11px]",
-                amount === a ? "border-near text-near" : "border-line text-muted",
-              )}
-            >
-              {a}Ⓝ
-            </button>
-          ))}
-          <div className="ml-auto flex gap-1.5">
-            {(["YES", "NO"] as const).map((side) => (
+        <>
+          <div className="mt-2 flex items-center gap-1.5">
+            {AMOUNTS.map((a) => (
               <button
-                key={side}
+                key={a}
                 disabled={!!busy}
-                onClick={() =>
-                  run(
-                    side,
-                    () => call("stake", { market_id: marketId, outcome: side === "YES" }, nearToYocto(amount), 30),
-                    `Staked ${amount} NEAR on ${side}`,
-                  )
-                }
+                onClick={() => setAmount(a)}
+                aria-pressed={amount === a}
                 className={clsx(
-                  "cursor-pointer inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold text-black disabled:opacity-50",
-                  side === "YES" ? "bg-up" : "bg-down",
+                  "cursor-pointer num min-h-9 rounded border px-2 py-1 text-xs disabled:cursor-not-allowed",
+                  amount === a ? "border-near text-near" : "border-line text-muted hover:text-text",
                 )}
               >
-                {busy === side && <Loader2 size={11} className="animate-spin" />}
-                {side}
+                {a}Ⓝ
               </button>
             ))}
+            <div className="ml-auto flex gap-1.5">
+              {(["YES", "NO"] as const).map((side) => (
+                <button
+                  key={side}
+                  disabled={!!busy}
+                  onClick={() => setPending(side)}
+                  aria-pressed={pending === side}
+                  className={clsx(
+                    "cursor-pointer min-h-9 rounded px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50",
+                    pending === side
+                      ? side === "YES"
+                        ? "bg-up text-black"
+                        : "bg-down text-black"
+                      : side === "YES"
+                        ? "bg-up/[0.12] text-up hover:bg-up/[0.2]"
+                        : "bg-down/[0.12] text-down hover:bg-down/[0.2]",
+                  )}
+                >
+                  {side}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+          {pending && (
+            <StakePreview
+              marketId={marketId}
+              side={pending}
+              amount={amount}
+              sidePool={pending === "YES" ? yes : no}
+              total={total}
+              busy={busy === pending}
+              onSign={() =>
+                run(
+                  pending,
+                  () =>
+                    call("stake", { market_id: marketId, outcome: pending === "YES" }, nearToYocto(amount), STAKE_GAS_TGAS),
+                  `Staked ${amount} NEAR on ${pending}`,
+                )
+              }
+              onCancel={() => setPending(null)}
+            />
+          )}
+        </>
       )}
 
       {hasStake && (
-        <div className="num mt-2 text-[11px] text-muted">
+        <div className="num mt-2 text-xs text-muted">
           Your stake: {myYes > BigInt(0) && `${yoctoToNear(myYes)} Ⓝ YES`}
           {myYes > BigInt(0) && myNo > BigInt(0) && " · "}
           {myNo > BigInt(0) && `${yoctoToNear(myNo)} Ⓝ NO`}
@@ -179,11 +216,106 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
           href={nearTxUrl(lastTx)}
           target="_blank"
           rel="noreferrer"
-          className="cursor-pointer mt-1 inline-flex items-center gap-1 text-[11px] text-near hover:underline"
+          className="cursor-pointer mt-1 inline-flex items-center gap-1 text-xs text-near hover:underline"
         >
           Last tx {lastTx.slice(0, 8)}… <ExternalLink size={10} />
         </a>
       )}
     </div>
+  );
+}
+
+/** What the wallet will be asked to sign, in plain terms, so it can be checked against the wallet prompt. */
+function StakePreview({
+  marketId,
+  side,
+  amount,
+  sidePool,
+  total,
+  busy,
+  onSign,
+  onCancel,
+}: {
+  marketId: string;
+  side: "YES" | "NO";
+  amount: number;
+  sidePool: bigint;
+  total: bigint;
+  busy: boolean;
+  onSign: () => void;
+  onCancel: () => void;
+}) {
+  const stake = BigInt(nearToYocto(amount));
+  // Parimutuel estimate if nobody else stakes before settlement: your share of the winning side × whole pool.
+  const payout = (stake * (total + stake)) / (sidePool + stake);
+  return (
+    <section
+      aria-label="Review before signing"
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !busy) {
+          e.stopPropagation();
+          onCancel();
+        }
+      }}
+      className="mt-2 rounded border border-near/30 bg-panel-2 p-3 text-xs"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-semibold text-text">Your wallet will ask you to sign</h3>
+        <button
+          onClick={onCancel}
+          disabled={busy}
+          aria-label="Cancel and close preview"
+          className="cursor-pointer -m-1 inline-flex h-7 w-7 items-center justify-center rounded text-muted hover:text-text disabled:cursor-not-allowed"
+        >
+          <X size={14} aria-hidden />
+        </button>
+      </div>
+      <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1">
+        <dt className="text-muted">Network</dt>
+        <dd className="text-right">NEAR {NEAR_NETWORK} (no real value)</dd>
+        <dt className="text-muted">Contract</dt>
+        <dd className="truncate text-right">
+          <a
+            href={nearAccountUrl(NEAR_CONTRACT)}
+            target="_blank"
+            rel="noreferrer"
+            className="cursor-pointer font-mono text-near hover:underline"
+          >
+            {NEAR_CONTRACT}
+          </a>
+        </dd>
+        <dt className="text-muted">Method</dt>
+        <dd className="text-right font-mono">stake</dd>
+        <dt className="text-muted">Market id</dt>
+        <dd className="truncate text-right font-mono" title={marketId}>
+          {marketId}
+        </dd>
+        <dt className="text-muted">Side</dt>
+        <dd className={clsx("text-right font-semibold", side === "YES" ? "text-up" : "text-down")}>
+          {side} <span className="font-mono font-normal text-faint">(outcome: {String(side === "YES")})</span>
+        </dd>
+        <dt className="text-muted">Deposit</dt>
+        <dd className="num text-right font-semibold">{amount} NEAR</dd>
+        <dt className="text-muted">Gas limit</dt>
+        <dd className="num text-right">{STAKE_GAS_TGAS} Tgas</dd>
+        <dt className="text-muted">Payout if {side} wins</dt>
+        <dd className="num text-right">≈ {yoctoToNear(payout, 3)} NEAR</dd>
+      </dl>
+      <p className="mt-2 leading-relaxed text-faint">
+        Estimate assumes the pool stays as it is now; later stakes change it. The deposit leaves your wallet when
+        you sign.
+      </p>
+      <button
+        onClick={onSign}
+        disabled={busy}
+        className={clsx(
+          "cursor-pointer mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60",
+          side === "YES" ? "bg-up" : "bg-down",
+        )}
+      >
+        {busy && <Loader2 size={13} className="animate-spin" aria-hidden />}
+        {busy ? "Waiting for wallet…" : `Sign & stake ${amount} NEAR on ${side}`}
+      </button>
+    </section>
   );
 }

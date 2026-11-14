@@ -91,7 +91,7 @@ describe("On-chain page", () => {
     ]);
     expect(screen.getByText("reading contract…")).toBeInTheDocument();
     expect(kpi("Trade receipts")).toHaveTextContent("—");
-    expect(screen.getByText("No receipts yet. Connect a NEAR wallet and place a trade.")).toBeInTheDocument();
+    expect(screen.getByText("Reading receipts…")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: new RegExp(NEAR_CONTRACT) })).toHaveAttribute(
       "href",
       `https://testnet.nearblocks.io/address/${NEAR_CONTRACT}`,
@@ -120,12 +120,29 @@ describe("On-chain page", () => {
     await screen.findByText("oracle.testnet");
     expect(screen.getByText("backup-oracle.testnet")).toBeInTheDocument();
     expect(screen.queryByText("reading contract…")).not.toBeInTheDocument();
+    expect(screen.queryByText(/contract owner/)).not.toBeInTheDocument();
 
-    // 3 live markets, 1 legacy one from an earlier catalogue
-    expect(kpi("Markets registered")).toHaveTextContent("3 (+1 from earlier deploys)");
+    // 4 registered on NEAR (get_stats), 3 of them listed in the app, 1 legacy one from an earlier catalogue
+    const reg = kpi("Markets registered on NEAR");
+    expect(reg.querySelector(".num")).toHaveTextContent(/^4$/);
+    expect(reg).toHaveTextContent("3 listed in app · 1 from earlier catalogues, no longer traded");
     expect(kpi("Trade receipts")).toHaveTextContent("7");
-    expect(kpi("EPI reports · staked")).toHaveTextContent("12 · 2.50 Ⓝ");
+    expect(kpi("EPI reports")).toHaveTextContent("12");
+    expect(kpi("Staked in pools")).toHaveTextContent("2.50 Ⓝ");
+    expect(screen.getByRole("link", { name: "oracle.testnet" })).toHaveAttribute(
+      "href",
+      "https://testnet.nearblocks.io/address/oracle.testnet",
+    );
     expect(screen.queryByText(/RPC error/)).not.toBeInTheDocument();
+  });
+
+  it("labels the contract owner in the trusted-oracle list instead of hiding it", async () => {
+    mockRpc((method, args) => (method === "get_oracles" ? encode(["owner.testnet", "oracle.testnet"]) : ok(method, args)));
+    render(<OnchainPage />);
+    const owner = await screen.findByRole("link", { name: /owner\.testnet/ });
+    expect(owner).toHaveTextContent("owner.testnet· contract owner");
+    expect(screen.getByRole("link", { name: "oracle.testnet" })).not.toHaveTextContent("contract owner");
+    expect(screen.getByText(/The owner is allow-listed at deploy/)).toBeInTheDocument();
   });
 
   it("lists live asset markets with on-chain vs app EPI, hiding legacy ids", async () => {
@@ -133,6 +150,8 @@ describe("On-chain page", () => {
     render(<OnchainPage />);
     const link = await screen.findByRole("link", { name: `${asset.ticker} ${asset.title}` });
     expect(link).toHaveAttribute("href", `/asset/${asset.id}`);
+    expect(screen.getByRole("columnheader", { name: "Oracle EPI · NEAR" })).toBeInTheDocument();
+    expect(screen.getByText(/never accumulated across visitors/)).toBeInTheDocument();
     const row = link.closest("tr")!;
     const cells = within(row).getAllByRole("cell");
     expect(cells[1]).toHaveTextContent("73.4");
@@ -190,6 +209,31 @@ describe("On-chain page", () => {
     expect(screen.queryByText(/No receipts yet/)).not.toBeInTheDocument();
   });
 
+  it("turns zero receipts and zero stakes into instructive empty states, without inventing rows", async () => {
+    mockRpc((method, args) =>
+      method === "get_stats"
+        ? encode({ ...STATS, receipts: 0, total_staked: "0" })
+        : method === "get_recent_receipts"
+          ? encode([])
+          : ok(method, args),
+    );
+    render(<OnchainPage />);
+    expect(await screen.findByText("No trade receipts on this contract yet.")).toBeInTheDocument();
+    const cta = screen.getByRole("link", { name: /Make a trade to write the first receipt/ });
+    expect(cta.getAttribute("href")).toMatch(/^\/asset\//);
+    expect(within(kpi("Trade receipts")).getByRole("link", { name: /Make the first trade/ })).toHaveAttribute(
+      "href",
+      cta.getAttribute("href"),
+    );
+    expect(within(kpi("Staked in pools")).getByRole("link", { name: /Stake on a prediction/ })).toHaveAttribute(
+      "href",
+      "/predictions",
+    );
+    // Contract-level facts still lead with real numbers.
+    expect(kpi("EPI reports")).toHaveTextContent("12");
+    expect(within(panelOf(/Latest NEAR trade receipts/)).queryByRole("table")).toBeNull();
+  });
+
   it("shows an RPC error state when the contract call fails", async () => {
     mockRpc(() => ({ jsonrpc: "2.0", id: "entx", error: { message: "Server error" } }));
     render(<OnchainPage />);
@@ -198,7 +242,7 @@ describe("On-chain page", () => {
       "Couldn't reach NEAR testnet. Try Refresh.",
       "Couldn't reach NEAR testnet. Try Refresh.",
     ]);
-    expect(kpi("Markets registered")).toHaveTextContent("—");
+    expect(kpi("Markets registered on NEAR")).toHaveTextContent("—");
   });
 
   it("surfaces a contract-level error (result.error) and network failures", async () => {

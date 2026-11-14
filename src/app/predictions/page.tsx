@@ -19,9 +19,10 @@ export default function PredictionsPage() {
             <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Prediction markets</h1>
             <SimBadge />
           </div>
-          <p className="mt-1 max-w-xl text-sm text-muted">
-            YES/NO markets on box-office targets, awards, renewals and popularity milestones. Shares pay $1 if
-            correct. Odds move with trading and with oracle updates on the linked title.
+          <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-muted">
+            Bet YES or NO on box-office targets, awards, renewals and popularity milestones. A share costs its
+            price in cents and pays $1 if you&apos;re right, so 32¢ means the market sees a 32% chance. Odds move with
+            trading and with news on the linked title.
           </p>
         </div>
         <div className="seg flex-wrap">
@@ -37,7 +38,8 @@ export default function PredictionsPage() {
           ))}
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {/* Tickets float over the grid (popover / bottom sheet), so opening one never changes a card's height. */}
+      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
         {list.map((p) => (
           <PredictionCard key={p.id} p={p} />
         ))}

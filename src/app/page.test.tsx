@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import type { AssetSeed } from "@/lib/assets";
 import { ASSETS } from "@/lib/assets";
 import { change24h, priceOf, useMarket } from "@/store/market";
-import { usd } from "@/lib/format";
 
 const nav = vi.hoisted(() => ({ push: vi.fn() }));
 
@@ -20,9 +19,9 @@ vi.mock("next/image", () => ({
 }));
 // The table itself has its own tests; here we only care which assets the page hands it, in which order.
 vi.mock("@/components/asset-table", () => ({
-  AssetTable: ({ assets }: { assets: AssetSeed[] }) => (
+  AssetTable: ({ assets, limit }: { assets: AssetSeed[]; limit?: number }) => (
     <ol data-testid="asset-table">
-      {assets.map((a) => (
+      {(limit == null ? assets : assets.slice(0, limit)).map((a) => (
         <li key={a.id}>{a.id}</li>
       ))}
     </ol>
@@ -31,6 +30,10 @@ vi.mock("@/components/asset-table", () => ({
 vi.mock("@/components/release-clock", () => ({ ReleaseClock: () => <div data-testid="release-clock" /> }));
 
 import Discover from "./page";
+import { NEAR_CONTRACT } from "@/lib/near-config";
+
+const rpc = (v: unknown) =>
+  new Response(JSON.stringify({ jsonrpc: "2.0", id: "entx", result: { result: Array.from(new TextEncoder().encode(JSON.stringify(v))) } }));
 
 const rows = () =>
   within(screen.getByTestId("asset-table"))
@@ -62,7 +65,7 @@ describe("Discover page", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Entertainment, now tradable.");
     expect(screen.getByText("Hackathon demo")).toBeInTheDocument();
     expect(screen.getByTestId("release-clock")).toBeInTheDocument();
-    for (const h of ["Markets", "Market activity", "Spotlight", "Top gainers", "Top losers"]) {
+    for (const h of ["Markets", "Market activity", "Top gainers", "Top losers"]) {
       expect(screen.getByRole("heading", { name: h })).toBeInTheDocument();
     }
   });
@@ -119,30 +122,14 @@ describe("Discover page", () => {
     expect(days).toEqual([...days].sort((a, b) => a - b));
   });
 
-  it("spotlights the highest-EPI title in theaters and links to it", () => {
+  it("hero CTA trades the highest-EPI title in theaters", () => {
     render(<Discover />);
     const m = useMarket.getState().markets;
     const spot = ASSETS.filter((a) => a.status === "In theaters").sort((a, b) => m[b.id].epi - m[a.id].epi)[0];
-    const card = panelOf("Spotlight");
-    expect(card).toHaveAttribute("href", `/asset/${spot.id}`);
-    expect(within(card).getByText(spot.title)).toBeInTheDocument();
-    expect(card).toHaveTextContent(usd(priceOf(m[spot.id])));
-    expect(within(card).getByText(m[spot.id].epi.toFixed(1))).toBeInTheDocument();
     expect(screen.getByRole("link", { name: new RegExp(`^Trade ${spot.title}`) })).toHaveAttribute(
       "href",
       `/asset/${spot.id}`,
     );
-  });
-
-  it("spotlight follows EPI changes in the store", () => {
-    render(<Discover />);
-    const theaters = ASSETS.filter((a) => a.status === "In theaters");
-    const target = theaters[theaters.length - 1];
-    act(() => {
-      const s = useMarket.getState();
-      useMarket.setState({ markets: { ...s.markets, [target.id]: { ...s.markets[target.id], epi: 999 } } });
-    });
-    expect(panelOf("Spotlight")).toHaveAttribute("href", `/asset/${target.id}`);
   });
 
   it("lists top gainers and losers (max 4) sorted by 24h change, linking to assets", () => {
@@ -185,17 +172,72 @@ describe("Discover page", () => {
     expect(feed).toHaveTextContent(`You bought 1 ${a.ticker}`);
   });
 
-  it("'Simulate a news event' fires an oracle update and navigates to that asset", async () => {
+  it("hero CTA fires a news event on the hero title and opens its chart", async () => {
     const user = userEvent.setup();
     render(<Discover />);
-    await user.click(screen.getByRole("button", { name: /Simulate a news event/ }));
-    expect(nav.push).toHaveBeenCalledTimes(1);
-    const href = nav.push.mock.calls[0][0] as string;
-    expect(href).toMatch(/^\/asset\//);
-    const id = href.slice("/asset/".length);
-    expect(ASSETS.some((a) => a.id === id)).toBe(true);
-    const item = useMarket.getState().feed[0];
-    expect(item).toMatchObject({ type: "oracle", refId: id });
-    expect(panelOf("Market activity")).toHaveTextContent(/ORACLE/);
+    const m = useMarket.getState().markets;
+    const spot = ASSETS.filter((a) => a.status === "In theaters").sort((a, b) => m[b.id].epi - m[a.id].epi)[0];
+    await user.click(screen.getByRole("button", { name: `Watch news move ${spot.title}` }));
+    expect(nav.push).toHaveBeenCalledWith(`/asset/${spot.id}`);
+    expect(useMarket.getState().feed[0]).toMatchObject({ type: "oracle", refId: spot.id });
+    expect(panelOf("Market activity")).toHaveTextContent(/NEWS/);
+  });
+
+  it("leads with a live NEAR proof strip read from the contract", async () => {
+    // Registry: 3 titles the app lists plus 2 legacy markets it no longer does.
+    const market = (id: string) => ({
+      id,
+      kind: "Asset",
+      title: id,
+      ticker: id.slice(0, 5).toUpperCase(),
+      epi_x10: 500,
+      status: "Open",
+      created_at_ms: 0,
+      trades: 0,
+      volume_micro_usd: 0,
+      oracle_updates: 0,
+    });
+    const registry = [...ASSETS.slice(0, 3).map((a) => market(a.id)), market("legacy-1"), market("legacy-2")];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const method = JSON.parse(String(init.body)).params.method_name;
+        if (method === "get_stats")
+          return rpc({ owner: NEAR_CONTRACT, markets: 45, receipts: 0, epi_reports: 23, total_staked: "0" });
+        if (method === "get_markets") return rpc(registry);
+        return rpc([NEAR_CONTRACT, "oracle.testnet"]);
+      }),
+    );
+    render(<Discover />);
+    const strip = screen.getByRole("region", { name: "Live on NEAR testnet" });
+    expect(within(strip).getByRole("link", { name: new RegExp(NEAR_CONTRACT) })).toHaveAttribute(
+      "href",
+      `https://testnet.nearblocks.io/address/${NEAR_CONTRACT}`,
+    );
+    expect(within(strip).getByRole("status")).toHaveTextContent("Reading contract…");
+    expect(await within(strip).findByText(/oracle EPI reports/)).toHaveTextContent("23 oracle EPI reports");
+    expect(strip).toHaveTextContent("45 markets registered on NEAR (3 listed in app)");
+    expect(within(strip).getByRole("link", { name: /Trusted oracle/ })).toHaveAttribute(
+      "href",
+      "https://testnet.nearblocks.io/address/oracle.testnet",
+    );
+    expect(within(strip).getByRole("link", { name: /Verify on-chain/ })).toHaveAttribute("href", "/onchain");
+  });
+
+  it("proof strip says counts are unavailable when the RPC fails, never showing made-up numbers", async () => {
+    render(<Discover />);
+    const strip = screen.getByRole("region", { name: "Live on NEAR testnet" });
+    expect(await within(strip).findByText(/live counts are unavailable/)).toBeInTheDocument();
+    expect(strip).not.toHaveTextContent(/\d+ oracle EPI reports/);
+  });
+
+  it("only shows the live pulse once the activity feed has events", () => {
+    render(<Discover />);
+    const feed = panelOf("Market activity");
+    expect(feed.querySelector(".live-dot")).toBeNull();
+    act(() => {
+      useMarket.getState().buy(ASSETS[0].id, 1);
+    });
+    expect(feed.querySelector(".live-dot")).not.toBeNull();
   });
 });

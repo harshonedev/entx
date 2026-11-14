@@ -30,6 +30,28 @@ describe("TickerTape", () => {
     expect(link).toHaveTextContent(usd(priceOf(useMarket.getState().markets[a.id])));
   });
 
+  it("shows each title and is a single Tab stop with arrow-key navigation", async () => {
+    const user = userEvent.setup();
+    render(<TickerTape />);
+    const links = within(screen.getByRole("navigation", { name: "Market prices" })).getAllByRole("link");
+    expect(links[0]).toHaveTextContent(ASSETS[0].title);
+    expect(links[0]).toHaveAttribute("title", ASSETS[0].title);
+    expect(links.filter((l) => l.getAttribute("tabindex") === "0")).toHaveLength(1);
+
+    await user.tab();
+    expect(links[0]).toHaveFocus();
+    await user.keyboard("{ArrowRight}{ArrowRight}");
+    expect(links[2]).toHaveFocus();
+    expect(links[2]).toHaveAttribute("tabindex", "0");
+    expect(links[0]).toHaveAttribute("tabindex", "-1");
+    await user.keyboard("{ArrowLeft}");
+    expect(links[1]).toHaveFocus();
+    await user.keyboard("{End}");
+    expect(links[links.length - 1]).toHaveFocus();
+    await user.keyboard("{Home}");
+    expect(links[0]).toHaveFocus();
+  });
+
   it("updates prices when the store changes", () => {
     render(<TickerTape />);
     const a = ASSETS[0];

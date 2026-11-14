@@ -81,9 +81,9 @@ describe("AssetTable", () => {
 
   it("draws a trend sparkline only once candle history exists", () => {
     const { container } = render(<AssetTable assets={assets} />);
-    expect(container.querySelectorAll("table svg")).toHaveLength(0);
+    expect(container.querySelectorAll("tbody svg")).toHaveLength(0);
     act(() => useMarket.getState().ensureHistory());
-    expect(container.querySelectorAll("table svg path")).toHaveLength(3);
+    expect(container.querySelectorAll("tbody svg path")).toHaveLength(3);
   });
 
   it("reflects live price updates from the store", () => {
@@ -95,6 +95,60 @@ describe("AssetTable", () => {
       useMarket.setState({ markets: { ...s.markets, [a.id]: { ...m, pool: { cash: m.pool.units * 42.5, units: m.pool.units } } } });
     });
     expect(bodyRows()[0]).toHaveTextContent("$42.50");
+  });
+
+  it("keeps the given order until a column is sorted", () => {
+    render(<AssetTable assets={assets} />);
+    expect(bodyRows().map((r) => r.textContent)).toEqual(
+      assets.map((a) => expect.stringContaining(a.title) as unknown as string),
+    );
+    for (const name of [/Price/, /24h/, /EPI/, /Volume/]) {
+      expect(within(table()).getByRole("columnheader", { name })).toHaveAttribute("aria-sort", "none");
+    }
+  });
+
+  it("sorts by a column header: high to low, low to high, then back to default", async () => {
+    const user = userEvent.setup();
+    render(<AssetTable assets={assets} />);
+    const epi = (id: string) => initial.markets[id].epi;
+    const byEpi = [...assets].sort((a, b) => epi(b.id) - epi(a.id)).map((a) => a.title);
+    const titles = () => bodyRows().map((r) => assets.find((a) => r.textContent?.includes(a.title))!.title);
+    const header = () => within(table()).getByRole("columnheader", { name: /EPI/ });
+    const button = within(header()).getByRole("button", { name: /EPI/ });
+
+    await user.click(button);
+    expect(header()).toHaveAttribute("aria-sort", "descending");
+    expect(titles()).toEqual(byEpi);
+
+    await user.click(button);
+    expect(header()).toHaveAttribute("aria-sort", "ascending");
+    expect(titles()).toEqual([...byEpi].reverse());
+
+    await user.click(button);
+    expect(header()).toHaveAttribute("aria-sort", "none");
+    expect(titles()).toEqual(assets.map((a) => a.title));
+  });
+
+  it("sort headers are keyboard operable", async () => {
+    const user = userEvent.setup();
+    render(<AssetTable assets={assets} />);
+    within(table()).getByRole("button", { name: /Volume/ }).focus();
+    await user.keyboard("{Enter}");
+    expect(within(table()).getByRole("columnheader", { name: /Volume/ })).toHaveAttribute("aria-sort", "descending");
+  });
+
+  it("sorts the mobile list from the select and applies limit after sorting", async () => {
+    const user = userEvent.setup();
+    const all = ASSETS.slice(0, 6);
+    render(<AssetTable assets={all} limit={2} />);
+    expect(bodyRows()).toHaveLength(2);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Sort" }), "volume:desc");
+    const vol = (id: string) => initial.markets[id].volume24h;
+    const top2 = [...all].sort((a, b) => vol(b.id) - vol(a.id)).slice(0, 2);
+    const items = screen.getAllByRole("listitem");
+    expect(items).toHaveLength(2);
+    top2.forEach((a, i) => expect(items[i]).toHaveTextContent(a.title));
+    expect(within(table()).getByRole("columnheader", { name: /Volume/ })).toHaveAttribute("aria-sort", "descending");
   });
 
   it("renders an empty table for no assets", () => {

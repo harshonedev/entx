@@ -20,6 +20,7 @@ const lw = vi.hoisted(() => {
 vi.mock("lightweight-charts", () => ({
   ColorType: { Solid: "solid" },
   LineSeries: "Line",
+  LineStyle: { Dashed: 2 },
   createChart: lw.createChart,
   createSeriesMarkers: lw.createSeriesMarkers,
 }));
@@ -132,6 +133,35 @@ describe("ProbabilityChart", () => {
       });
     });
     expect(screen.getByRole("img")).toHaveAccessibleName("Chance of YES over time. 2 news events marked.");
+  });
+
+  it("draws the modelled lead-in as a separate dashed series and marks where live recording starts", () => {
+    const live = { setData: vi.fn(), update: vi.fn() };
+    const model = { setData: vi.fn(), update: vi.fn() };
+    lw.chart.addSeries.mockImplementationOnce(() => live).mockImplementationOnce(() => model);
+    hist.value = [
+      { time: T0 - 1800, value: 0.3, modelled: true },
+      { time: T0 - 900, value: 0.35, modelled: true },
+      ...points,
+    ] as typeof hist.value;
+    render(<ProbabilityChart p={p} />);
+    const modelOpts = (lw.chart.addSeries.mock.calls[1] as unknown[])[1] as { lineStyle: number; lastValueVisible: boolean };
+    expect(modelOpts).toMatchObject({ lineStyle: 2, lastValueVisible: false });
+    expect(model.setData).toHaveBeenCalledWith([
+      { time: T0 - 1800, value: 30 },
+      { time: T0 - 900, value: 35 },
+      { time: T0, value: 40 },
+    ]);
+    expect(live.setData).toHaveBeenCalledWith([
+      { time: T0, value: 40 },
+      { time: T0 + 60, value: 45 },
+      { time: T0 + 120, value: 50 },
+    ]);
+    const markers = lw.markers.setMarkers.mock.calls.at(-1)![0] as Array<Record<string, unknown>>;
+    expect(markers[0]).toMatchObject({ time: T0, text: "Live" });
+    expect(screen.getByRole("img").getAttribute("aria-label")).toMatch(/modelled from \w+'s EPI, not traded prices/);
+    expect(screen.getByText(/^Modelled from .+'s EPI, simulated, not traded$/)).toBeInTheDocument();
+    expect(screen.getByText("Live, recorded in this browser")).toBeInTheDocument();
   });
 
   it("removes the chart on unmount and recreates it when height changes", () => {

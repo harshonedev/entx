@@ -4,6 +4,9 @@ import clsx from "clsx";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { pct } from "@/lib/format";
 
+/** Rounds to the shown precision first, so -0.001% reads as a flat 0.00%, not a red loss. */
+export const isFlat = (value: number, digits = 2) => Math.abs(value * 100) < 0.5 * 10 ** -digits;
+
 /**
  * Gain/loss colour with a dead band: moves inside `band` (default ±0.25%) read as neutral,
  * so a fee-sized dip right after a trade doesn't paint the account red.
@@ -14,9 +17,14 @@ export function signTone(value: number, band = 0.0025) {
 }
 
 export function Change({ value, className }: { value: number; className?: string }) {
+  const flat = isFlat(value);
   return (
-    <span className={clsx("num whitespace-nowrap", value >= 0 ? "text-up" : "text-down", className)}>
-      {value >= 0 ? "▲" : "▼"} {pct(value).replace(/^[+-]/, "")}
+    <span
+      className={clsx("num relative whitespace-nowrap", flat ? "text-muted" : value > 0 ? "text-up" : "text-down", className)}
+    >
+      {!flat && <span aria-hidden>{value > 0 ? "▲ " : "▼ "}</span>}
+      <span className="sr-only">{flat ? "unchanged " : value > 0 ? "up " : "down "}</span>
+      {pct(flat ? 0 : value).replace(/^[+-]/, "")}
     </span>
   );
 }
@@ -68,9 +76,35 @@ export function Sparkline({
   );
 }
 
-export function SimBadge({ children = "Simulated" }: { children?: ReactNode }) {
+/**
+ * Below `sm`, table rows stack into cards: put this on each cell (with a `data-label`) and it becomes a
+ * "label · value" line. Pair with `max-sm:hidden` on <thead> and `max-sm:block` on <tr>.
+ */
+export const STACK_CELL =
+  "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:px-4 max-sm:py-1 max-sm:text-right max-sm:before:text-xs max-sm:before:text-muted max-sm:before:content-[attr(data-label)]";
+
+/**
+ * Labels a section's numbers as simulated. Keep one per section (page header or panel heading), not per number.
+ * `quiet` drops the outline for a secondary section under a page that already carries a SimBadge.
+ */
+export function SimBadge({ children = "Simulated", quiet = false }: { children?: ReactNode; quiet?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-sm border border-line-2 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-muted">
+    <span
+      className={clsx(
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm text-xs font-medium text-muted",
+        quiet ? "py-0.5" : "border border-line-2 px-1.5 py-0.5",
+      )}
+    >
+      {quiet && <span aria-hidden className="size-1.5 rounded-full border border-current" />}
+      {children}
+    </span>
+  );
+}
+
+/** The counterpart to SimBadge: marks state that lives on a real chain. */
+export function RealBadge({ children = "On-chain · NEAR testnet" }: { children?: ReactNode }) {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-sm border border-near/40 px-1.5 py-0.5 text-xs font-medium text-near">
       {children}
     </span>
   );

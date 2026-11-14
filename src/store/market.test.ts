@@ -83,7 +83,8 @@ describe("buy", () => {
     expect(priceOf(S().markets[A])).toBeGreaterThan(poolPrice(pool));
     expect(S().trades[0]).toBe(t);
     expect(S().feed[0]).toMatchObject({ type: "trade", tone: "up", refId: A });
-    expect(S().toasts.at(-1)!.title).toBe(`Bought 10 ${ASSET_BY_ID[A].ticker}`);
+    // Success shows an inline FillReceipt in the ticket, not a toast.
+    expect(S().toasts).toEqual([]);
     expect(S().candles[A].at(-1)!.close).toBeCloseTo(priceOf(S().markets[A]), 9);
   });
 
@@ -155,7 +156,11 @@ describe("oracle", () => {
     if (m.epi > m0.epi) expect(m.momentum).toBeGreaterThan(0);
     expect(m.lastEventAt).toBeDefined();
     expect(S().feed[0]).toMatchObject({ type: "oracle", refId: A, tag: ev.label });
-    expect(S().toasts.at(-1)!.title).toContain("Oracle update");
+    expect(S().feed[0].text).toMatch(/^NEWS · /);
+    expect(S().feed[0].text).not.toMatch(/ORACLE/i);
+    const t = S().toasts.at(-1)!;
+    expect(t.title).toBe(`News event · ${ASSET_BY_ID[A].ticker}`);
+    expect(t.body).toMatch(/^Simulated news: /);
   });
 
   it("clamps parts to [1, 100]", () => {
@@ -186,13 +191,36 @@ describe("oracle", () => {
   });
 
   it("calls the oracle API and stores the NEAR tx when it succeeds", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ hash: "HASH123456789", epi: 70, from: 69 }) });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ hash: "HASH123456789", epi: 70, from: 69, baseline: 66.2 }) });
     vi.stubGlobal("fetch", fetchMock);
     S().oracle(A, ev.id);
     await vi.waitFor(() => expect(S().markets[A].oracleTx).toBe("HASH123456789"));
     expect(fetchMock).toHaveBeenCalledWith("/api/oracle", expect.objectContaining({ method: "POST" }));
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ assetId: A, eventId: ev.id });
-    expect(S().feed[0]).toMatchObject({ type: "chain", href: "https://testnet.nearblocks.io/txns/HASH123456789" });
+    const tk = ASSET_BY_ID[A].ticker;
+    expect(S().feed[0]).toMatchObject({
+      type: "chain",
+      href: "https://testnet.nearblocks.io/txns/HASH123456789",
+      text: `Oracle EPI · NEAR · ${tk} 69.0 → 70.0 (report_epi, baseline 66.2 + this event)`,
+    });
+    expect(S().toasts.at(-1)).toMatchObject({
+      title: `Oracle EPI · NEAR · ${tk}`,
+      href: "https://testnet.nearblocks.io/txns/HASH123456789",
+    });
+    expect(S().toasts.at(-1)!.body).toContain("HASH123456");
+  });
+
+  it("adds no NEAR feed line or toast when the oracle API refuses (e.g. rate-limited)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: "rate-limited" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    S().oracle(A, ev.id);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(S().markets[A].oracleTx).toBeUndefined();
+    expect(S().feed.some((f) => f.type === "chain")).toBe(false);
+    expect(S().toasts.some((t) => t.title.startsWith("Oracle EPI"))).toBe(false);
   });
 
   it("survives oracle API failure", async () => {
@@ -200,6 +228,11 @@ describe("oracle", () => {
     S().oracle(A, ev.id);
     await Promise.resolve();
     expect(S().markets[A].oracleTx).toBeUndefined();
+  });
+
+  it("randomOracle targets the given asset when one is passed", () => {
+    expect(S().randomOracle(A)).toBe(A);
+    expect(S().feed[0]).toMatchObject({ type: "oracle", refId: A });
   });
 
   it("randomOracle fires an event on a real asset", () => {
@@ -230,6 +263,17 @@ describe("tick", () => {
       expect(y).toBeGreaterThanOrEqual(0.03 - 1e-9);
       expect(y).toBeLessThanOrEqual(0.97 + 1e-9);
     }
+  });
+
+  it("logs a feed line naming the EPI cause when odds move 2+ points", () => {
+    const p = linkedPred;
+    const ticker = ASSET_BY_ID[p.assetId!].ticker;
+    S().tick(); // sets the baseline mark
+    const st = S().predictions[p.id];
+    useMarket.setState({ predictions: { ...S().predictions, [p.id]: { ...st, momentum: 0.2 } } });
+    for (let i = 0; i < 4; i++) S().tick();
+    const line = S().feed.find((f) => f.refId === p.id);
+    expect(line?.text).toMatch(new RegExp(`^Odds of YES .* following ${ticker} EPI news$`));
   });
 
   it("appends candles into the current bucket", () => {
@@ -297,7 +341,7 @@ describe("predict / resolve", () => {
     expect(S().predictions[P]).toMatchObject({ resolved: "YES", momentum: 0 });
     expect(S().trades[0]).toMatchObject({ kind: "PAYOUT", qty: yesShares, price: 1 });
     expect(S().feed[0].type).toBe("settle");
-    expect(S().toasts.at(-1)!.title).toBe("Market settled YES");
+    expect(S().toasts.at(-1)!.title).toBe("Settled YES in simulation");
   });
 
   it("losing side expires worthless with no PAYOUT trade", () => {
@@ -306,7 +350,8 @@ describe("predict / resolve", () => {
     S().resolve(P, "YES");
     expect(S().realized).toBeCloseTo(-30, 9);
     expect(S().trades).toHaveLength(n);
-    expect(S().toasts.at(-1)!.body).toMatch(/worthless/);
+    expect(S().toasts.at(-1)!.body).toMatch(/position lost \$/);
+    expect(S().settled[0]).toMatchObject({ side: "NO", outcome: "YES", payout: 0 });
   });
 
   it("resolve is idempotent and silent with no positions", () => {

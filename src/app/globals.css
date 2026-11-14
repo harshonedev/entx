@@ -7,10 +7,11 @@
   --line: #232323;
   --line-2: #2f2f2f;
   --text: #f2f2f2;
-  /* Text ramp, measured on the darkest tile (--panel-2):
-     text 14.9:1 · muted 7.0:1 · faint 4.7:1 (all >= 4.5:1). */
+  /* Text ramp, measured on the lightest tile (--panel-2 #1e1e1e):
+     text 14.9:1 · muted 7.0:1 · faint 5.5:1. Faint keeps >= 4.5:1 even on a
+     hovered row over --panel-2 (~#262626: 5.0:1), so it is safe for 12px text. */
   --muted: #a8a8a8;
-  --faint: #888888;
+  --faint: #949494;
   --accent: #ff7a1a;
   --accent-ink: #1a0b00;
   /* Status: gain/loss and caution. Hues (OKLCH): up 155°, down 25°, warn 85°, accent 49°. */
@@ -64,6 +65,22 @@ body {
   font-family: var(--font-ui), system-ui, sans-serif;
 }
 
+/* Browser surfaces carry the palette too: one visible focus ring, themed selection and caret. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 35%, transparent);
+    color: var(--text);
+  }
+  input,
+  textarea {
+    caret-color: var(--accent);
+  }
+}
+
 @layer components {
 /* Numerals: proportional sans with tabular figures (no monospace). */
 .num {
@@ -114,6 +131,10 @@ body {
 }
 @media (hover: hover) {
   .seg > button:hover, .seg > a:hover { color: var(--text); }
+}
+/* Touch: segmented options grow to a 44px target. */
+@media (pointer: coarse) {
+  .seg > button, .seg > a { height: 44px; min-width: 44px; }
 }
 .seg > [aria-pressed="true"], .seg > [aria-selected="true"] {
   background: var(--text);

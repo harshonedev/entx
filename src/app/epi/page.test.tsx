@@ -23,7 +23,7 @@ describe("EPI page", () => {
   it("renders the title, badge and table headers", () => {
     render(<EpiPage />);
     expect(screen.getByRole("heading", { level: 1, name: "Entertainment Popularity Index" })).toBeInTheDocument();
-    expect(screen.getByText("Simulated data")).toBeInTheDocument();
+    expect(screen.getByText("TMDB inputs · simulated updates")).toBeInTheDocument();
     for (const h of ["#", "Title", "EPI", "24h", "Box office", "Streaming", "Social", "Rating", "Confidence", "Trend"]) {
       expect(screen.getByRole("columnheader", { name: h })).toBeInTheDocument();
     }
@@ -94,6 +94,7 @@ describe("EPI page", () => {
     const sources = screen.getByRole("heading", { name: "Data sources" }).closest(".panel") as HTMLElement;
     expect(within(sources).getAllByRole("listitem")).toHaveLength(5);
     expect(sources).toHaveTextContent("TMDB audience vote average");
-    expect(sources).toHaveTextContent("Hourly");
+    expect(sources).toHaveTextContent("Modelled on studio reports, theatrical trackers");
+    expect(sources).not.toHaveTextContent("Hourly");
   });
 });

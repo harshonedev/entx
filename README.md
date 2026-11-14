@@ -101,8 +101,10 @@ trending rank, an EPI target and a weekend-drop market.
    - a Solana devnet memo receipt, then
    - a NEAR `record_trade` call whose `chain_ref` stores the Solana signature, so the two chains are linked.
 4. **Entertainment oracle → "Box office beats forecast".** The EPI recalculates (e.g. 83.8 → 90.7). The browser sends
-   only the event name. The **oracle service** reads the on-chain EPI, applies the event's weighted impact and signs
-   `report_epi` with a key that can call nothing else. A toast and the activity feed link to NearBlocks.
+   only the event name. The **oracle service** publishes the title's seeded baseline EPI plus that one event's
+   weighted impact (clamped to ±15 of baseline and to [1, 100], so clicks never accumulate on-chain) and signs
+   `report_epi` with a key that can call nothing else. Demo publishes are limited to one per title per 60s.
+   A toast and the activity feed link to NearBlocks.
    Simulated traders then reprice the market, the chart rips and the linked prediction odds move.
 5. **ENTX Analyst** shows a transparent rule-based signal. Every factor and weight is visible. It only
    recommends and never trades.

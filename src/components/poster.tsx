@@ -48,7 +48,7 @@ export function Poster({
             {asset.title}
           </div>
           {size === "lg" && (
-            <div className="mt-1 text-[10px] text-white/60">{asset.studio}</div>
+            <div className="mt-1 text-xs text-white/70">{asset.studio}</div>
           )}
         </div>
       )}

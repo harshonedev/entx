@@ -58,17 +58,43 @@ describe("Portfolio page", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Portfolio" })).toBeInTheDocument();
     expect(screen.getByText(/Connect a Solana and\/or NEAR wallet/)).toBeInTheDocument();
     expect(card("Total value")).toHaveTextContent(usd(STARTING_CASH));
-    expect(card("Total value")).toHaveTextContent("+0.00% all-time");
+    expect(card("Total value")).toHaveTextContent(`${pct(0)} all-time`);
     expect(card("Available cash")).toHaveTextContent(usd(STARTING_CASH));
     expect(card("Holdings")).toHaveTextContent("$0.00");
     expect(card("Predictions")).toHaveTextContent("$0.00");
 
+    // One instructive empty state instead of three empty panels.
+    const empty = panelOf("Nothing traded yet");
+    expect(within(empty).getByRole("link", { name: /^Trade / }).getAttribute("href")).toMatch(/^\/asset\//);
+    expect(within(empty).getByRole("link", { name: "Browse predictions" })).toHaveAttribute("href", "/predictions");
+    expect(within(empty).getByRole("link", { name: "All markets" })).toHaveAttribute("href", "/");
+    expect(screen.queryByRole("heading", { name: "Holdings" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Open predictions" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Trade history" })).toBeNull();
+  });
+
+  it("keeps per-panel empty messages once there is some activity", () => {
+    act(() => {
+      useMarket.getState().predict(PREDICTIONS[0].id, "YES", 10);
+    });
+    render(<PortfolioPage />);
     expect(within(panelOf("Holdings")).getByRole("link", { name: /Discover titles to trade/ })).toHaveAttribute("href", "/");
-    expect(within(panelOf("Open predictions")).getByRole("link", { name: /Browse markets/ })).toHaveAttribute(
-      "href",
-      "/predictions",
-    );
-    expect(panelOf("Trade history")).toHaveTextContent("No trades yet.");
+    expect(screen.queryByRole("heading", { name: "Nothing traded yet" })).toBeNull();
+  });
+
+  it("sells a whole holding in one click", async () => {
+    const user = userEvent.setup();
+    const a = ASSETS[0];
+    act(() => {
+      useMarket.getState().buy(a.id, 3);
+    });
+    render(<PortfolioPage />);
+    await user.click(screen.getByRole("button", { name: `Sell all 3 ${a.ticker}` }));
+    const s = useMarket.getState();
+    expect(s.holdings[a.id]).toBeUndefined();
+    expect(s.trades[0]).toMatchObject({ kind: "SELL", refId: a.id, qty: 3 });
+    expect(s.toasts.at(-1)?.title).toBe(`Sold all 3 ${a.ticker}`);
+    expect(panelOf("Holdings")).toHaveTextContent("No holdings yet.");
   });
 
   it("shows a holding with units, price, value and P&L after a buy", () => {
@@ -112,7 +138,10 @@ describe("Portfolio page", () => {
     expect(rows).toHaveLength(2);
     const [sell, buy] = useMarket.getState().trades;
     expect(rows[0]).toHaveTextContent("SELL");
+    // Spot trades read title + ticker and link to the asset.
+    expect(rows[0]).toHaveTextContent(a.title);
     expect(rows[0]).toHaveTextContent(a.ticker);
+    expect(within(rows[0]).getByRole("link", { name: new RegExp(a.title) })).toHaveAttribute("href", `/asset/${a.id}`);
     expect(rows[0]).toHaveTextContent(usd(sell.total));
     expect(rows[1]).toHaveTextContent("BUY");
     expect(rows[1]).toHaveTextContent(usd(buy.total));
@@ -133,12 +162,22 @@ describe("Portfolio page", () => {
     const list = panelOf("Open predictions");
     expect(within(list).getByRole("link", { name: p.question })).toHaveAttribute("href", `/predictions/${p.id}`);
     expect(list).toHaveTextContent("YES");
-    expect(list).toHaveTextContent(`${num(pos.shares, 1)} sh @ ${(yp * 100).toFixed(0)}¢`);
+    // Fill price (avg) and live price are labelled separately, plus cost and payout if right.
+    expect(list).toHaveTextContent(
+      `${num(pos.shares, 1)} sh · avg ${((pos.cost / pos.shares) * 100).toFixed(1)}¢ · now ${(yp * 100).toFixed(1)}¢ · cost ${usd(pos.cost)} · pays ${usd(pos.shares)} if right`,
+    );
     expect(list).toHaveTextContent(usd(pos.shares * yp));
     expect(card("Predictions")).toHaveTextContent(usd(pos.shares * yp));
 
     const history = within(panelOf("Trade history")).getByRole("table");
     expect(history).toHaveTextContent(`${(s.trades[0].price * 100).toFixed(1)}¢`);
+    // Prediction trades read the question, tagged as a prediction.
+    const tradeRow = within(history).getAllByRole("row")[1];
+    expect(tradeRow).toHaveTextContent("Prediction");
+    expect(within(tradeRow).getByRole("link", { name: new RegExp("Prediction") })).toHaveAttribute(
+      "href",
+      `/predictions/${p.id}`,
+    );
   });
 
   it("resolving a winning prediction pays out and clears the position", () => {
@@ -166,6 +205,17 @@ describe("Portfolio page", () => {
     // 0% sits between streamwatcher (+6.4%) and sequel_skeptic (-3.8%)
     expect(items.indexOf(you)).toBe(5);
     expect(items[0]).toHaveTextContent("reeltrader.sol");
+  });
+
+  it("never shows a negative zero return on the leaderboard", () => {
+    act(() => {
+      // A tiny loss that rounds to 0.0% at one decimal.
+      useMarket.setState({ cash: STARTING_CASH - 0.2 });
+    });
+    render(<PortfolioPage />);
+    const you = screen.getByText("YOU").closest("li")!;
+    expect(you).toHaveTextContent(pct(0, 1));
+    expect(you).not.toHaveTextContent("-0.0%");
   });
 
   it("uses the NEAR account name and wallet description when connected", () => {
@@ -222,21 +272,20 @@ describe("Portfolio page", () => {
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
-  it("Reset demo asks for confirmation and only resets when confirmed", async () => {
+  it("Reset demo asks for an in-page confirmation and only resets when confirmed", async () => {
     const user = userEvent.setup();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     act(() => {
       useMarket.getState().buy(ASSETS[0].id, 1);
     });
     render(<PortfolioPage />);
     await user.click(screen.getByRole("button", { name: /Reset demo/ }));
-    expect(confirm).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(Object.keys(useMarket.getState().holdings)).toHaveLength(1);
 
-    confirm.mockReturnValue(true);
     await user.click(screen.getByRole("button", { name: /Reset demo/ }));
+    await user.click(screen.getByRole("button", { name: "Confirm reset" }));
     expect(useMarket.getState().holdings).toEqual({});
     expect(useMarket.getState().cash).toBe(STARTING_CASH);
-    expect(panelOf("Holdings")).toHaveTextContent("No holdings yet.");
+    expect(screen.getByRole("heading", { name: "Nothing traded yet" })).toBeInTheDocument();
   });
 });

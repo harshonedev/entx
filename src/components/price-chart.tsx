@@ -1,27 +1,89 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   CandlestickSeries,
   ColorType,
   createChart,
+  createSeriesMarkers,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
+  type SeriesMarker,
+  type Time,
   type UTCTimestamp,
 } from "lightweight-charts";
-import { useMarket } from "@/store/market";
+import { CANDLE_SECONDS, type Candle } from "@/lib/engine";
+import { fairValue, useMarket } from "@/store/market";
 
-export function PriceChart({ assetId, height = 380 }: { assetId: string; height?: number }) {
+function chartLabel(news: number, trades: number) {
+  const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`;
+  if (!news && !trades) return "Price chart. No news events or trades in this window yet.";
+  return `Price chart. Marked: ${n(news, "news event", "news events")}, ${n(trades, "of your trades", "of your trades")}.`;
+}
+
+/** Merge consecutive candles into `step`-second buckets. */
+function aggregate(list: Candle[], step: number): Candle[] {
+  if (step <= CANDLE_SECONDS) return list;
+  const out: Candle[] = [];
+  for (const k of list) {
+    const t = Math.floor(k.time / step) * step;
+    const last = out[out.length - 1];
+    if (last && last.time === t) {
+      last.high = Math.max(last.high, k.high);
+      last.low = Math.min(last.low, k.low);
+      last.close = k.close;
+    } else out.push({ ...k, time: t });
+  }
+  return out;
+}
+
+export function PriceChart({
+  assetId,
+  height = 380,
+  step = CANDLE_SECONDS,
+}: {
+  assetId: string;
+  height?: number;
+  /** Candle width in seconds; must be a multiple of CANDLE_SECONDS. */
+  step?: number;
+}) {
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
   const series = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const markersApi = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
+  // Canvas can't resolve CSS variables, so token colours are read once at mount.
+  const colors = useRef({ up: "#34c77b", down: "#ef5350", text: "#ededed" });
   const lastLen = useRef(0);
-  const candles = useMarket((s) => s.candles[assetId]);
+  const raw = useMarket((s) => s.candles[assetId]);
+  const feed = useMarket((s) => s.feed);
+  // Rounded so the line only moves when the EPI does, not on every tick.
+  const fair = useMarket((s) => Math.round(fairValue(assetId, s.markets[assetId]) * 100) / 100);
+  const fairLine = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]> | null>(null);
+  const candles = useMemo(() => (raw ? aggregate(raw, step) : raw), [raw, step]);
+
+  // News and your own trades, pinned to the candle they landed in.
+  const events = useMemo(() => {
+    if (!candles?.length) return [];
+    const first = candles[0].time;
+    return feed
+      .filter((f) => f.refId === assetId && (f.type === "oracle" || f.type === "trade"))
+      .map((f) => ({
+        time: Math.floor(f.ts / 1000 / step) * step,
+        news: f.type === "oracle",
+        up: f.tone === "up",
+        // Older persisted events have no short tag; show just the arrow rather than a long overlapping sentence.
+        text: f.type === "oracle" ? (f.tag ?? "") : "",
+      }))
+      .filter((e) => e.time >= first)
+      .sort((x, y) => x.time - y.time);
+  }, [feed, candles, assetId, step]);
 
   useEffect(() => {
     if (!el.current) return;
     const css = getComputedStyle(el.current);
     const token = (name: string) => css.getPropertyValue(name).trim();
+    colors.current = { up: token("--up"), down: token("--down"), text: token("--text") };
     const c = createChart(el.current, {
       height,
       autoSize: true,
@@ -37,7 +99,7 @@ export function PriceChart({ assetId, height = 380 }: { assetId: string; height?
         horzLines: { color: "rgba(255,255,255,0.03)" },
       },
       rightPriceScale: { borderColor: token("--line") },
-      timeScale: { borderColor: token("--line"), timeVisible: true, secondsVisible: true, rightOffset: 4 },
+      timeScale: { borderColor: token("--line"), timeVisible: true, secondsVisible: step < 60, rightOffset: 12 },
       crosshair: { mode: 1 },
     });
     const s = c.addSeries(CandlestickSeries, {
@@ -50,13 +112,25 @@ export function PriceChart({ assetId, height = 380 }: { assetId: string; height?
     });
     chart.current = c;
     series.current = s;
+    markersApi.current = createSeriesMarkers(s, []);
     lastLen.current = 0;
+    fairLine.current = null;
     return () => {
       c.remove();
       chart.current = null;
       series.current = null;
+      markersApi.current = null;
     };
-  }, [assetId, height]);
+  }, [assetId, height, step]);
+
+  // Dashed line at the price the EPI supports, so the anchor behind every move is visible.
+  useEffect(() => {
+    const s = series.current;
+    if (!s?.createPriceLine) return;
+    const opts = { price: fair, color: colors.current.text, lineWidth: 1 as const, lineStyle: 2, axisLabelVisible: true, title: "EPI fair value" };
+    if (fairLine.current) fairLine.current.applyOptions(opts);
+    else fairLine.current = s.createPriceLine(opts);
+  }, [fair, assetId, height, step]);
 
   useEffect(() => {
     const s = series.current;
@@ -71,5 +145,36 @@ export function PriceChart({ assetId, height = 380 }: { assetId: string; height?
     lastLen.current = candles.length;
   }, [candles]);
 
-  return <div ref={el} className="w-full" style={{ height }} />;
+  useEffect(() => {
+    const { up, down, text } = colors.current;
+    const markers: SeriesMarker<Time>[] = events.map((e) =>
+      e.news
+        ? {
+            time: e.time as UTCTimestamp,
+            position: e.up ? "belowBar" : "aboveBar",
+            shape: e.up ? "arrowUp" : "arrowDown",
+            color: e.up ? up : down,
+            text: e.text,
+          }
+        : {
+            time: e.time as UTCTimestamp,
+            position: e.up ? "belowBar" : "aboveBar",
+            shape: "circle",
+            color: text,
+            text: e.text,
+            size: 0.6,
+          },
+    );
+    markersApi.current?.setMarkers(markers);
+  }, [events]);
+
+  return (
+    <div
+      ref={el}
+      role="img"
+      aria-label={chartLabel(events.filter((e) => e.news).length, events.filter((e) => !e.news).length)}
+      className="w-full"
+      style={{ height }}
+    />
+  );
 }

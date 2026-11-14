@@ -7,12 +7,13 @@ import { ArrowLeft, Clock, Gavel } from "lucide-react";
 import { ASSET_BY_ID } from "@/lib/assets";
 import { PREDICTIONS, type PredictionSeed } from "@/lib/predictions";
 import { yesPrice } from "@/lib/engine";
-import { useProbHistory } from "@/lib/prediction-history";
+import { recordedChange, useProbHistory } from "@/lib/prediction-history";
+import { MobileJumpBar } from "@/components/mobile-jump-bar";
 import { change24h, priceOf, useMarket } from "@/store/market";
-import { compactUsd, num, usd } from "@/lib/format";
+import { cents, compactUsd, num, usd } from "@/lib/format";
 import { Poster } from "@/components/poster";
 import { ProbabilityChart } from "@/components/probability-chart";
-import { PredictionTicket } from "@/components/prediction-ticket";
+import { PICK_SIDE_EVENT, PredictionTicket } from "@/components/prediction-ticket";
 import { NearStakePanel } from "@/components/near-stake";
 import { LiveFeed } from "@/components/chrome";
 import { Change, Dim, Flash, SimBadge, Sparkline, signTone } from "@/components/ui";
@@ -39,15 +40,17 @@ export default function PredictionMarketPage() {
   const asset = p.assetId ? ASSET_BY_ID[p.assetId] : undefined;
   const yp = yesPrice(st.pool);
   const resolved = st.resolved;
-  // Change over the charted window (seeded hour + this session), in percentage points.
-  const delta = history.length > 1 ? (history[history.length - 1].value - history[0].value) * 100 : null;
+  // Change over recorded points only (up to an hour), never over the modelled lead-in.
+  const change = recordedChange(history);
+  const delta = change?.pts ?? null;
+  const span = !change ? "" : change.seconds >= 3540 ? "past hour" : `past ${Math.max(1, Math.round(change.seconds / 60))} min`;
   const mine = positions.filter((x) => x.marketId === p.id);
 
   return (
     <div className="space-y-4">
       <Link
         href="/predictions"
-        className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted hover:text-text"
+        className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 text-xs text-muted hover:text-text sm:min-h-0"
       >
         <ArrowLeft size={13} /> Prediction markets
       </Link>
@@ -86,7 +89,7 @@ export default function PredictionMarketPage() {
             {!resolved && delta !== null && (
               <div className={clsx("num mt-1.5 text-xs", signTone(delta / 100, 0.005))}>
                 {Math.abs(delta) < 0.5 ? "Flat" : `${delta > 0 ? "▲" : "▼"} ${Math.abs(delta).toFixed(1)} pts`}
-                <span className="text-faint"> · past hour</span>
+                <span className="text-faint"> · {span}{asset ? ` · moves with ${asset.ticker} EPI` : ""}</span>
               </div>
             )}
           </div>
@@ -103,8 +106,14 @@ export default function PredictionMarketPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2">
             <h2 className="h-panel">Chance of YES</h2>
             <span className="flex items-center gap-1.5 text-xs text-muted">
-              <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" />
-              Live simulation{asset ? ` · ${asset.ticker} news marked by its effect on YES` : ""}
+              {resolved ? (
+                <>Settled {resolved} in simulation · trading closed</>
+              ) : (
+                <>
+                  <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" />
+                  Live simulation{asset ? ` · ${asset.ticker} news marked by its effect on YES` : ""}
+                </>
+              )}
             </span>
           </div>
           <ProbabilityChart p={p} />
@@ -157,24 +166,27 @@ export default function PredictionMarketPage() {
       {/* Mobile: the ticket sits below the chart, so keep a one-tap way back to it. */}
       {!resolved && (
         <>
-          <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/95 px-4 py-3 backdrop-blur xl:hidden">
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs text-muted">{p.question}</div>
-                <div className="num text-sm font-semibold">
-                  <span className="text-up">Yes {(yp * 100).toFixed(0)}¢</span>
-                  <span className="text-faint"> · </span>
-                  <span className="text-down">No {((1 - yp) * 100).toFixed(0)}¢</span>
-                </div>
-              </div>
-              <a
-                href="#bet"
-                className="cursor-pointer inline-flex h-11 items-center rounded bg-accent px-5 text-sm font-semibold text-accent-ink"
-              >
-                Place bet
-              </a>
+          <MobileJumpBar targetId="bet">
+            {/* Same green/red as the ticket's sides and CTA; each jumps to the ticket with that side picked. */}
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1 truncate text-xs text-muted">{p.question}</div>
+              {(["YES", "NO"] as const).map((s) => (
+                <a
+                  key={s}
+                  href="#bet"
+                  onClick={() => window.dispatchEvent(new CustomEvent(PICK_SIDE_EVENT, { detail: s }))}
+                  aria-label={`Bet ${s === "YES" ? "Yes" : "No"} at ${cents(s === "YES" ? yp : 1 - yp)}`}
+                  className={clsx(
+                    "cursor-pointer num inline-flex h-11 shrink-0 items-center gap-1.5 rounded px-3.5 text-sm font-semibold text-black",
+                    s === "YES" ? "bg-up" : "bg-down",
+                  )}
+                >
+                  {s === "YES" ? "Yes" : "No"}
+                  <span className="font-normal opacity-80">{cents(s === "YES" ? yp : 1 - yp)}</span>
+                </a>
+              ))}
             </div>
-          </div>
+          </MobileJumpBar>
           <div aria-hidden className="h-16 xl:hidden" />
         </>
       )}
@@ -205,7 +217,7 @@ function YourPosition({ p, yp, resolved }: { p: PredictionSeed; yp: number; reso
                   {x.side}
                 </span>
                 <span className="num text-xs text-muted">
-                  {num(x.shares, 1)} shares · avg {((x.cost / x.shares) * 100).toFixed(1)}¢
+                  {num(x.shares, 1)} shares · avg {cents(x.cost / x.shares)}
                 </span>
               </div>
               <div>
@@ -222,7 +234,7 @@ function YourPosition({ p, yp, resolved }: { p: PredictionSeed; yp: number; reso
               </div>
               {!resolved && (
                 <div className="col-span-2 flex justify-between text-xs">
-                  <span className="text-muted">Unrealized P&L</span>
+                  <span className="text-muted">Gain or loss at today&apos;s odds</span>
                   <span className={clsx("num", signTone(pnl / x.cost, 0.005))}>
                     {pnl >= 0 ? "+" : ""}
                     {usd(pnl)}
@@ -315,7 +327,7 @@ function RelatedMarkets({ p }: { p: PredictionSeed }) {
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block leading-snug text-text group-hover:text-accent">{x.question}</span>
-                    <span className="mt-0.5 block text-[11px] text-faint">
+                    <span className="mt-0.5 block text-xs text-faint">
                       {x.category} · {compactUsd(s.volume)} vol
                     </span>
                   </span>

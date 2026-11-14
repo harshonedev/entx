@@ -61,10 +61,10 @@ describe("Predictions page", () => {
   it("reflects resolved markets from the store", () => {
     const p = PREDICTIONS[0];
     render(<PredictionsPage />);
-    expect(screen.getAllByRole("button", { name: /^Bet YES at/ })).toHaveLength(PREDICTIONS.length);
+    expect(screen.getAllByRole("button", { name: /^Pick YES at/ })).toHaveLength(PREDICTIONS.length);
     act(() => useMarket.getState().resolve(p.id, "YES"));
     // A resolved card no longer offers YES/NO bets.
-    expect(screen.queryAllByRole("button", { name: /^Bet YES at/ })).toHaveLength(PREDICTIONS.length - 1);
+    expect(screen.queryAllByRole("button", { name: /^Pick YES at/ })).toHaveLength(PREDICTIONS.length - 1);
     expect(screen.getByText("Settled YES")).toBeInTheDocument();
   });
 });

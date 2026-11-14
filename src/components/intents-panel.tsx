@@ -76,8 +76,8 @@ export function IntentsPanel() {
     <div className="panel p-4">
       <div className="flex items-center gap-2">
         <Route size={14} className="text-near" />
-        <span className="h-panel">Fund from any chain · NEAR Intents</span>
-        <span className="ml-auto rounded-sm border border-line-2 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-near">
+        <h2 className="h-panel min-w-0">Fund via NEAR Intents</h2>
+        <span className="ml-auto shrink-0 whitespace-nowrap rounded-sm border border-line-2 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-near">
           Live dry-run
         </span>
       </div>
@@ -96,7 +96,7 @@ export function IntentsPanel() {
               setAmount(String(o.amount));
             }}
             className={clsx(
-              "cursor-pointer rounded-lg border px-2.5 py-1 text-xs",
+              "cursor-pointer inline-flex min-h-11 items-center rounded-lg border px-2.5 py-1 text-xs sm:min-h-8",
               origin.id === o.id ? "border-near text-near" : "border-line text-muted hover:text-text",
             )}
           >
@@ -105,27 +105,28 @@ export function IntentsPanel() {
         ))}
       </div>
 
-      <div className="mt-3 rounded-xl border border-line-2 bg-bg p-3">
-        <div className="text-[11px] text-faint">You send ({origin.chain})</div>
+      <div className="mt-3 rounded border border-line-2 bg-bg p-3 focus-within:border-accent">
+        <div className="text-xs text-muted">You send ({origin.chain})</div>
         <div className="flex items-center">
           <input
             value={amount}
             inputMode="decimal"
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+            name="intents-amount"
             className="num h-9 w-full bg-transparent text-lg font-semibold outline-none"
             aria-label="Amount to send"
           />
           <span className="text-sm font-semibold text-muted">{origin.label}</span>
         </div>
-        {quote && <div className="num text-[11px] text-faint">≈ {usd(Number(quote.amountInUsd))}</div>}
+        {quote && <div className="num text-xs text-muted">≈ {usd(Number(quote.amountInUsd))}</div>}
       </div>
       <div className="-my-2 flex justify-center">
         <span className="z-10 grid h-7 w-7 place-items-center rounded border border-line bg-panel text-muted">
           <ArrowDown size={13} />
         </span>
       </div>
-      <div className="rounded-xl border border-line-2 bg-bg p-3">
-        <div className="text-[11px] text-faint">ENTX receives (NEAR)</div>
+      <div className="rounded border border-line-2 bg-bg p-3">
+        <div className="text-xs text-muted">ENTX receives (NEAR)</div>
         <div className="flex items-center">
           <div className="num h-9 w-full text-lg font-semibold leading-9">
             {loading ? (
@@ -139,14 +140,14 @@ export function IntentsPanel() {
           <span className="text-sm font-semibold text-muted">USDC</span>
         </div>
         {quote && (
-          <div className="num flex justify-between text-[11px] text-faint">
+          <div className="num flex justify-between text-xs text-muted">
             <span>min {(Number(quote.minAmountOut) / 1e6).toFixed(2)} · ~{quote.timeEstimate}s</span>
             {at && <span>quoted {new Date(at).toLocaleTimeString()}</span>}
           </div>
         )}
       </div>
       {error && <div className="mt-2 text-xs text-down">{error}</div>}
-      <p className="mt-3 text-[11px] leading-relaxed text-faint">
+      <p className="mt-3 text-xs leading-relaxed text-muted">
         Production flow: request the same quote with <code>dry: false</code>, send funds to the returned
         deposit address, poll <code>/v0/status</code>, then credit the ENTX account on NEAR.
       </p>
