@@ -425,7 +425,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
         <AssetSearch />
         {IS_DEMO && <DemoControls />}
         <SettingsMenu />
-        {connected && (
+        {CHAIN_ON.solana && connected && (
           <button
             onClick={airdrop}
             title="Request 1 devnet SOL to pay for on-chain receipts"
