@@ -3,6 +3,7 @@ import { Providers } from "@/components/providers";
 import { Shell } from "@/components/nav";
 import { Toasts } from "@/components/chrome";
 import { CHAIN_ON, IS_LIVE } from "@/lib/env";
+import { themeScript } from "@/lib/theme-script";
 export { metadata, viewport } from "@/lib/site-meta";
 import "../globals.css";
 
@@ -12,7 +13,10 @@ const codeFont = IBM_Plex_Mono({ variable: "--font-code", subsets: ["latin"], we
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${uiFont.variable} ${condFont.variable} ${codeFont.variable} h-full antialiased`}>
+    <html lang="en" className={`${uiFont.variable} ${condFont.variable} ${codeFont.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full">
         <a
           href="#main"

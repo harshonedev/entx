@@ -134,8 +134,8 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
               "cond cursor-pointer h-11 border text-[17px] font-bold uppercase tracking-[0.08em] transition-colors",
               side === s
                 ? s === "buy"
-                  ? "border-up bg-up text-white"
-                  : "border-down bg-down text-white"
+                  ? "border-up bg-up text-on-status"
+                  : "border-down bg-down text-on-status"
                 : "border-ink text-text hover:bg-panel-2",
             )}
           >

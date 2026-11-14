@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Settings, X } from "lucide-react";
+import { useThemePref, type ThemePref } from "@/lib/theme";
 import { CHAIN, CHAIN_LABEL, FLAGS, MODE, chainUrl, otherModeUrl, type Chain, type Mode } from "@/lib/env";
 
 const MODES: { id: Mode; label: string; detail: string }[] = [
@@ -11,6 +12,12 @@ const MODES: { id: Mode; label: string; detail: string }[] = [
 ];
 
 const CHAINS: Chain[] = ["near", "solana"];
+
+const THEMES: { id: ThemePref; label: string }[] = [
+  { id: "light", label: "Day" },
+  { id: "dark", label: "Night" },
+  { id: "system", label: "System" },
+];
 
 /** Keeps the current path when hopping between deployments, so a judge lands on the same page. */
 const withPath = (base: string) =>
@@ -47,6 +54,7 @@ export function ModeBadge({ className }: { className?: string }) {
 export function SettingsMenu() {
   const [open, setOpen] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
+  const [theme, setTheme] = useThemePref();
 
   useEffect(() => {
     if (!open) return;
@@ -67,7 +75,7 @@ export function SettingsMenu() {
         aria-label="Settings"
         className={clsx(
           "cursor-pointer grid h-9 w-9 place-items-center rounded transition-colors pointer-coarse:h-11 pointer-coarse:w-11",
-          open ? "border border-bg bg-bg text-ink" : "border border-bg/25 text-bg/75 hover:border-bg/60 hover:text-bg",
+          open ? "border border-bar-ink bg-bar-ink text-bar" : "border border-bar-ink/25 text-bar-ink/75 hover:border-bar-ink/60 hover:text-bar-ink",
         )}
       >
         <Settings size={15} />
@@ -80,7 +88,7 @@ export function SettingsMenu() {
           tabIndex={-1}
           role="dialog"
           aria-label="Settings"
-          className="fixed right-4 top-[60px] z-50 max-h-[calc(100vh-76px)] w-[min(340px,calc(100vw-32px))] overflow-y-auto border-2 border-ink bg-panel p-4 shadow-[0_8px_24px_rgba(20,20,20,0.18)] outline-none"
+          className="fixed right-4 top-[60px] z-50 max-h-[calc(100vh-76px)] w-[min(340px,calc(100vw-32px))] overflow-y-auto border-2 border-ink bg-panel p-4 shadow-lift outline-none"
         >
           <div className="flex items-center gap-2">
             <h2 className="h-panel">Settings</h2>
@@ -91,6 +99,15 @@ export function SettingsMenu() {
             >
               <X size={14} />
             </button>
+          </div>
+
+          <h3 className="mt-4 text-xs text-muted">Edition</h3>
+          <div role="group" aria-label="Edition" className="seg mt-2 flex w-full [&>button]:flex-1">
+            {THEMES.map((t) => (
+              <button key={t.id} type="button" className="cursor-pointer" aria-pressed={theme === t.id} onClick={() => setTheme(t.id)}>
+                {t.label}
+              </button>
+            ))}
           </div>
 
           <h3 className="mt-4 text-xs text-muted">Environment</h3>

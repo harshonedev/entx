@@ -1,0 +1,63 @@
+/* ENTX landing, Night Edition: the same newsprint page read under lamp light. Values match the app's
+   :root[data-theme="dark"] tokens (src/app/globals.css). Ink and paper trade places; stock steps lighter
+   toward the tickets; red, gain and loss brighten to hold 4.5:1 on the carbon ground. No glow, no shadow.
+   Loaded after landing.css, kept separate so the day edition stays untouched. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --p-bg: #12110f; --p-surface: #1b1a17; --p-ink: #ece6d8; --p-muted: #a69f90;
+  /* fills keep the press red (white type 5:1); red set as type uses the brighter --brand-red below */
+  --p-accent: #d6261f; --p-accent-ink: #ffffff; --p-action: #d6261f; --p-action-ink: #ffffff;
+  /* the ink bar and the closing band: a deeper black than the ground, cream type */
+  --p-inv-bg: #0a0908; --p-inv-surface: #1b1a17; --p-inv-ink: #ece6d8; --p-inv-muted: #a69f90;
+  --brand-red: #f45a4a; --stock: #25231f; --hair: #35322c; --gain: #4cc085; --loss: #f47c86;
+  --on-status: #12110f;
+}
+html[data-theme="dark"] body { background: var(--p-bg); }
+
+/* the hairline under the fixed nav reads as a cream rule against the deeper bar */
+html[data-theme="dark"] .nav--tone { border-bottom-color: color-mix(in oklab, var(--p-inv-ink) 16%, transparent); }
+
+/* status fills: dark type on the brighter gain green */
+html[data-theme="dark"] :is(.pc-yesno .yes, .tk__tabs .is-buy, .mk-row__odds .yes) { color: var(--on-status); }
+
+/* the closing band sits on the bar black, with one cream rule where the page ends */
+html[data-theme="dark"] footer.footer--statement {
+  --ground-bg: #0a0908; --ground-surface: #1b1a17; --ground-ink: #ece6d8; --ground-muted: #a69f90; --ground-accent: #f45a4a;
+  border-top: 2px solid var(--p-ink);
+  /* the full-width close button keeps the press red so its white type holds 5:1 */
+  --action: #d6261f; --action-ink: #ffffff;
+}
+html[data-theme="dark"] :is(.footer ul a, .footer__nav a):hover { color: var(--brand-red); }
+
+/* single-colour black marks (NEAR) print light at night; full-colour marks keep their colours. The whole
+   tile inverts, so its paper and rule are set to the inverse of --stock and --p-ink to land back on them. */
+html[data-theme="dark"] img[data-icon="si:near"] { filter: invert(1); background: #dadce0; border-color: #131927; }
+
+/* the hub diagram's red halo would read as a glow on the carbon ground: keep the rings, drop the light */
+html[data-theme="dark"] .dg { --dg-halo: 0; --dg-glow-a: 0.12; }
+
+/* chart fills: a lighter wash at night, where the brighter greens and roses would otherwise turn to a muddy slab */
+html[data-theme="dark"] .ch { --ch-fill: .045; }
+
+/* posters sit a step back so the page's type, not the artwork, sets the brightness */
+html[data-theme="dark"] :is(.mk__pic img, .poster-frame img, .mk-row img, .hw .bd__t img) { filter: brightness(0.92); }
+
+/* the edition toggle in the nav: a square ink-outlined button, the app's segmented option shape */
+.theme-btn {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; flex: none;
+  border: 1px solid color-mix(in oklab, currentColor 30%, transparent); background: transparent; color: inherit;
+  cursor: pointer; border-radius: 0;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.theme-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+@media (hover: hover) { .theme-btn:hover { border-color: currentColor; } }
+.theme-btn:focus-visible { outline: 2px solid var(--brand-red); outline-offset: 2px; }
+.theme-btn .i-sun { display: none; }
+html[data-theme="dark"] .theme-btn .i-sun { display: block; }
+html[data-theme="dark"] .theme-btn .i-moon { display: none; }
+@media (pointer: coarse) { .theme-btn { width: 44px; height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .theme-btn { transition: none; } }
+/* phones and tablets: the toggle rides in the menu sheet's action bar, under the main button */
+@media (max-width: 1023px) {
+  .nav.is-open .nav__actions .theme-btn { order: 2; justify-self: center; width: 44px; height: 44px; }
+}

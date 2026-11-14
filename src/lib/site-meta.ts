@@ -25,4 +25,10 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title, description },
 };
 
-export const viewport: Viewport = { themeColor: "#141414", colorScheme: "light" };
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#141414" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0908" },
+  ],
+  colorScheme: "light dark",
+};

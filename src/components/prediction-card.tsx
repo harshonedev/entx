@@ -367,7 +367,7 @@ function BetTicket({
   return (
     <>
       {modal && (
-        <div aria-hidden="true" className="fixed inset-0 z-50 bg-ink/60 motion-safe:animate-[fade-in_200ms_ease-out]" onClick={() => onClose(true)} />
+        <div aria-hidden="true" className="fixed inset-0 z-50 bg-[var(--scrim)] motion-safe:animate-[fade-in_200ms_ease-out]" onClick={() => onClose(true)} />
       )}
       <div
         ref={panel}
@@ -376,7 +376,7 @@ function BetTicket({
         aria-labelledby={titleId}
         onKeyDown={onKeyDown}
         className={clsx(
-          "z-50 border-line-2 bg-panel-2 shadow-[0_8px_24px_rgba(20,20,20,0.18)]",
+          "z-50 border-line-2 bg-panel-2 shadow-lift",
           // Phones: bottom sheet clear of the home indicator.
           "fixed inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t border-t px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))]",
           // md+: popover anchored under the Yes/No buttons, painted over the card below it.

@@ -112,15 +112,15 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
   const path = usePathname();
   return (
     <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
-      <div ref={backdrop} aria-hidden="true" className="cursor-pointer absolute inset-0 bg-ink/60" onClick={onClose} />
+      <div ref={backdrop} aria-hidden="true" className="cursor-pointer absolute inset-0 bg-[var(--scrim)]" onClick={onClose} />
       <aside ref={panel} className="relative flex h-full w-72 flex-col border-r-2 border-ink bg-bg">
-        <div className="flex h-[52px] shrink-0 items-center bg-ink px-4 text-bg">
+        <div className="flex h-[52px] shrink-0 items-center bg-bar px-4 text-bar-ink">
           <Link href="/" onClick={onClose} aria-label="ENTX home" className="cursor-pointer inline-flex min-h-11 items-center">
             <Wordmark className="h-3.5 w-auto" />
           </Link>
           <button
             onClick={onClose}
-            className="cursor-pointer ml-auto grid h-11 w-11 place-items-center text-bg/70 transition-colors hover:text-bg"
+            className="cursor-pointer ml-auto grid h-11 w-11 place-items-center text-bar-ink/70 transition-colors hover:text-bar-ink"
             aria-label="Close menu"
           >
             <X size={18} />
@@ -257,10 +257,10 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
   const airdrop = useAirdrop();
   const path = usePathname();
   return (
-    <header className="sticky top-0 z-40 flex h-[52px] shrink-0 items-center gap-1.5 bg-ink px-2 text-bg sm:gap-2 sm:px-6">
+    <header className="sticky top-0 z-40 flex h-[52px] shrink-0 items-center gap-1.5 bg-bar px-2 text-bar-ink sm:gap-2 sm:px-6">
       <button
         onClick={onMenu}
-        className="cursor-pointer grid h-11 w-11 shrink-0 place-items-center text-bg/75 hover:text-bg lg:hidden"
+        className="cursor-pointer grid h-11 w-11 shrink-0 place-items-center text-bar-ink/75 hover:text-bar-ink lg:hidden"
         aria-label="Open menu"
       >
         <Menu size={18} />
@@ -279,7 +279,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
                   aria-current={active ? "page" : undefined}
                   className={clsx(
                     "cursor-pointer flex h-full items-center border-b-[3px] px-3.5 pt-[3px] text-[13.5px] font-medium transition-colors xl:px-4",
-                    active ? "border-accent text-bg" : "border-transparent text-bg/65 hover:text-bg",
+                    active ? "border-accent text-bar-ink" : "border-transparent text-bar-ink/65 hover:text-bar-ink",
                   )}
                 >
                   {label}
@@ -298,7 +298,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
             onClick={airdrop}
             title="Request 1 devnet SOL to pay for on-chain receipts"
             aria-label="Request devnet SOL airdrop"
-            className="cursor-pointer grid h-9 w-9 place-items-center border border-bg/25 text-bg/75 transition-colors hover:text-bg pointer-coarse:h-11 pointer-coarse:w-11"
+            className="cursor-pointer grid h-9 w-9 place-items-center border border-bar-ink/25 text-bar-ink/75 transition-colors hover:text-bar-ink pointer-coarse:h-11 pointer-coarse:w-11"
           >
             <Droplets size={15} />
           </button>
@@ -426,7 +426,7 @@ function AssetSearch() {
     <div className="relative">
       {/* Phones: an icon-wide field that opens up on focus. sm+: always-open field. The 2px accent ring on the
           wrapper is the focus indicator (the bare input sits inside it, so it never needs its own outline). */}
-      <div className="flex h-9 w-11 items-center gap-2 overflow-hidden border border-bg/20 bg-[#262626] px-[14px] text-bg/60 focus-within:w-44 focus-within:border-accent focus-within:text-bg motion-safe:transition-[width] motion-safe:duration-200 sm:w-56 sm:px-3 sm:focus-within:w-56 xl:w-64 xl:focus-within:w-64 pointer-coarse:h-11">
+      <div className="flex h-9 w-11 items-center gap-2 overflow-hidden border border-bar-ink/20 bg-bar-field px-[14px] text-bar-ink/60 focus-within:w-44 focus-within:border-accent focus-within:text-bar-ink motion-safe:transition-[width] motion-safe:duration-200 sm:w-56 sm:px-3 sm:focus-within:w-56 xl:w-64 xl:focus-within:w-64 pointer-coarse:h-11">
         <Search size={14} className="shrink-0" aria-hidden onClick={() => input.current?.focus()} />
         <input
           ref={input}
@@ -459,12 +459,12 @@ function AssetSearch() {
           aria-expanded={open}
           aria-controls="asset-search-list"
           aria-activedescendant={open && results[hi] ? `search-opt-${results[hi].id}` : undefined}
-          className="w-full min-w-0 bg-transparent text-[12.5px] text-bg outline-none placeholder:text-bg/55"
+          className="w-full min-w-0 bg-transparent text-[12.5px] text-bar-ink outline-none placeholder:text-bar-ink/55"
         />
-        <kbd className="hidden border border-bg/20 px-1.5 py-0.5 text-[11px] text-bg/60 sm:inline">⌘K</kbd>
+        <kbd className="hidden border border-bar-ink/20 px-1.5 py-0.5 text-[11px] text-bar-ink/60 sm:inline">⌘K</kbd>
       </div>
       {open && results.length > 0 && (
-        <div className="absolute right-0 top-11 z-50 max-h-[min(32rem,calc(100dvh-80px))] w-[min(22rem,calc(100vw-32px))] overflow-y-auto overscroll-contain border-2 border-ink bg-panel p-0.5 text-text shadow-[0_8px_24px_rgba(20,20,20,0.18)]">
+        <div className="absolute right-0 top-11 z-50 max-h-[min(32rem,calc(100dvh-80px))] w-[min(22rem,calc(100vw-32px))] overflow-y-auto overscroll-contain border-2 border-ink bg-panel p-0.5 text-text shadow-lift">
           {noMatch && (
             <p id="asset-search-empty" role="status" className="px-2 pb-1 pt-2 text-[12px] text-muted">
               Nothing matches &ldquo;<span className="text-text">{q.trim()}</span>&rdquo;. Most traded titles:

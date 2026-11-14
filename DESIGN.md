@@ -20,6 +20,26 @@ colors:
   warn: "#8f5a00"
   sol: "#6b4fd0"
   near: "#0b746f"
+  night-ground: "#12110f"
+  night-panel: "#1b1a17"
+  night-panel-2: "#24221e"
+  night-paper: "#25231f"
+  night-bar: "#0a0908"
+  night-bar-field: "#1d1c19"
+  night-line: "#35322c"
+  night-line-2: "#504b41"
+  night-ink: "#ece6d8"
+  night-ink-hover: "#d4cdbd"
+  night-muted: "#a69f90"
+  night-faint: "#938c7d"
+  night-accent: "#f45a4a"
+  night-up: "#4cc085"
+  night-down: "#f47c86"
+  night-warn: "#e3a63f"
+  night-sol: "#a493f7"
+  night-near: "#3fc6b9"
+  icon-invert-paper: "#dadce0"
+  icon-invert-rule: "#131927"
 typography:
   display:
     fontFamily: "Barlow Condensed, Arial Narrow, sans-serif"
@@ -134,7 +154,7 @@ components:
 
 ENTX is set as a trade-press box office chart that never goes to press: ranked rows, big condensed rank numerals, tabular figures, and the oracle as a news wire. The ground is newsprint, panels are a whiter stock laid on it, and structure comes from ink rules (a black top bar, a 2px ink rule over every panel and chart head, a double rule under page mastheads, dotted hairlines between key/value rows) rather than from fills, glows, or depth. It is a light, dense, information-first world; the reader scans what ranks where and what just moved, then acts in one tap.
 
-The system refuses the dark crypto-exchange dashboard with glowing panels. Color is spent on meaning: red marks the brand and the wire, green and a separate darker red mark gain and loss, two chain hues mark NEAR and Solana. Everything else is ink on paper.
+The system refuses the dark crypto-exchange dashboard with glowing panels; its own dark theme, the Night Edition, is the same chart with ink and paper swapped. Color is spent on meaning: red marks the brand and the wire, green and a separate darker red mark gain and loss, two chain hues mark NEAR and Solana. Everything else is ink on paper.
 
 The landing page at `/` (`src/app/(site)/`) is a separate surface built under its own brief; it shares this palette and type families but is not governed by this document.
 
@@ -175,6 +195,16 @@ Ink on newsprint, with one signal red and a disciplined set of status and chain 
 **The Red Wire Rule.** Signal Red marks the brand's moving parts (active section, wallet, oracle wire, focus) and nothing else. The primary trade action is ink, not red; losses use Loss Red.
 
 **The Paper Tiers Rule.** Depth is paper stock, not shadow: newsprint ground, panel stock on it, white ticket paper for the one surface where the user commits money.
+
+### Night Edition (dark theme)
+The same chart read under lamp light, not a crypto terminal. `html[data-theme="dark"]` swaps every token in `src/app/globals.css` (landing: `public/site/landing-dark.css`); components only ever name tokens.
+- **Ink and paper trade places.** Ground is warm carbon (night-ground), text and every structural rule turn cream (night-ink). The primary action and the active segmented option become cream blocks with carbon type: still "ink", now the brightest mark.
+- **Tiers step lighter toward the ticket.** night-ground, then night-panel, night-panel-2 for the wire, and night-paper (the lightest stock) for the ticket. Same order as day: the surface where money is committed stands out most.
+- **The bar goes deeper, not lighter.** The top bar and the landing's closing band sit on night-bar, darker than the ground, separated by the dateline's cream rule.
+- **Colours brighten to hold 4.5:1** on every tier: night-accent for red as type, rules and focus; night-up and night-down (a rose, kept apart from the vermilion accent) for gain and loss; chain hues lifted the same way. Red fills (wallet, landing actions) keep the day's press red so white type stays at 5:1.
+- **Status fills take carbon type** (`--on-status`), never white, because the night greens and roses are light.
+- **No glow.** No halos, coloured shadows or luminous accents; the hub diagram's halo is off at night. The overlay lift deepens to `rgb(0 0 0 / 0.55)` and stays the only shadow.
+- **Choosing the edition:** follows the OS by default; Settings > Edition (Day / Night / System) in the app and the sun/moon button in the landing nav store an explicit choice in `localStorage["entx-theme"]`. An inline head script (`src/lib/theme-script.ts`) applies it before first paint. Canvas charts read tokens at mount and rebuild on change (`useTheme`).
 
 ## Typography
 
@@ -271,5 +301,6 @@ A news line on Wire Stock behind a 4px Signal Red left rule, slugged "ORACLE WIR
 - **Don't** put a shadow on anything laid on the page; the overlay lift is for floating menus and toasts only.
 - **Don't** use Signal Red for losses or for the primary trade action.
 - **Don't** set figures in the condensed face or in monospace.
-- **Don't** introduce a dark theme, glowing panels or neon accents; this is ink on newsprint.
+- **Don't** let the Night Edition glow: no neon accents, halos, coloured shadows or gradient panels; it is the same ink-and-paper chart with the tones swapped.
+- **Don't** hard-code a colour in a component; name a token so both editions follow.
 - **Don't** round corners on panels, buttons, inputs or menus.

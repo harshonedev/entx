@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "@/lib/theme";
 import { useEffect, useMemo, useRef } from "react";
 import {
   ColorType,
@@ -44,6 +45,8 @@ export function ProbabilityChart({ p, height = 340 }: { p: PredictionSeed; heigh
   const markersApi = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
   const colors = useRef({ up: "#1d7446", down: "#c4221b", text: "#141414" });
   const lastLen = useRef(0);
+  // Canvas colours are read from tokens, so the chart is rebuilt when the edition changes.
+  const theme = useTheme();
   const history = useProbHistory(p.id);
   const feed = useMarket((s) => s.feed);
 
@@ -89,7 +92,7 @@ export function ProbabilityChart({ p, height = 340 }: { p: PredictionSeed; heigh
       },
       grid: {
         vertLines: { visible: false },
-        horzLines: { color: "rgba(20,20,20,0.07)" },
+        horzLines: { color: token("--grid") },
       },
       // Thin margins, and no axis label outside 0–100%, so a settled market never shows "110%".
       rightPriceScale: { borderColor: token("--line"), scaleMargins: { top: 0.06, bottom: 0.06 } },
@@ -135,7 +138,7 @@ export function ProbabilityChart({ p, height = 340 }: { p: PredictionSeed; heigh
       modelSeries.current = null;
       markersApi.current = null;
     };
-  }, [height]);
+  }, [height, theme]);
 
   useEffect(() => {
     const s = series.current;
@@ -152,7 +155,7 @@ export function ProbabilityChart({ p, height = 340 }: { p: PredictionSeed; heigh
       s.update(real[real.length - 1]);
     }
     lastLen.current = history.length;
-  }, [history]);
+  }, [history, theme]);
 
   useEffect(() => {
     const { up, down, text } = colors.current;
@@ -182,7 +185,7 @@ export function ProbabilityChart({ p, height = 340 }: { p: PredictionSeed; heigh
       size: e.news ? 1 : 0.6,
     }) as SeriesMarker<Time>)].sort((a, b) => (a.time as number) - (b.time as number));
     markersApi.current?.setMarkers(markers);
-  }, [events, history]);
+  }, [events, history, theme]);
 
   const news = events.filter((e) => e.news).length;
   const modelled = history[0]?.modelled === true;
