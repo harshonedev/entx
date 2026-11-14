@@ -46,7 +46,7 @@ One Docker image, deployed per host on Coolify with different env:
 - [x] Demo / Live badge on every page, links to the other host
 - [x] Settings menu in nav with chain switch, behind `NEXT_PUBLIC_FLAG_CHAIN_SWITCH` (switch = go to the other chain's host)
 - [ ] `solana.entx.space` build: Solana chain, demo mode, memo receipts
-- [ ] Dockerfile (Next.js `output: "standalone"`, bun) + `.dockerignore`
+- [x] Dockerfile (Next.js `output: "standalone"`, bun) + `.dockerignore`
 - [ ] Coolify: 3 apps from the same repo/image, env per host, DNS A records, TLS
 - [ ] Oracle: server-only keys set only on hosts that need them; `ENTX_PUBLIC_ORACLE` off on live
 
@@ -57,8 +57,8 @@ One Docker image, deployed per host on Coolify with different env:
 - [ ] Repo public, MIT license present
 
 ### Exit gate
-- [ ] Testing
-- [ ] Security audit
+- [x] Testing (536 tests, lint, tsc, live image smoke test + desktop/mobile screenshots)
+- [x] Security audit (1 high, 9 medium found; 9 fixed in d39620f, 2 logged as accepted risks)
 - [ ] Deploy check (all 3 hosts)
 
 ---
@@ -116,8 +116,10 @@ One Docker image, deployed per host on Coolify with different env:
 
 | Milestone | Risk | Why accepted |
 |-----------|------|--------------|
-| _none yet_ | | |
+| M0 | Demo host's public oracle path is guarded only by a same-origin check (fakeable by scripts). Demo and live share one NEAR contract, so anyone can shift a live title's on-chain EPI by up to ±15 within rate limits | Testnet only, bounded, rate-limited; demo video needs click-to-publish. Fixed in M1 (separate contract/oracle for live) |
+| M0 | `report_epi` in the contract accepts any value ≤100 from an allow-listed oracle; the ±15 bound lives only in the API route | Oracle key is server-only FC key; rotation runbook in docs/deploy-coolify.md. Move bound into contract in M1 |
 
 ## Changelog
 
+- 2026-11-14: M0 build + security audit done; waiting on DNS/Coolify deploy.
 - 2026-11-14: File created. M0 active. M1–M5 set from the initial plan.
