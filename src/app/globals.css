@@ -38,8 +38,8 @@
   --color-warn: var(--warn);
   --color-sol: var(--sol);
   --color-near: var(--near);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-code);
 }
 
 /* Flat, low-radius system: every rounded-* utility maps to 2–4px. */
@@ -61,7 +61,7 @@ body {
   background: var(--bg);
   letter-spacing: -0.003em;
   color: var(--text);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-ui), system-ui, sans-serif;
 }
 
 @layer components {
@@ -71,7 +71,7 @@ body {
   letter-spacing: -0.01em;
 }
 .mono {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-family: var(--font-code), ui-monospace, monospace;
 }
 
 .panel {
@@ -156,12 +156,6 @@ button, .press {
 .flash-up { animation: flash-up 900ms ease-out; }
 .flash-down { animation: flash-down 900ms ease-out; }
 
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-.marquee { animation: marquee 60s linear infinite; }
-
 @keyframes toast-in {
   from { opacity: 0; filter: blur(4px); translate: 0 12px; }
 }
@@ -180,7 +174,7 @@ button, .press {
 .live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee, .live-dot, .flash-up, .flash-down { animation: none; }
+  .live-dot, .flash-up, .flash-down { animation: none; }
 }
 
 /* Wallet adapter button restyle: neutral, flat, matches the shell */

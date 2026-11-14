@@ -45,7 +45,7 @@ export function OraclePanel({ asset }: { asset: AssetSeed }) {
       <div className="flex items-center gap-2">
         <Satellite size={15} className="text-accent" />
         <span className="h-panel">Entertainment oracle</span>
-        <span className="ml-auto rounded-sm border border-line-2 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
+        <span className="ml-auto rounded-sm border border-line-2 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-accent">
           Demo control
         </span>
       </div>
@@ -73,7 +73,7 @@ export function OraclePanel({ asset }: { asset: AssetSeed }) {
                 <TrendingDown size={14} className="text-down" />
               )}
               <span className="flex-1">{e.label}</span>
-              <span className="text-[10px] text-faint">
+              <span className="text-[11px] text-faint">
                 {Object.entries(e.delta)
                   .map(([k, v]) => `${k === "boxOffice" ? "BO" : k.slice(0, 4)} ${v! > 0 ? "+" : ""}${v}`)
                   .join(" · ")}

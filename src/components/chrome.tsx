@@ -6,30 +6,33 @@ import { X } from "lucide-react";
 import { ASSETS, ASSET_BY_ID } from "@/lib/assets";
 import { change24h, priceOf, useMarket } from "@/store/market";
 import { timeAgo, usd } from "@/lib/format";
-import { Change } from "./ui";
+import { Change, Flash } from "./ui";
 
+/** Static price strip: scrolls only when the user scrolls it; prices flash on change. */
 export function TickerTape() {
   const markets = useMarket((s) => s.markets);
-  const row = (suffix: string) => ASSETS.map((a) => (
-    <Link
-      key={a.id + suffix}
-      aria-hidden={suffix ? true : undefined}
-      tabIndex={suffix ? -1 : undefined}
-      href={`/asset/${a.id}`}
-      className="flex items-center gap-2 border-r border-line px-5 text-[11.5px] hover:text-accent"
-    >
-      <span className="font-semibold">{a.ticker}</span>
-      <span className="num text-muted">{usd(priceOf(markets[a.id]))}</span>
-      <Change value={change24h(markets[a.id])} />
-    </Link>
-  ));
   return (
-    <div className="overflow-hidden border-b border-line bg-bg py-2.5">
-      <div className="marquee flex w-max">
-        {row("")}
-        {row("-dup")}
-      </div>
-    </div>
+    <nav aria-label="Market prices" className="border-b border-line bg-bg">
+      <ul className="flex overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {ASSETS.map((a) => {
+          const price = priceOf(markets[a.id]);
+          return (
+            <li key={a.id} className="shrink-0">
+              <Link
+                href={`/asset/${a.id}`}
+                className="flex h-10 items-center gap-2 border-r border-line px-5 text-[12px] transition-colors hover:bg-panel"
+              >
+                <span className="font-medium">{a.ticker}</span>
+                <Flash value={price} className="num text-muted">
+                  {usd(price)}
+                </Flash>
+                <Change value={change24h(markets[a.id])} />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 
@@ -110,7 +113,7 @@ export function LiveFeed({ refId, limit = 12, className }: { refId?: string; lim
                     f.text
                   )}
                 </div>
-                <div className="mt-0.5 text-[10px] text-faint">{timeAgo(f.ts)}</div>
+                <div className="mt-0.5 text-[11px] text-faint">{timeAgo(f.ts)}</div>
               </div>
             </li>
           ))}

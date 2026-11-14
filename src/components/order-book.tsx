@@ -46,9 +46,9 @@ export function OrderBook({ assetId }: { assetId: string }) {
     <div className="panel overflow-hidden">
       <div className="flex items-center justify-between px-3 pb-1 pt-3">
         <span className="h-panel">Market depth</span>
-        <span className="text-[10px] text-faint">AMM-derived · simulated</span>
+        <span className="text-[11px] text-faint">AMM-derived · simulated</span>
       </div>
-      <div className="grid grid-cols-3 px-3 py-1 text-[10px] uppercase tracking-wider text-faint">
+      <div className="grid grid-cols-3 px-3 py-1 text-[11px] uppercase tracking-wider text-faint">
         <span>Price</span>
         <span className="text-right">Size</span>
         <span className="text-right">Total</span>

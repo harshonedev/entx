@@ -316,7 +316,7 @@ function AssetSearch() {
           aria-activedescendant={open && results[hi] ? `search-opt-${results[hi].id}` : undefined}
           className="w-full bg-transparent text-[12.5px] text-text outline-none placeholder:text-faint"
         />
-        <kbd className="rounded-sm bg-panel-2 px-1.5 py-0.5 text-[10.5px] text-faint">⌘K</kbd>
+        <kbd className="rounded-sm bg-panel-2 px-1.5 py-0.5 text-[11px] text-faint">⌘K</kbd>
       </div>
       {open && results.length > 0 && (
         <ul
