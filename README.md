@@ -39,11 +39,11 @@ near contract call-function as-read-only entx-market-1794654167.testnet get_rece
 
 ## Quick start (about 2 minutes, no keys needed)
 
-Requires **Node ≥ 22** and **pnpm**.
+Requires **Node ≥ 22** and **Bun**.
 
 ```bash
-pnpm install
-pnpm dev            # http://localhost:3000
+bun install
+bun run dev            # http://localhost:3000
 ```
 
 The app reads the shared testnet contract above with no configuration. Without an oracle key, EPI updates
@@ -59,14 +59,14 @@ rustup target add wasm32-unknown-unknown
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
 
-pnpm contract:test   # 11 unit tests: registry, receipts, storage deposits/refunds, oracle trust, report ring,
+bun run contract:test   # 11 unit tests: registry, receipts, storage deposits/refunds, oracle trust, report ring,
                      # parimutuel payout, permissions, input sanitising
-pnpm near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers 19 markets,
+bun run near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers 19 markets,
                      # allow-lists the oracle, gives it a report_epi-only key, writes .env.local
-pnpm dev
+bun run dev
 ```
 
-To resolve a prediction market on-chain (owner/oracle only), run `pnpm near:resolve drift-opening-250 true`.
+To resolve a prediction market on-chain (owner/oracle only), run `bun run near:resolve drift-opening-250 true`.
 
 ---
 
