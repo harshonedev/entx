@@ -25,7 +25,7 @@ export default function EpiPage() {
     <div className="space-y-5">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Entertainment Popularity Index</h1>
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Entertainment Popularity Index</h1>
           <SimBadge>Simulated data</SimBadge>
         </div>
         <p className="mt-1 max-w-2xl text-sm text-muted">
@@ -69,15 +69,15 @@ export default function EpiPage() {
                         </div>
                       </Link>
                     </td>
-                    <td className="num py-2.5 text-right text-base font-bold text-accent">{m.epi.toFixed(1)}</td>
+                    <td className="num py-2.5 text-right text-base font-semibold">{m.epi.toFixed(1)}</td>
                     <td className="py-2.5 text-right text-xs">
                       <Change value={m.epi / ref - 1} />
                     </td>
                     {KEYS.map((k) => (
                       <td key={k} className="hidden py-2.5 pl-4 md:table-cell">
                         <div className="flex items-center gap-2">
-                          <div className="h-1 w-12 overflow-hidden rounded-full bg-white/5">
-                            <div className="h-full bg-accent/70" style={{ width: `${m.epiParts[k]}%` }} />
+                          <div className="h-1 w-12 overflow-hidden bg-white/[0.06]">
+                            <div className="h-full bg-white/60" style={{ width: `${m.epiParts[k]}%` }} />
                           </div>
                           <span className="num text-xs text-muted">{m.epiParts[k].toFixed(0)}</span>
                         </div>
@@ -96,7 +96,7 @@ export default function EpiPage() {
 
         <div className="space-y-4">
           <div className="panel p-4">
-            <div className="label">Methodology</div>
+            <div className="h-panel">Methodology</div>
             <div className="num mt-3 rounded-lg bg-bg p-3 text-[12px] leading-relaxed text-muted">
               EPI = {KEYS.map((k, i) => (
                 <span key={k}>
@@ -113,7 +113,7 @@ export default function EpiPage() {
           <div className="panel p-4">
             <div className="flex items-center gap-2">
               <Database size={14} className="text-accent" />
-              <span className="label">Data sources</span>
+              <span className="h-panel">Data sources</span>
             </div>
             <ul className="mt-3 space-y-2.5">
               {SOURCES.map((s) => (

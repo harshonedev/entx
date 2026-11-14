@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import clsx from "clsx";
 import { PREDICTIONS, type PredictionCategory } from "@/lib/predictions";
 import { PredictionCard } from "@/components/prediction-card";
 import { SimBadge } from "@/components/ui";
@@ -17,7 +16,7 @@ export default function PredictionsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Prediction markets</h1>
+            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Prediction markets</h1>
             <SimBadge />
           </div>
           <p className="mt-1 max-w-xl text-sm text-muted">
@@ -25,15 +24,12 @@ export default function PredictionsPage() {
             correct. Odds move with trading and with oracle updates on the linked title.
           </p>
         </div>
-        <div className="flex flex-wrap gap-1 rounded-xl border border-line p-1">
+        <div className="seg flex-wrap">
           {CATS.map((c) => (
             <button
               key={c}
               onClick={() => setCat(c)}
-              className={clsx(
-                "rounded-lg px-3 py-1.5 text-sm transition-colors",
-                cat === c ? "bg-white/[0.07] text-text" : "text-muted hover:text-text",
-              )}
+              aria-pressed={cat === c}
             >
               {c}
             </button>

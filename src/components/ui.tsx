@@ -6,7 +6,7 @@ import { pct } from "@/lib/format";
 
 export function Change({ value, className }: { value: number; className?: string }) {
   return (
-    <span className={clsx("num", value >= 0 ? "text-up" : "text-down", className)}>
+    <span className={clsx("num whitespace-nowrap", value >= 0 ? "text-up" : "text-down", className)}>
       {value >= 0 ? "▲" : "▼"} {pct(value).replace(/^[+-]/, "")}
     </span>
   );
@@ -61,7 +61,7 @@ export function Sparkline({
 
 export function SimBadge({ children = "Simulated" }: { children?: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+    <span className="inline-flex items-center gap-1.5 rounded-sm border border-line-2 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted">
       {children}
     </span>
   );
@@ -69,13 +69,10 @@ export function SimBadge({ children = "Simulated" }: { children?: ReactNode }) {
 
 export function EpiMeter({ value, className }: { value: number; className?: string }) {
   return (
-    <div className={clsx("h-1.5 w-full overflow-hidden rounded-full bg-white/5", className)}>
+    <div className={clsx("h-1 w-full overflow-hidden bg-white/[0.06]", className)}>
       <div
-        className="h-full rounded-full transition-[width] duration-700"
-        style={{
-          width: `${Math.min(100, value)}%`,
-          background: "linear-gradient(90deg, #f5b544aa, #f5b544)",
-        }}
+        className="h-full origin-left bg-white/70 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out"
+        style={{ transform: `scaleX(${Math.min(100, Math.max(0, value)) / 100})` }}
       />
     </div>
   );
@@ -88,5 +85,17 @@ export function Stat({ label, children, sub }: { label: string; children: ReactN
       <div className="num mt-1 text-lg font-semibold">{children}</div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}
     </div>
+  );
+}
+
+/** Renders a formatted amount with the fractional part dimmed: $43 255<span>.38</span>. */
+export function Dim({ text, className }: { text: string; className?: string }) {
+  const i = text.lastIndexOf(".");
+  if (i < 0) return <span className={className}>{text}</span>;
+  return (
+    <span className={className}>
+      {text.slice(0, i)}
+      <span className="text-faint">{text.slice(i)}</span>
+    </span>
   );
 }

@@ -20,30 +20,32 @@ export function PriceChart({ assetId, height = 380 }: { assetId: string; height?
 
   useEffect(() => {
     if (!el.current) return;
+    const css = getComputedStyle(el.current);
+    const token = (name: string) => css.getPropertyValue(name).trim();
     const c = createChart(el.current, {
       height,
       autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#8b919b",
-        fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
+        textColor: token("--muted"),
+        fontFamily: token("--font-geist-sans") || "system-ui, sans-serif",
         fontSize: 11,
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "rgba(255,255,255,0.035)" },
-        horzLines: { color: "rgba(255,255,255,0.035)" },
+        vertLines: { color: "rgba(255,255,255,0.03)" },
+        horzLines: { color: "rgba(255,255,255,0.03)" },
       },
-      rightPriceScale: { borderColor: "#1d2128" },
-      timeScale: { borderColor: "#1d2128", timeVisible: true, secondsVisible: true, rightOffset: 4 },
+      rightPriceScale: { borderColor: token("--line") },
+      timeScale: { borderColor: token("--line"), timeVisible: true, secondsVisible: true, rightOffset: 4 },
       crosshair: { mode: 1 },
     });
     const s = c.addSeries(CandlestickSeries, {
-      upColor: "#34d399",
-      downColor: "#f87171",
+      upColor: token("--up"),
+      downColor: token("--down"),
       borderVisible: false,
-      wickUpColor: "#34d399",
-      wickDownColor: "#f87171",
+      wickUpColor: token("--up"),
+      wickDownColor: token("--down"),
       priceFormat: { type: "price", precision: 2, minMove: 0.01 },
     });
     chart.current = c;

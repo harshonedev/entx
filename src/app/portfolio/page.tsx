@@ -43,7 +43,7 @@ export default function PortfolioPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Portfolio</h1>
+            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Portfolio</h1>
             <SimBadge>Virtual balance</SimBadge>
           </div>
           <p className="mt-1 text-sm text-muted">
@@ -83,7 +83,7 @@ export default function PortfolioPage() {
       <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           <div className="panel overflow-x-auto">
-            <div className="label px-4 pt-4">Holdings</div>
+            <div className="h-panel px-4 pt-4">Holdings</div>
             {Object.keys(s.holdings).length === 0 ? (
               <Empty>
                 No holdings yet. <Link href="/" className="text-accent">Discover titles to trade →</Link>
@@ -133,7 +133,7 @@ export default function PortfolioPage() {
           </div>
 
           <div className="panel">
-            <div className="label px-4 pt-4">Open predictions</div>
+            <div className="h-panel px-4 pt-4">Open predictions</div>
             {s.positions.length === 0 ? (
               <Empty>
                 No open predictions. <Link href="/predictions" className="text-accent">Browse markets →</Link>
@@ -149,7 +149,7 @@ export default function PortfolioPage() {
                     <li key={p.marketId + p.side} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
                       <span
                         className={clsx(
-                          "rounded px-1.5 py-0.5 text-xs font-bold",
+                          "rounded px-1.5 py-0.5 text-xs font-semibold",
                           p.side === "YES" ? "bg-up/15 text-up" : "bg-down/15 text-down",
                         )}
                       >
@@ -170,7 +170,7 @@ export default function PortfolioPage() {
           </div>
 
           <div className="panel overflow-x-auto">
-            <div className="label px-4 pt-4">Trade history</div>
+            <div className="h-panel px-4 pt-4">Trade history</div>
             {s.trades.length === 0 ? (
               <Empty>No trades yet.</Empty>
             ) : (
@@ -194,7 +194,7 @@ export default function PortfolioPage() {
                       <td className="py-2">
                         <span
                           className={clsx(
-                            "text-xs font-bold",
+                            "text-xs font-semibold",
                             t.kind === "BUY" || t.kind === "YES" || t.kind === "PAYOUT" ? "text-up" : "text-down",
                           )}
                         >
@@ -265,7 +265,7 @@ export default function PortfolioPage() {
         <aside className="panel h-fit p-4">
           <div className="flex items-center gap-2">
             <Trophy size={14} className="text-accent" />
-            <span className="label">Leaderboard · season return</span>
+            <span className="h-panel">Leaderboard · season return</span>
           </div>
           <ol className="mt-3 space-y-1">
             {leaderboard.map((r, i) => (

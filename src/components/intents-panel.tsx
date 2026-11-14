@@ -76,8 +76,8 @@ export function IntentsPanel() {
     <div className="panel p-4">
       <div className="flex items-center gap-2">
         <Route size={14} className="text-near" />
-        <span className="label">Fund from any chain · NEAR Intents</span>
-        <span className="ml-auto rounded-full border border-near/30 bg-near/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-near">
+        <span className="h-panel">Fund from any chain · NEAR Intents</span>
+        <span className="ml-auto rounded-sm border border-line-2 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-near">
           Live dry-run
         </span>
       </div>
@@ -120,7 +120,7 @@ export function IntentsPanel() {
         {quote && <div className="num text-[11px] text-faint">≈ {usd(Number(quote.amountInUsd))}</div>}
       </div>
       <div className="-my-2 flex justify-center">
-        <span className="z-10 grid h-7 w-7 place-items-center rounded-full border border-line bg-panel text-muted">
+        <span className="z-10 grid h-7 w-7 place-items-center rounded border border-line bg-panel text-muted">
           <ArrowDown size={13} />
         </span>
       </div>

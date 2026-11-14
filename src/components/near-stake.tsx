@@ -86,14 +86,14 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
   }
 
   return (
-    <div className="mt-3 rounded-xl border border-near/25 bg-near/[0.04] p-3">
+    <div className="mt-3 rounded border border-line-2 bg-bg p-3">
       <div className="flex items-center justify-between text-[11px]">
         <span className="inline-flex items-center gap-1.5 font-semibold text-near">
           <span className="h-1.5 w-1.5 rounded-full bg-near" /> On-chain pool · NEAR testnet
         </span>
         <span className="num text-muted">{yoctoToNear(total, 2)} NEAR staked</span>
       </div>
-      <div className="mt-2 flex h-1 overflow-hidden rounded-full bg-down/40">
+      <div className="mt-2 flex h-1 overflow-hidden bg-down/40">
         <div className="h-full bg-up" style={{ width: `${yesShare}%` }} />
       </div>
       <div className="num mt-1 flex justify-between text-[11px] text-muted">
@@ -155,7 +155,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
                   )
                 }
                 className={clsx(
-                  "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold text-black disabled:opacity-50",
+                  "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold text-black disabled:opacity-50",
                   side === "YES" ? "bg-up" : "bg-down",
                 )}
               >

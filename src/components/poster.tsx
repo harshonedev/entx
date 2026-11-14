@@ -15,24 +15,17 @@ export function Poster({
   return (
     <div
       className={clsx(
-        "relative shrink-0 overflow-hidden rounded-lg border border-white/10",
+        "relative shrink-0 overflow-hidden rounded-sm border border-white/10",
         size === "sm" && "h-11 w-8",
         size === "md" && "h-24 w-16",
         size === "lg" && "h-44 w-30",
         className,
       )}
-      style={{
-        background: `radial-gradient(120% 80% at 30% 15%, ${c1} 0%, transparent 60%), linear-gradient(170deg, ${c1}55 0%, ${c2} 70%)`,
-      }}
+      style={{ background: c2 }}
       aria-hidden
     >
-      <div
-        className="absolute inset-0 opacity-30 mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 3px)",
-        }}
-      />
+      <div className="absolute inset-x-0 top-0 h-[58%]" style={{ background: c1, opacity: 0.85 }} />
+      <div className="absolute inset-x-0 top-[58%] h-px bg-black/30" />
       {size !== "sm" && (
         <div className="absolute inset-x-0 bottom-0 p-1.5">
           <div
