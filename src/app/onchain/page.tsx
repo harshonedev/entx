@@ -33,6 +33,7 @@ export default function OnchainPage() {
   // Phones show a few rows per table (stacked cards are tall); the rest is one tap away.
   const [allAssets, setAllAssets] = useState(false);
   const [allPools, setAllPools] = useState(false);
+  const [allReceipts, setAllReceipts] = useState(false);
   const local = useMarket((s) => s.markets);
 
   const load = useCallback(async () => {
@@ -122,11 +123,13 @@ export default function OnchainPage() {
                   href={nearAccountUrl(o)}
                   target="_blank"
                   rel="noreferrer"
-                  className="cursor-pointer num inline-flex min-h-11 items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-text/80 hover:text-near sm:min-h-0"
+                  className="cursor-pointer num inline-flex min-h-11 items-center text-text/80 hover:text-near sm:min-h-0"
                 >
-                  {o}
-                  {role && <span className="font-sans text-faint">· {role}</span>}
-                  <ExternalLink size={10} aria-hidden />
+                  <span className="inline-flex items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5">
+                    {o}
+                    {role && <span className="font-sans text-faint">· {role}</span>}
+                    <ExternalLink size={10} aria-hidden />
+                  </span>
                 </a>
               );
             })}
@@ -193,8 +196,8 @@ export default function OnchainPage() {
               </thead>
               <tbody>
                 {markets.length === 0 && (
-                  <tr className="border-t border-line">
-                    <td colSpan={7} className="px-4 py-4 text-xs text-muted" role="status">
+                  <tr className="border-t border-line max-sm:block">
+                    <td colSpan={7} className="px-4 py-4 text-xs text-muted max-sm:block" role="status">
                       {err ? "Couldn't reach NEAR testnet. Try Refresh." : "Reading the NEAR contract…"}
                     </td>
                   </tr>
@@ -202,7 +205,7 @@ export default function OnchainPage() {
                 {assets.map((m, i) => (
                   <tr
                     key={m.id}
-                    className={clsx("border-t border-line max-sm:block max-sm:py-2", !allAssets && i >= MOBILE_ROWS && "max-sm:hidden")}
+                    className={clsx("border-t border-line max-sm:py-2", !allAssets && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block")}
                   >
                     <td className="py-2 pl-4 max-sm:block max-sm:px-4">
                       <Link href={`/asset/${m.id}`} className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 hover:text-accent sm:min-h-0">
@@ -221,7 +224,7 @@ export default function OnchainPage() {
                           href={nearTxUrl(local[m.id].oracleTx!)}
                           target="_blank"
                           rel="noreferrer"
-                          className="cursor-pointer inline-flex items-center gap-1 text-near hover:underline"
+                          className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-near hover:underline sm:min-h-0"
                         >
                           {local[m.id].oracleTx!.slice(0, 6)}… <ExternalLink size={10} />
                         </a>
@@ -257,8 +260,8 @@ export default function OnchainPage() {
               </thead>
               <tbody>
                 {markets.length === 0 && (
-                  <tr className="border-t border-line">
-                    <td colSpan={4} className="px-4 py-4 text-xs text-muted" role="status">
+                  <tr className="border-t border-line max-sm:block">
+                    <td colSpan={4} className="px-4 py-4 text-xs text-muted max-sm:block" role="status">
                       {err ? "Couldn't reach NEAR testnet. Try Refresh." : "Reading the NEAR contract…"}
                     </td>
                   </tr>
@@ -268,7 +271,7 @@ export default function OnchainPage() {
                   return (
                     <tr
                       key={m.id}
-                      className={clsx("border-t border-line max-sm:block max-sm:py-2", !allPools && i >= MOBILE_ROWS && "max-sm:hidden")}
+                      className={clsx("border-t border-line max-sm:py-2", !allPools && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block")}
                     >
                       <td className="py-2 pl-4 text-xs max-sm:block max-sm:px-4 sm:max-w-[360px] sm:truncate">
                         <Link href={`/predictions/${m.id}`} className="cursor-pointer inline-flex min-h-11 items-center hover:text-accent sm:min-h-0">
@@ -322,14 +325,22 @@ export default function OnchainPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {receipts.map((r) => {
+                  {receipts.map((r, i) => {
                     const solSig = r.chain_ref?.startsWith("solana:devnet:") ? r.chain_ref.slice(14) : null;
                     const isPred = r.side === "YES" || r.side === "NO";
                     return (
-                      <tr key={r.id} className="border-t border-line text-xs max-sm:block max-sm:py-2">
+                      <tr
+                        key={r.id}
+                        className={clsx("border-t border-line text-xs max-sm:py-2", !allReceipts && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block")}
+                      >
                         <td data-label="#" className={clsx("num py-2 pl-4 text-faint", CELL)}>{r.id}</td>
                         <td data-label="Trader" className={clsx("num max-w-[160px] truncate py-2 max-sm:max-w-none", CELL)}>
-                          <a href={nearAccountUrl(r.account)} target="_blank" rel="noreferrer" className="cursor-pointer hover:text-near">
+                          <a
+                            href={nearAccountUrl(r.account)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="cursor-pointer hover:text-near max-sm:block max-sm:truncate max-sm:leading-[44px]"
+                          >
                             {r.account}
                           </a>
                         </td>
@@ -341,7 +352,7 @@ export default function OnchainPage() {
                         </td>
                         <td data-label="Cross-chain ref" className={clsx("py-2 pl-4", CELL)}>
                           {solSig ? (
-                            <a href={explorerTx(solSig)} target="_blank" rel="noreferrer" className="cursor-pointer inline-flex items-center gap-1 text-sol hover:underline">
+                            <a href={explorerTx(solSig)} target="_blank" rel="noreferrer" className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-sol hover:underline sm:min-h-0">
                               Solana {solSig.slice(0, 6)}… <ExternalLink size={10} />
                             </a>
                           ) : (
@@ -355,6 +366,7 @@ export default function OnchainPage() {
                 </tbody>
               </table>
             )}
+            <ShowAllRows count={receipts.length} open={allReceipts} onToggle={() => setAllReceipts((v) => !v)} noun="receipts" />
           </div>
         </div>
 
@@ -421,7 +433,12 @@ function ShowAllRows({ count, open, onToggle, noun }: { count: number; open: boo
   if (count <= MOBILE_ROWS) return null;
   return (
     <button
-      onClick={onToggle}
+      onClick={(e) => {
+        const panel = e.currentTarget.closest(".panel");
+        onToggle();
+        // Collapsing removes rows above the button; bring the table back into view instead of stranding the reader below it.
+        if (open) requestAnimationFrame(() => panel?.scrollIntoView({ block: "start" }));
+      }}
       aria-expanded={open}
       className="cursor-pointer flex h-11 w-full items-center justify-center border-t border-line text-[12.5px] text-muted hover:text-text sm:hidden"
     >
