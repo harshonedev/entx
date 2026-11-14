@@ -3,6 +3,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { NearConnector } from "@hot-labs/near-connect";
 import { NEAR_CONTRACT, NEAR_NETWORK, nearTxUrl } from "./near-config";
+
+/** record_trade storage deposit (~0.008 NEAR used; the contract refunds the excess). */
+const RECEIPT_DEPOSIT = "10000000000000000000000"; // 0.01 NEAR
 import { useMarket, type Trade } from "@/store/market";
 
 interface NearCtx {
@@ -117,7 +120,7 @@ export function useNearNotarize() {
           qty_micro: Math.max(1, Math.round(trade.qty * 1e6)),
           price_micro: Math.round(trade.price * 1e6),
           chain_ref: chainRef ?? null,
-        });
+        }, RECEIPT_DEPOSIT);
         setNear(trade.id, { nearTx: hash, nearStatus: "confirmed" });
         toast({
           title: "Receipt recorded on NEAR testnet",

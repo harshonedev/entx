@@ -20,7 +20,8 @@ Hackathon tracks: **Unstoppable DeFi** + **Open Innovation**.
 
 | Thing | Where |
 | --- | --- |
-| NEAR contract (testnet) | [`entx-exchange-52194.testnet`](https://testnet.nearblocks.io/address/entx-exchange-52194.testnet) |
+| NEAR contract (testnet) | [`entx-market-1794653894.testnet`](https://testnet.nearblocks.io/address/entx-market-1794653894.testnet) |
+| Trusted oracle (testnet) | [`entx-oracle-1794653894.testnet`](https://testnet.nearblocks.io/address/entx-oracle-1794653894.testnet) (function-call key, `report_epi` only) |
 | Contract source | [`contracts/near/src/lib.rs`](contracts/near/src/lib.rs) (Rust, near-sdk 5.30) |
 | Solana receipts | SPL Memo program `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` on devnet |
 | NEAR Intents | 1Click API `https://1click.chaindefuser.com/v0/quote` (dry-run) |
@@ -28,9 +29,10 @@ Hackathon tracks: **Unstoppable DeFi** + **Open Innovation**.
 Check the contract state from any terminal (needs [near-cli-rs](https://near.cli.rs)):
 
 ```bash
-near contract call-function as-read-only entx-exchange-52194.testnet get_stats json-args '{}' network-config testnet now
-near contract call-function as-read-only entx-exchange-52194.testnet get_epi_reports json-args '{"market_id":"dune-drift"}' network-config testnet now
-near contract call-function as-read-only entx-exchange-52194.testnet get_recent_receipts json-args '{"limit":10}' network-config testnet now
+near contract call-function as-read-only entx-market-1794653894.testnet get_stats json-args '{}' network-config testnet now
+near contract call-function as-read-only entx-market-1794653894.testnet get_epi_reports json-args '{"market_id":"dune-drift"}' network-config testnet now
+near contract call-function as-read-only entx-market-1794653894.testnet get_oracles json-args '{}' network-config testnet now
+near contract call-function as-read-only entx-market-1794653894.testnet get_recent_receipts json-args '{"limit":10}' network-config testnet now
 ```
 
 ---
@@ -57,9 +59,10 @@ rustup target add wasm32-unknown-unknown
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
 
-pnpm contract:test   # 5 unit tests: registry, receipts, oracle trust, parimutuel payout, permissions
-pnpm near:deploy     # creates a faucet-funded testnet account, builds, deploys, registers 19 markets,
-                     # and writes .env.local (contract id + oracle key)
+pnpm contract:test   # 10 unit tests: registry, receipts, storage deposits/refunds, oracle trust,
+                     # parimutuel payout, permissions, input sanitising
+pnpm near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers 19 markets,
+                     # allow-lists the oracle, gives it a report_epi-only key, writes .env.local
 pnpm dev
 ```
 
@@ -75,8 +78,9 @@ To resolve a prediction market on-chain (owner/oracle only), run `pnpm near:reso
 3. **Buy 10 units.** The AMM fills the simulated trade. The wallet then signs:
    - a Solana devnet memo receipt, then
    - a NEAR `record_trade` call whose `chain_ref` stores the Solana signature, so the two chains are linked.
-4. **Entertainment oracle → "Box office beats forecast".** The EPI recalculates (84.3 → 90.6). The server-side
-   **trusted oracle** signs `report_epi` on NEAR, and a toast plus the activity feed link to NearBlocks.
+4. **Entertainment oracle → "Box office beats forecast".** The EPI recalculates (84.3 → 90.6). The browser sends
+   only the event name. The **oracle service** reads the on-chain EPI, applies the event's weighted impact and signs
+   `report_epi` with a key that can call nothing else. A toast and the activity feed link to NearBlocks.
    Simulated traders then reprice the market, the chart rips and the linked prediction odds move.
 5. **ENTX Analyst** shows a transparent rule-based signal. Every factor and weight is visible. It only
    recommends and never trades.
@@ -121,13 +125,28 @@ To resolve a prediction market on-chain (owner/oracle only), run `pnpm near:reso
 | `new(owner_id)` | deployer | init; owner is the first trusted oracle |
 | `register_markets(markets)` | owner | asset + prediction registry (id, kind, title, ticker, EPI) |
 | `add_oracle(account_id)` | owner | allow-list another EPI reporter |
-| `report_epi(market_id, epi_x10, note)` | anyone | stored with `trusted` flag; only oracles move canonical EPI |
-| `record_trade(market_id, side, qty_micro, price_micro, chain_ref?)` | any trader | notarised receipt + market volume |
+| `report_epi(market_id, epi_x10, note)` *payable* | anyone | oracles move canonical EPI; others file untrusted reports and pay storage |
+| `record_trade(market_id, side, qty_micro, price_micro, chain_ref?)` *payable* | any trader | notarised receipt; caller pays storage (~0.003–0.008 Ⓝ), excess refunded |
 | `stake(market_id, outcome)` *payable* | any trader | parimutuel YES/NO pool, min 0.01 NEAR |
 | `resolve(market_id, outcome)` | oracle | settle prediction market |
 | `claim(market_id)` | stakers | payout = stake × total / winning pool (U256 math; refunds if nobody won) |
 
 All state changes emit NEP-297 `EVENT_JSON` logs (`standard: "entx"`).
+
+### Security model
+
+- **Storage is caller-paid.** `record_trade` and untrusted `report_epi` measure the storage they add and require
+  a deposit to cover it, refunding any excess. Spam costs the spammer, not the contract.
+- **Bounded reads.** Receipts and EPI reports are indexed per account and per market (count + keyed entries).
+  Every view is paginated (`limit` ≤ 50, `before` cursor), so no view scans global history.
+- **Least-privilege oracle.** The server signs with a separate oracle account's **function-call access key**,
+  limited to `report_epi` on the ENTX contract with a 1 NEAR gas allowance. It cannot `resolve` markets, touch
+  stakes or transfer funds (verified on testnet: `Access key does not allow method resolve`).
+- **Clients can't choose oracle values.** `/api/oracle` accepts only `{assetId, eventId}` from a fixed event
+  catalogue. The server derives the new EPI from the current on-chain value. It requires a same-origin request
+  and is rate-limited per IP and globally.
+- **Honest limitation.** Oracle *events* are still simulated (demo buttons), and there's a single trusted
+  reporter. See the roadmap for a multi-source quorum.
 
 ### Code map
 
@@ -141,7 +160,7 @@ src/lib/near-config.ts           RPC view helper, contract types
 src/lib/solana.ts                Solana memo receipts + devnet airdrop
 src/lib/receipts.ts              Solana → NEAR linked receipt flow
 src/lib/analyst.ts               explainable signal engine
-src/app/api/oracle/route.ts      trusted oracle signer (report_epi)
+src/app/api/oracle/route.ts      oracle service (server-derived EPI, FC-key signer)
 src/app/api/intents/quote/route.ts  1Click dry-run proxy
 scripts/near-deploy.sh           one-command testnet deploy
 ```
@@ -153,7 +172,7 @@ See [`.env.example`](.env.example). All variables are optional.
 | Var | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_NEAR_CONTRACT` | contract to use (defaults to the shared testnet deployment) |
-| `NEAR_ORACLE_ACCOUNT` / `NEAR_ORACLE_PRIVATE_KEY` | server-only trusted oracle signer (testnet) |
+| `NEAR_ORACLE_ACCOUNT` / `NEAR_ORACLE_PRIVATE_KEY` | server-only oracle signer: a function-call key limited to `report_epi` (testnet) |
 | `NEXT_PUBLIC_SOLANA_RPC`, `NEXT_PUBLIC_NEAR_RPC` | RPC overrides |
 | `ONECLICK_JWT` | 1Click API key (lower fee tier; quotes work without it) |
 

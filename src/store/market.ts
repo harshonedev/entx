@@ -222,17 +222,18 @@ function appendCandle(list: Candle[], price: number): Candle[] {
 }
 
 /** Ask the trusted oracle service to publish the new EPI on the NEAR contract (report_epi). */
-async function publishToNear(assetId: string, epi: number, note: string) {
+async function publishToNear(assetId: string, eventId: string) {
   if (typeof window === "undefined") return;
   try {
     const res = await fetch("/api/oracle", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ assetId, epi, note }),
+      body: JSON.stringify({ assetId, eventId }),
     });
-    const json = (await res.json()) as { hash?: string; error?: string };
+    const json = (await res.json()) as { hash?: string; error?: string; epi?: number; from?: number };
     if (!res.ok || !json.hash) return;
     const hash = json.hash;
+    const epi = json.epi ?? 0;
     const a = ASSET_BY_ID[assetId];
     const st = useMarket.getState();
     useMarket.setState({
@@ -242,7 +243,7 @@ async function publishToNear(assetId: string, epi: number, note: string) {
         tone: "neutral",
         refId: assetId,
         href: `https://testnet.nearblocks.io/txns/${hash}`,
-        text: `NEAR · oracle published ${a.ticker} EPI ${epi.toFixed(1)} on-chain (report_epi)`,
+        text: `NEAR · oracle published ${a.ticker} EPI ${json.from?.toFixed(1)} → ${epi.toFixed(1)} on-chain (report_epi)`,
       }),
     });
     st.toast({
@@ -447,7 +448,7 @@ export const useMarket = create<Store>()(
           tone: up ? "up" : "down",
           href: `/asset/${assetId}`,
         });
-        void publishToNear(assetId, epi, ev.label);
+        void publishToNear(assetId, ev.id);
       },
 
       randomOracle: () => {

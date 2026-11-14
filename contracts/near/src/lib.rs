@@ -2,17 +2,23 @@
 //!
 //! - Market registry: every ENTX movie/show asset and prediction market has an on-chain record.
 //! - EPI oracle: Entertainment Popularity Index updates are published on-chain with the reporter account.
-//!   Reports from allow-listed oracle accounts are marked `trusted`.
-//! - Trade receipts: simulated ENTX spot trades are notarised on-chain, optionally cross-referencing the
-//!   Solana devnet signature of the same trade (`chain_ref`).
-//! - Prediction markets: real parimutuel YES/NO staking with attached NEAR, resolution by the owner or an
-//!   oracle, and pro-rata claims. Funds are held by the contract only until a market resolves.
+//!   Reports from allow-listed oracle accounts are `trusted` and move the canonical EPI; anyone else may
+//!   file an untrusted report but must pay for the storage it uses.
+//! - Trade receipts: simulated ENTX spot trades are notarised on-chain (caller pays storage), optionally
+//!   cross-referencing the Solana devnet signature of the same trade (`chain_ref`).
+//! - Prediction markets: real parimutuel YES/NO staking with attached NEAR, resolution by an oracle,
+//!   and pro-rata claims.
+//!
+//! Storage safety: every user-writable record is paid for by the caller (deposit, excess refunded), and
+//! history is indexed per market / per account so views never scan unbounded global lists.
 
 use near_sdk::store::{IterableMap, LookupMap, Vector};
 use near_sdk::{env, near, require, AccountId, NearToken, PanicOnDefault, Promise};
 
 pub const MIN_STAKE: NearToken = NearToken::from_millinear(10); // 0.01 NEAR
 const MAX_STR: usize = 96;
+const MAX_REF: usize = 128;
+const MAX_PAGE: u32 = 50;
 
 uint::construct_uint! {
     pub struct U256(4);
@@ -51,7 +57,7 @@ pub struct Market {
     /// Notional of notarised trades, in micro-USD (simulated).
     pub volume_micro_usd: u64,
     pub oracle_updates: u32,
-    /// Parimutuel pools in yoctoNEAR (prediction markets only), as strings for JSON safety.
+    /// Parimutuel pools (prediction markets only).
     pub yes_pool: NearToken,
     pub no_pool: NearToken,
 }
@@ -117,9 +123,15 @@ pub struct Entx {
     owner: AccountId,
     oracles: Vec<AccountId>,
     markets: IterableMap<String, Market>,
+    /// Global append-only receipt log (O(1) push, paginated reads from the tail).
     receipts: Vector<Receipt>,
-    receipts_by_account: LookupMap<AccountId, Vec<u64>>,
-    epi_reports: Vector<EpiReport>,
+    /// Per-account receipt index: count + "{account}#{i}" -> receipt id.
+    account_receipt_count: LookupMap<AccountId, u32>,
+    account_receipts: LookupMap<String, u64>,
+    /// Per-market EPI report index: count + "{market}#{i}" -> report.
+    market_report_count: LookupMap<String, u32>,
+    market_reports: LookupMap<String, EpiReport>,
+    epi_report_total: u64,
     stakes: LookupMap<String, Stake>,
     total_staked: NearToken,
 }
@@ -128,16 +140,23 @@ fn stake_key(market_id: &str, account: &AccountId) -> String {
     format!("{market_id}:{account}")
 }
 
+fn idx_key(scope: &str, i: u32) -> String {
+    format!("{scope}#{i}")
+}
+
 fn emit(event: &str, data: String) {
     env::log_str(&format!(
         r#"EVENT_JSON:{{"standard":"entx","version":"1.0.0","event":"{event}","data":[{data}]}}"#
     ));
 }
 
-fn clean(s: String) -> String {
-    let mut s: String = s.chars().filter(|c| *c != '"' && *c != '\\').collect();
-    s.truncate(MAX_STR);
-    s
+/// Strips JSON-breaking characters and truncates on a char boundary.
+fn clean(s: String, max: usize) -> String {
+    s.chars().filter(|c| *c != '"' && *c != '\\' && !c.is_control()).take(max).collect()
+}
+
+fn valid_id(id: &str) -> bool {
+    !id.is_empty() && id.len() <= 64 && id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
 #[near]
@@ -149,14 +168,17 @@ impl Entx {
             oracles: vec![owner_id],
             markets: IterableMap::new(b"m"),
             receipts: Vector::new(b"r"),
-            receipts_by_account: LookupMap::new(b"a"),
-            epi_reports: Vector::new(b"e"),
+            account_receipt_count: LookupMap::new(b"c"),
+            account_receipts: LookupMap::new(b"a"),
+            market_report_count: LookupMap::new(b"n"),
+            market_reports: LookupMap::new(b"e"),
+            epi_report_total: 0,
             stakes: LookupMap::new(b"s"),
             total_staked: NearToken::from_yoctonear(0),
         }
     }
 
-    // ---------- admin ----------
+    // ---------- internal ----------
 
     fn assert_owner(&self) {
         require!(env::predecessor_account_id() == self.owner, "Only owner");
@@ -165,6 +187,35 @@ impl Entx {
     fn is_oracle(&self, a: &AccountId) -> bool {
         self.oracles.contains(a)
     }
+
+    /// Writes pending collection changes so `env::storage_usage()` reflects them.
+    fn flush_all(&mut self) {
+        self.markets.flush();
+        self.receipts.flush();
+        self.account_receipt_count.flush();
+        self.account_receipts.flush();
+        self.market_report_count.flush();
+        self.market_reports.flush();
+        self.stakes.flush();
+    }
+
+    /// Charges the caller for storage added since `before`; refunds any excess deposit.
+    fn charge_storage(&mut self, before: u64) {
+        self.flush_all();
+        let used = env::storage_usage().saturating_sub(before) as u128;
+        let cost = env::storage_byte_cost().saturating_mul(used);
+        let attached = env::attached_deposit();
+        require!(
+            attached >= cost,
+            format!("Attach at least {} yoctoNEAR to cover storage", cost.as_yoctonear())
+        );
+        let refund = attached.saturating_sub(cost);
+        if !refund.is_zero() {
+            Promise::new(env::predecessor_account_id()).transfer(refund).detach();
+        }
+    }
+
+    // ---------- admin ----------
 
     pub fn add_oracle(&mut self, account_id: AccountId) {
         self.assert_owner();
@@ -177,14 +228,15 @@ impl Entx {
         self.assert_owner();
         let mut n = 0;
         for m in markets {
+            require!(valid_id(&m.id), "Market id must be [a-z0-9-], max 64 chars");
             if self.markets.contains_key(&m.id) {
                 continue;
             }
             let market = Market {
-                id: clean(m.id),
+                id: m.id,
                 kind: m.kind,
-                title: clean(m.title),
-                ticker: clean(m.ticker),
+                title: clean(m.title, MAX_STR),
+                ticker: clean(m.ticker, 12),
                 epi_x10: m.epi_x10.min(1000),
                 status: MarketStatus::Open,
                 created_at_ms: env::block_timestamp_ms(),
@@ -206,9 +258,11 @@ impl Entx {
 
     // ---------- oracle ----------
 
-    /// Publish an EPI update. Anyone may report (demo), but only allow-listed oracles move the
-    /// market's canonical EPI; other reports are stored as untrusted signals.
+    /// Publish an EPI update. Allow-listed oracles move the canonical EPI (contract pays their storage).
+    /// Anyone else may file an untrusted report, but must attach a deposit covering its storage.
+    #[payable]
     pub fn report_epi(&mut self, market_id: String, epi_x10: u32, note: String) -> bool {
+        let before = env::storage_usage();
         let reporter = env::predecessor_account_id();
         let trusted = self.is_oracle(&reporter);
         let epi_x10 = epi_x10.min(1000);
@@ -217,26 +271,38 @@ impl Entx {
             market.epi_x10 = epi_x10;
         }
         market.oracle_updates += 1;
-        let note = clean(note);
+        let note = clean(note, MAX_STR);
         emit(
             "epi_report",
             format!(
                 r#"{{"market_id":"{market_id}","reporter":"{reporter}","trusted":{trusted},"epi_x10":{epi_x10},"note":"{note}"}}"#
             ),
         );
-        self.epi_reports.push(EpiReport {
-            market_id,
-            reporter,
-            trusted,
-            epi_x10,
-            note,
-            ts_ms: env::block_timestamp_ms(),
-        });
+        let i = self.market_report_count.get(&market_id).copied().unwrap_or(0);
+        self.market_reports.insert(
+            idx_key(&market_id, i),
+            EpiReport {
+                market_id: market_id.clone(),
+                reporter,
+                trusted,
+                epi_x10,
+                note,
+                ts_ms: env::block_timestamp_ms(),
+            },
+        );
+        self.market_report_count.insert(market_id, i + 1);
+        self.epi_report_total += 1;
+
+        if !trusted {
+            self.charge_storage(before);
+        }
         trusted
     }
 
     // ---------- trade receipts ----------
 
+    /// Notarise a trade. The caller pays for the storage it adds (attach 0.01 NEAR; excess is refunded).
+    #[payable]
     pub fn record_trade(
         &mut self,
         market_id: String,
@@ -245,6 +311,7 @@ impl Entx {
         price_micro: u64,
         chain_ref: Option<String>,
     ) -> u64 {
+        let before = env::storage_usage();
         require!(
             matches!(side.as_str(), "BUY" | "SELL" | "YES" | "NO"),
             "side must be BUY, SELL, YES or NO"
@@ -253,15 +320,11 @@ impl Entx {
         let account = env::predecessor_account_id();
         let market = self.markets.get_mut(&market_id).unwrap_or_else(|| env::panic_str("Unknown market"));
         market.trades += 1;
-        let notional = (qty_micro as u128 * price_micro as u128 / 1_000_000) as u64;
+        let notional = (qty_micro as u128 * price_micro as u128 / 1_000_000).min(u64::MAX as u128) as u64;
         market.volume_micro_usd = market.volume_micro_usd.saturating_add(notional);
 
         let id = self.receipts.len() as u64;
-        let chain_ref = chain_ref.map(|c| {
-            let mut c = clean(c);
-            c.truncate(128);
-            c
-        });
+        let chain_ref = chain_ref.map(|c| clean(c, MAX_REF));
         emit(
             "trade",
             format!(
@@ -278,9 +341,11 @@ impl Entx {
             ts_ms: env::block_timestamp_ms(),
             chain_ref,
         });
-        let mut ids = self.receipts_by_account.get(&account).cloned().unwrap_or_default();
-        ids.push(id);
-        self.receipts_by_account.insert(account, ids);
+        let n = self.account_receipt_count.get(&account).copied().unwrap_or(0);
+        self.account_receipts.insert(idx_key(account.as_str(), n), id);
+        self.account_receipt_count.insert(account, n + 1);
+
+        self.charge_storage(before);
         id
     }
 
@@ -365,14 +430,14 @@ impl Entx {
         Promise::new(account).transfer(NearToken::from_yoctonear(payout))
     }
 
-    // ---------- views ----------
+    // ---------- views (all bounded) ----------
 
     pub fn get_stats(&self) -> Stats {
         Stats {
             owner: self.owner.clone(),
             markets: self.markets.len(),
             receipts: self.receipts.len() as u64,
-            epi_reports: self.epi_reports.len() as u64,
+            epi_reports: self.epi_report_total,
             total_staked: self.total_staked,
         }
     }
@@ -389,40 +454,38 @@ impl Entx {
         self.markets
             .values()
             .skip(from_index.unwrap_or(0) as usize)
-            .take(limit.unwrap_or(50).min(100) as usize)
+            .take(limit.unwrap_or(MAX_PAGE).min(100) as usize)
             .cloned()
             .collect()
     }
 
-    pub fn get_receipts_for(&self, account_id: AccountId, limit: Option<u32>) -> Vec<Receipt> {
-        let ids = self.receipts_by_account.get(&account_id).cloned().unwrap_or_default();
-        ids.iter()
+    /// Newest-first receipts for one account. `before` is an exclusive per-account index for paging.
+    pub fn get_receipts_for(&self, account_id: AccountId, limit: Option<u32>, before: Option<u32>) -> Vec<Receipt> {
+        let n = self.account_receipt_count.get(&account_id).copied().unwrap_or(0);
+        let end = before.unwrap_or(n).min(n);
+        let take = limit.unwrap_or(25).min(MAX_PAGE).min(end);
+        (end - take..end)
             .rev()
-            .take(limit.unwrap_or(25).min(100) as usize)
-            .filter_map(|i| self.receipts.get(*i as u32).cloned())
+            .filter_map(|i| self.account_receipts.get(&idx_key(account_id.as_str(), i)))
+            .filter_map(|id| self.receipts.get(*id as u32).cloned())
             .collect()
     }
 
     pub fn get_recent_receipts(&self, limit: Option<u32>) -> Vec<Receipt> {
         let n = self.receipts.len();
-        let take = limit.unwrap_or(25).min(100).min(n);
+        let take = limit.unwrap_or(25).min(MAX_PAGE).min(n);
         (n - take..n).rev().filter_map(|i| self.receipts.get(i).cloned()).collect()
     }
 
-    pub fn get_epi_reports(&self, market_id: String, limit: Option<u32>) -> Vec<EpiReport> {
-        let n = self.epi_reports.len();
-        let limit = limit.unwrap_or(20).min(100) as usize;
-        let mut out = Vec::new();
-        let mut i = n;
-        while i > 0 && out.len() < limit {
-            i -= 1;
-            if let Some(r) = self.epi_reports.get(i) {
-                if r.market_id == market_id {
-                    out.push(r.clone());
-                }
-            }
-        }
-        out
+    /// Newest-first EPI reports for one market. `before` is an exclusive per-market index for paging.
+    pub fn get_epi_reports(&self, market_id: String, limit: Option<u32>, before: Option<u32>) -> Vec<EpiReport> {
+        let n = self.market_report_count.get(&market_id).copied().unwrap_or(0);
+        let end = before.unwrap_or(n).min(n);
+        let take = limit.unwrap_or(20).min(MAX_PAGE).min(end);
+        (end - take..end)
+            .rev()
+            .filter_map(|i| self.market_reports.get(&idx_key(&market_id, i)).cloned())
+            .collect()
     }
 
     pub fn get_stake(&self, market_id: String, account_id: AccountId) -> Option<Stake> {
@@ -433,7 +496,7 @@ impl Entx {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use near_sdk::test_utils::{accounts, VMContextBuilder};
+    use near_sdk::test_utils::{accounts, get_created_receipts, VMContextBuilder};
     use near_sdk::testing_env;
 
     fn ctx(who: usize, deposit: NearToken) {
@@ -441,6 +504,8 @@ mod tests {
         b.predecessor_account_id(accounts(who)).attached_deposit(deposit);
         testing_env!(b.build());
     }
+
+    const RECEIPT_DEPOSIT: NearToken = NearToken::from_millinear(10);
 
     fn setup() -> Entx {
         ctx(0, NearToken::from_yoctonear(0));
@@ -467,7 +532,7 @@ mod tests {
     #[test]
     fn registers_and_records_trades() {
         let mut c = setup();
-        ctx(1, NearToken::from_yoctonear(0));
+        ctx(1, RECEIPT_DEPOSIT);
         let id = c.record_trade(
             "dune-drift".into(),
             "BUY".into(),
@@ -476,23 +541,65 @@ mod tests {
             Some("solana:devnet:abc".into()),
         );
         assert_eq!(id, 0);
+        ctx(1, RECEIPT_DEPOSIT);
+        c.record_trade("dune-drift".into(), "SELL".into(), 5_000_000, 13_000_000, None);
         let m = c.get_market("dune-drift".into()).unwrap();
-        assert_eq!(m.trades, 1);
-        assert_eq!(m.volume_micro_usd, 124_000_000);
-        assert_eq!(c.get_receipts_for(accounts(1), None).len(), 1);
-        assert_eq!(c.get_recent_receipts(None)[0].chain_ref.as_deref(), Some("solana:devnet:abc"));
+        assert_eq!(m.trades, 2);
+        let mine = c.get_receipts_for(accounts(1), None, None);
+        assert_eq!(mine.len(), 2);
+        assert_eq!(mine[0].side, "SELL"); // newest first
+        assert_eq!(c.get_receipts_for(accounts(1), Some(1), Some(1))[0].side, "BUY"); // paging
+        assert_eq!(c.get_recent_receipts(None)[1].chain_ref.as_deref(), Some("solana:devnet:abc"));
+    }
+
+    #[test]
+    fn record_trade_refunds_excess_deposit() {
+        let mut c = setup();
+        ctx(1, RECEIPT_DEPOSIT);
+        c.record_trade("dune-drift".into(), "BUY".into(), 1, 1, None);
+        // one refund transfer back to the caller
+        assert_eq!(get_created_receipts().len(), 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "to cover storage")]
+    fn record_trade_requires_storage_deposit() {
+        let mut c = setup();
+        ctx(1, NearToken::from_yoctonear(0));
+        c.record_trade("dune-drift".into(), "BUY".into(), 1, 1, None);
+    }
+
+    #[test]
+    #[should_panic(expected = "to cover storage")]
+    fn untrusted_report_requires_storage_deposit() {
+        let mut c = setup();
+        ctx(2, NearToken::from_yoctonear(0));
+        c.report_epi("dune-drift".into(), 906, "rumour".into());
     }
 
     #[test]
     fn only_trusted_oracle_moves_epi() {
         let mut c = setup();
-        ctx(2, NearToken::from_yoctonear(0));
+        ctx(2, RECEIPT_DEPOSIT);
         assert!(!c.report_epi("dune-drift".into(), 906, "rumour".into()));
         assert_eq!(c.get_market("dune-drift".into()).unwrap().epi_x10, 843);
-        ctx(0, NearToken::from_yoctonear(0));
+        ctx(0, NearToken::from_yoctonear(0)); // trusted oracle: contract pays storage
         assert!(c.report_epi("dune-drift".into(), 906, "box office beat".into()));
         assert_eq!(c.get_market("dune-drift".into()).unwrap().epi_x10, 906);
-        assert_eq!(c.get_epi_reports("dune-drift".into(), None).len(), 2);
+        let reports = c.get_epi_reports("dune-drift".into(), None, None);
+        assert_eq!(reports.len(), 2);
+        assert!(reports[0].trusted); // newest first
+        assert_eq!(c.get_epi_reports("drift-opening-250".into(), None, None).len(), 0);
+        assert_eq!(c.get_stats().epi_reports, 2);
+    }
+
+    #[test]
+    fn notes_truncate_on_char_boundary() {
+        let mut c = setup();
+        ctx(0, NearToken::from_yoctonear(0));
+        c.report_epi("dune-drift".into(), 900, "🎬".repeat(200));
+        let r = &c.get_epi_reports("dune-drift".into(), None, None)[0];
+        assert_eq!(r.note.chars().count(), MAX_STR);
     }
 
     #[test]
@@ -505,7 +612,7 @@ mod tests {
         ctx(0, NearToken::from_yoctonear(0));
         c.resolve("drift-opening-250".into(), true);
         ctx(1, NearToken::from_yoctonear(0));
-        c.claim("drift-opening-250".into());
+        let _ = c.claim("drift-opening-250".into());
         let s = c.get_stake("drift-opening-250".into(), accounts(1)).unwrap();
         assert!(s.claimed);
         // winner takes the whole 4 NEAR pool
@@ -526,5 +633,19 @@ mod tests {
         let mut c = setup();
         ctx(1, NearToken::from_near(1));
         c.stake("dune-drift".into(), true);
+    }
+
+    #[test]
+    #[should_panic(expected = "Market id must be")]
+    fn rejects_bad_market_ids() {
+        let mut c = setup();
+        ctx(0, NearToken::from_yoctonear(0));
+        c.register_markets(vec![MarketInput {
+            id: "bad#id".into(),
+            kind: MarketKind::Asset,
+            title: "x".into(),
+            ticker: "X".into(),
+            epi_x10: 0,
+        }]);
     }
 }

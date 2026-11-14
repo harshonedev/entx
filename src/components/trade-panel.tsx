@@ -145,7 +145,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
       >
         <ShieldCheck size={14} className={clsx("mt-0.5 shrink-0", connected ? "text-sol" : "text-faint")} />
         {connected
-          ? `Each trade's receipt will be signed and written to ${[receipts.active.solana && "Solana devnet (Memo)", receipts.active.near && "NEAR testnet (record_trade)"].filter(Boolean).join(" + ")}. Prices remain simulated.`
+          ? `Each trade's receipt will be signed and written to ${[receipts.active.solana && "Solana devnet (Memo)", receipts.active.near && "NEAR testnet (record_trade, 0.01 Ⓝ storage deposit, excess refunded)"].filter(Boolean).join(" + ")}. Prices remain simulated.`
           : "Connect a Solana and/or NEAR wallet to write a verifiable receipt of each trade on-chain. Trading works without it."}
       </div>
     </div>
