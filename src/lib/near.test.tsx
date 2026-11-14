@@ -171,6 +171,14 @@ describe("useNearNotarize", () => {
     expect(useMarket.getState().toasts.at(-1)).toMatchObject({ title: "NEAR receipt not recorded", tone: "down" });
   });
 
+  it("marks failed when the wallet resolves without a transaction (nothing reached the chain)", async () => {
+    const r = await setup();
+    signAndSendTransaction.mockResolvedValue(undefined);
+    await act(() => r.current.notarize(trade()));
+    expect(useMarket.getState().trades[0].nearStatus).toBe("failed");
+    expect(useMarket.getState().toasts.at(-1)).toMatchObject({ title: "NEAR receipt not recorded", tone: "down" });
+  });
+
   it("no-op without a connected account", async () => {
     connector.getConnectedWallet.mockRejectedValue(new Error("none"));
     const { result } = renderHook(() => ({ notarize: useNearNotarize(), near: useNear() }), { wrapper });

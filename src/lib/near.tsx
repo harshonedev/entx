@@ -92,7 +92,11 @@ export function NearProvider({ children }: { children: ReactNode }) {
       if (status && typeof status === "object" && "Failure" in (status as object)) {
         throw new Error(JSON.stringify((status as { Failure: unknown }).Failure).slice(0, 160));
       }
-      return out?.transaction?.hash ?? out?.transaction_outcome?.id ?? "";
+      const hash = out?.transaction?.hash ?? out?.transaction_outcome?.id;
+      // Some wallet executors resolve without signing (e.g. their approval window never opened).
+      // No hash means nothing reached the chain, so never report it as recorded.
+      if (!hash) throw new Error("Wallet returned no transaction; nothing was sent");
+      return hash;
     },
     [accountId],
   );
