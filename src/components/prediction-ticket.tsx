@@ -81,7 +81,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
 
   if (st.resolved) {
     return (
-      <div className="panel p-4">
+      <div className="panel ticket p-4">
         <div className="label">Outcome</div>
         <div className={clsx("mt-1 text-2xl font-semibold", st.resolved === "YES" ? "text-up" : "text-down")}>
           Settled {st.resolved}
@@ -95,7 +95,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
   }
 
   return (
-    <div className="panel p-4">
+    <div className="panel ticket p-4">
       <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="Outcome">
         {(["YES", "NO"] as const).map((s) => {
           const px = s === "YES" ? yp : 1 - yp;
@@ -107,18 +107,18 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
               aria-pressed={on}
               aria-label={`${s === "YES" ? "Yes" : "No"} at ${(px * 100).toFixed(1)} cents`}
               className={clsx(
-                "cursor-pointer flex h-12 items-center justify-center gap-2 rounded text-[13.5px] font-semibold transition-colors",
+                "cond cursor-pointer flex h-12 items-center justify-center gap-2 border text-[18px] font-bold uppercase tracking-[0.06em] transition-colors",
                 on
                   ? s === "YES"
-                    ? "bg-up text-black"
-                    : "bg-down text-black"
+                    ? "border-up bg-up text-white"
+                    : "border-down bg-down text-white"
                   : s === "YES"
-                    ? "bg-up/[0.08] text-up hover:bg-up/[0.14]"
-                    : "bg-down/[0.08] text-down hover:bg-down/[0.14]",
+                    ? "border-up text-up hover:bg-up/[0.08]"
+                    : "border-down text-down hover:bg-down/[0.08]",
               )}
             >
               {s === "YES" ? "Yes" : "No"}
-              <span className="num font-normal opacity-80">
+              <span className="num font-semibold opacity-90">
                 <Flash value={px}>{cents(px)}</Flash>
               </span>
             </button>
@@ -160,7 +160,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
         ))}
       </div>
 
-      <dl className="mt-4 space-y-1.5 text-xs">
+      <dl className="kv-dotted mt-4 text-xs">
         <Row k={`${side} price now = chance of ${side}`} v={cents(price)} />
         <Row k="Avg price per share" v={amount > 0 ? cents(q.avg) : "—"} />
         <Row k="Shares" v={amount > 0 ? num(q.shares, 1) : "—"} />
@@ -212,8 +212,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
           disabled={reason !== null}
           onClick={place}
           className={clsx(
-            "cursor-pointer mt-4 h-12 w-full rounded text-[13.5px] font-semibold text-black hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40",
-            side === "YES" ? "bg-up" : "bg-down",
+            "btn-primary cursor-pointer mt-4 h-12 w-full text-[18px] disabled:cursor-not-allowed disabled:opacity-40",
           )}
         >
           {reason ?? `Bet ${usd(amount, amount % 1 ? 2 : 0)} on ${side === "YES" ? "Yes" : "No"}`}

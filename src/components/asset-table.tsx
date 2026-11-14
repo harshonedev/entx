@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { releaseInfo } from "@/lib/release";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { AssetSeed } from "@/lib/assets";
 import { change24h, priceOf, useMarket, type MarketState } from "@/store/market";
@@ -137,6 +138,7 @@ export function AssetTable({
           <tr className="th-chart text-left">
             <th className="w-12 py-2 pl-4 text-center" title="Position in this list">Rank</th>
             <th className="py-2 pl-3">Title</th>
+            <th className="hidden py-2 pl-4 text-right xl:table-cell" title="Weeks since release or premiere">Wks</th>
             {sortTh("price", "Price", "right")}
             {sortTh("change", "24h", "right")}
             {sortTh("epi", "EPI", "left")}
@@ -168,6 +170,7 @@ export function AssetTable({
                     </div>
                   </Link>
                 </td>
+                <td className="num hidden py-2.5 pl-4 text-right text-muted xl:table-cell">{weeksOut(a)}</td>
                 <td className="num py-2.5 text-right font-medium">
                   <Flash value={price}>{usd(price)}</Flash>
                 </td>
@@ -198,4 +201,10 @@ export function AssetTable({
     </div>
     </>
   );
+}
+
+/** Weeks since release or premiere (1 in the first week), or an en dash before release. */
+function weeksOut(a: AssetSeed) {
+  const r = releaseInfo(a);
+  return r.days < 0 ? "–" : String(Math.floor(r.days / 7) + 1);
 }

@@ -213,6 +213,21 @@ body {
   .btn-primary:not(:disabled):hover { background: #2c2c2c; }
 }
 
+/* Ticket: white paper on the newsprint, dotted hairlines between its key/value rows. */
+.ticket {
+  background: #ffffff;
+}
+.kv-dotted > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+.kv-dotted > div + div {
+  border-top: 1px dotted var(--line-2);
+}
+
 /* The oracle wire: a red-ruled news line. */
 .wire {
   border-left: 4px solid var(--accent);

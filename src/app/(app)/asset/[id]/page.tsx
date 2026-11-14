@@ -52,15 +52,15 @@ export default function AssetPage() {
       <section className="panel flex flex-wrap items-start gap-5 p-4 sm:p-5">
         <Poster asset={asset} size="md" />
         <div className="min-w-0 flex-1 basis-64">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-sm bg-panel-2 px-1.5 py-0.5 text-xs font-medium text-text">{asset.ticker}</span>
+          <h1 className="h-display">{asset.title}</h1>
+          <p className="mt-1 text-sm text-muted">{asset.tagline}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="cond border border-ink px-1.5 text-[14px] font-bold tracking-[0.04em] text-text">{asset.ticker}</span>
             <span className="text-xs text-muted">
               {asset.kind === "movie" ? "Movie" : "Show"} · {asset.genre} · {asset.studio} · {asset.status} ·{" "}
               {releaseInfo(asset).label}
             </span>
           </div>
-          <h1 className="h-display mt-2">{asset.title}</h1>
-          <p className="mt-0.5 text-sm text-muted">{asset.tagline}</p>
           <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs">
             <Stat k="24h volume" source="Simulated">
               <span className="num">{compactUsd(m.volume24h)}</span>

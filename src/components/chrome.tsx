@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useRef, useState, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { X } from "lucide-react";
@@ -17,6 +18,8 @@ export function TickerTape() {
   const markets = useMarket((s) => s.markets);
   const [active, setActive] = useState(0);
   const links = useRef<(HTMLAnchorElement | null)[]>([]);
+  // The board on /markets already lists every price; the strip would only repeat it there.
+  const onBoard = usePathname() === "/markets";
 
   const onKeyDown = (e: KeyboardEvent<HTMLUListElement>) => {
     const last = ASSETS.length - 1;
@@ -31,6 +34,8 @@ export function TickerTape() {
     setActive(next);
     links.current[next]?.focus();
   };
+
+  if (onBoard) return null;
 
   return (
     <nav aria-label="Market prices" aria-describedby="ticker-hint" className="w-full border-b border-line bg-panel">

@@ -11,7 +11,8 @@ import { AssetTable } from "@/components/asset-table";
 import { ReleaseClock } from "@/components/release-clock";
 import { LiveFeed } from "@/components/chrome";
 import { Poster } from "@/components/poster";
-import { ContractProofStrip } from "@/components/onchain-epi";
+import { ContractProofStrip, useContractFacts } from "@/components/onchain-epi";
+import { NEAR_CONTRACT, nearAccountUrl } from "@/lib/near-config";
 import { Change, SimBadge } from "@/components/ui";
 import { CHAIN, CHAIN_LABEL, CHAIN_ON, IS_LIVE } from "@/lib/env";
 
@@ -55,19 +56,27 @@ export default function Discover() {
 
   return (
     <div className="space-y-6">
-      {/* Lead: masthead (what ENTX is), the oracle wire (why prices move), the trade action, then chain proof. */}
-      <div className="space-y-4">
+      {/* Lead: a chart masthead and the oracle wire (why prices move); the board starts right under them. */}
+      <div className="space-y-3">
         <section className="masthead">
           <div className="min-w-0">
-            <h1 className="h-display">
-              Entertainment, <span className="text-accent">now tradable.</span>
-            </h1>
-            <p className="mt-3 max-w-[64ch] text-pretty text-sm leading-relaxed text-muted">
-              Movies and shows trade like assets. Prices react to box office, TMDB popularity, audience votes and
-              audience ratings, rolled into one live score: the Entertainment Popularity Index (EPI).
+            <h1 className="h-display">Entertainment, now tradable.</h1>
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+              {IS_LIVE ? (
+                <>
+                  <SimBadge>Live · testnet</SimBadge>
+                  Titles and EPI inputs are real TMDB data; prediction pools are real on-chain state; asset prices are a
+                  simulated preview.
+                </>
+              ) : (
+                <>
+                  <SimBadge>Hackathon demo</SimBadge>
+                  Prices and trades are simulated. The {CHAIN_LABEL[CHAIN]} records are real on-chain state.
+                </>
+              )}
             </p>
           </div>
-          <div className="flex flex-col items-start gap-1 text-xs leading-relaxed text-muted sm:items-end sm:text-right">
+          <div className="flex flex-col items-start gap-0.5 text-xs leading-relaxed text-muted sm:items-end sm:text-right">
             <Dateline />
             <span>
               Ranked by 24h volume · Prices <span className="font-semibold text-text">simulated</span>
@@ -76,51 +85,6 @@ export default function Discover() {
         </section>
 
         <OracleWire />
-
-        <section className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3">
-          <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
-            {IS_LIVE ? (
-              <>
-                <SimBadge>Live · testnet</SimBadge>
-                Titles and EPI inputs are real TMDB data. Prediction pools are real on-chain state. Asset trading is a
-                preview with simulated prices until the shared market launches.
-              </>
-            ) : (
-              <>
-                <SimBadge>Hackathon demo</SimBadge>
-                Prices and trades are simulated. The {CHAIN_LABEL[CHAIN]} records are real on-chain state.
-              </>
-            )}
-          </p>
-          <div className="flex flex-col gap-2">
-            <p className="text-xs text-muted">
-              {spotReason}: <span className="text-text">{spot.title}</span>, EPI{" "}
-              <span className="num text-text">{markets[spot.id].epi.toFixed(1)}</span>
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href={`/asset/${spot.id}`}
-                className="btn-primary cursor-pointer press h-11 px-5 text-[16px]"
-              >
-                Trade {spot.title} <ArrowRight size={16} />
-              </Link>
-              {!IS_LIVE && (
-                <button
-                  onClick={() => {
-                    randomOracle(spot.id);
-                    router.push(`/asset/${spot.id}`);
-                  }}
-                  title={`Fires a simulated news event on ${spot.title} and opens its chart, so you can watch EPI and price react`}
-                  className="cursor-pointer press inline-flex h-11 items-center gap-2 border border-ink px-4 text-[13px] font-medium hover:bg-panel-2"
-                >
-                  <Zap size={15} className="text-accent" /> Watch news move {spot.title}
-                </button>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {CHAIN_ON.near && <ContractProofStrip />}
       </div>
 
       <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -158,9 +122,39 @@ export default function Discover() {
             </button>
           )}
         </div>
+        {CHAIN_ON.near && <ContractProofStrip />}
         </div>
 
         <div className="space-y-4">
+          <div className="panel ticket p-4">
+            <h2 className="h-panel">Spotlight</h2>
+            <p className="mt-1 text-xs text-muted">{spotReason}</p>
+            <Link href={`/asset/${spot.id}`} className="cursor-pointer mt-3 flex items-center gap-3 hover:text-accent">
+              <Poster asset={spot} size="sm" />
+              <span className="min-w-0 flex-1">
+                <span className="cond block truncate text-[20px] font-bold uppercase leading-tight tracking-[0.02em]">{spot.title}</span>
+                <span className="block text-xs text-muted">
+                  {spot.ticker} · EPI <span className="num text-text">{markets[spot.id].epi.toFixed(1)}</span>
+                </span>
+              </span>
+              <span className="num text-sm font-semibold">{usd(priceOf(markets[spot.id]))}</span>
+            </Link>
+            <Link href={`/asset/${spot.id}`} className="btn-primary cursor-pointer press mt-3 h-11 w-full text-[16px]">
+              Trade {spot.title} <ArrowRight size={16} />
+            </Link>
+            {!IS_LIVE && (
+              <button
+                onClick={() => {
+                  randomOracle(spot.id);
+                  router.push(`/asset/${spot.id}`);
+                }}
+                title={`Fires a simulated news event on ${spot.title} and opens its chart, so you can watch EPI and price react`}
+                className="cursor-pointer press mt-2 inline-flex h-11 w-full items-center justify-center gap-2 border border-ink px-4 text-[13px] font-medium hover:bg-panel-2"
+              >
+                <Zap size={15} className="text-accent" /> Watch news move {spot.title}
+              </button>
+            )}
+          </div>
           <MoverList title="Top gainers" items={gainers} empty="Nothing is up today." />
           <MoverList title="Top losers" items={losers} empty="Nothing is down today." />
           <div className="panel p-4">
@@ -228,14 +222,18 @@ function Dateline() {
   return <span className="font-semibold uppercase tracking-[0.06em] text-text">{today ?? "\u00a0"}</span>;
 }
 
-/** The oracle wire: the latest news event that moved a price, so the cause sits above the board. */
+/**
+ * The oracle wire: the latest news event that moved a price, so the cause sits above the board. Before any
+ * simulated news lands, it reports the real oracle activity read from the NEAR contract instead of going blank.
+ */
 function OracleWire() {
   const latest = useMarket((s) => s.feed.find((f) => f.type === "oracle"));
-  if (!latest) return null;
+  const label = <span className="cond text-[14px] font-bold uppercase tracking-[0.08em] text-accent">Oracle wire</span>;
+  if (!latest) return CHAIN_ON.near ? <ChainWire label={label} /> : null;
   const asset = latest.refId ? ASSETS.find((a) => a.id === latest.refId) : undefined;
   return (
     <div role="status" className="wire flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-[13px]">
-      <span className="cond text-[14px] font-bold uppercase tracking-[0.08em] text-accent">Oracle wire</span>
+      {label}
       {asset ? (
         <Link href={`/asset/${asset.id}`} className="cursor-pointer min-w-0 hover:underline">
           {latest.text}
@@ -244,6 +242,34 @@ function OracleWire() {
         <span className="min-w-0">{latest.text}</span>
       )}
       <span className="ml-auto text-xs text-muted">{timeAgo(latest.ts)} · simulated</span>
+    </div>
+  );
+}
+
+/** Wire line from NEAR testnet: how many EPI reports the trusted oracle published, and the most-reported title. */
+function ChainWire({ label }: { label: React.ReactNode }) {
+  const { status, stats, markets } = useContractFacts();
+  const top = markets?.filter((m) => m.oracle_updates > 0).sort((a, b) => b.oracle_updates - a.oracle_updates)[0];
+  return (
+    <div className="wire flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-[13px]">
+      {label}
+      <span className="min-w-0">
+        {status === "loading"
+          ? "Reading the latest oracle reports from NEAR testnet…"
+          : status === "error" || !stats
+            ? "Oracle reports are on NEAR testnet; live counts are unavailable right now."
+            : `${stats.epi_reports} EPI reports published on-chain by the trusted oracle${
+                top ? `; most reported: ${top.title} (${top.oracle_updates} updates, EPI ${(top.epi_x10 / 10).toFixed(1)}).` : "."
+              }`}
+      </span>
+      <a
+        href={nearAccountUrl(NEAR_CONTRACT)}
+        target="_blank"
+        rel="noreferrer"
+        className="cursor-pointer ml-auto text-xs text-near hover:underline"
+      >
+        On NEAR testnet ↗
+      </a>
     </div>
   );
 }

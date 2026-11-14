@@ -65,7 +65,10 @@ export default function PredictionMarketPage() {
       {/* Header */}
       <section className="panel flex flex-wrap items-center gap-x-8 gap-y-5 p-4 sm:p-5">
         <div className="min-w-0 flex-1 basis-[28rem]">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          <h1 className="cond text-balance text-[28px] font-bold leading-[1.02] sm:text-[38px]">
+            {p.question}
+          </h1>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
             <span className="rounded-sm bg-panel-2 px-1.5 py-0.5 font-medium text-text">{p.category}</span>
             {asset && (
               <Link href={`/asset/${asset.id}`} className="cursor-pointer font-medium hover:text-text">
@@ -78,9 +81,6 @@ export default function PredictionMarketPage() {
             </span>
             <SimBadge />
           </div>
-          <h1 className="cond mt-2 text-balance text-[28px] font-bold leading-[1.02] sm:text-[38px]">
-            {p.question}
-          </h1>
         </div>
         <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
           <div>
