@@ -67,12 +67,22 @@ export default function AssetPage() {
             </Stat>
             <Stat
               k={asset.metric.label}
-              source={unreleased && m.metricValue === 0 ? "Not released yet" : metricMoved ? "TMDB + simulated news" : "TMDB"}
+              // Headline is the real TMDB figure (what markets resolve on); simulated news shows as a change.
+              source={
+                unreleased && m.metricValue === 0
+                  ? "Not released yet"
+                  : metricMoved
+                    ? `TMDB · simulated news ${m.metricValue >= asset.metric.value ? "+" : "−"}${metricText({
+                        value: Math.abs(m.metricValue - asset.metric.value),
+                        unit: asset.metric.unit,
+                      })}`
+                    : "TMDB"
+              }
             >
               {unreleased && m.metricValue === 0 ? (
                 <span className="text-muted">—</span>
               ) : (
-                <span className="num">{metricText({ value: m.metricValue, unit: asset.metric.unit })}</span>
+                <span className="num">{metricText({ value: asset.metric.value, unit: asset.metric.unit })}</span>
               )}
             </Stat>
             <Stat k="Next catalyst">

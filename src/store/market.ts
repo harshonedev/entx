@@ -6,6 +6,7 @@ import {
   ASSETS,
   ASSET_BY_ID,
   ORACLE_EVENTS,
+  eventsFor,
   computeEpi,
   type EpiParts,
 } from "@/lib/assets";
@@ -571,8 +572,10 @@ export const useMarket = create<Store>()(
 
       randomOracle: (assetId) => {
         const a = (assetId && ASSET_BY_ID[assetId]) || ASSETS[Math.floor(Math.random() * ASSETS.length)];
-        const positive = ORACLE_EVENTS.filter((e) => !e.id.includes("pan") && !e.id.includes("miss"));
-        const pool = Math.random() < 0.75 ? positive : ORACLE_EVENTS;
+        // Only news that fits the title's release state (no "opening weekend" for a streaming title).
+        const fitting = eventsFor(a);
+        const positive = fitting.filter((e) => !e.id.includes("pan") && !e.id.includes("miss"));
+        const pool = positive.length && Math.random() < 0.75 ? positive : fitting;
         const ev = pool[Math.floor(Math.random() * pool.length)];
         get().oracle(a.id, ev.id);
         return a.id;
