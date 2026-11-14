@@ -1,5 +1,6 @@
 "use client";
 
+import { CHAIN_ON } from "@/lib/env";
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { ChevronDown, Wallet } from "lucide-react";
@@ -59,7 +60,7 @@ export function WalletMenu() {
       disconnect: () => void sol.disconnect(),
       disabled: false,
     },
-  ];
+  ].filter((r) => CHAIN_ON[r.key === "sol" ? "solana" : "near"]);
 
   return (
     <div ref={root} className="relative">

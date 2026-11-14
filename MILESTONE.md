@@ -116,7 +116,7 @@ One Docker image, deployed per host on Coolify with different env:
 | Firewall the VPS so ports 80/443 accept only Cloudflare IP ranges (`TRUST_PROXY=cloudflare` trusts `cf-connecting-ip`) | P1 | M5, earlier if origin IP leaks |
 | Coolify API token was pasted in chat: rotate it | P0 | After M0 deploy |
 | Switch hosts to `entx.space` once registration clears | P1 | M0 follow-up |
-| Solana host still shows the NEAR contract proof strip on Discover; make it chain-aware | P2 | M4 |
+| Solana host `/onchain` page is NEAR-only content (registry, oracle, receipts); give it a Solana view or hide the nav link | P2 | M3 |
 
 ## Accepted risks
 
@@ -127,6 +127,7 @@ One Docker image, deployed per host on Coolify with different env:
 
 ## Changelog
 
+- 2026-11-14: Each host is now single-chain (`CHAIN_ON`): NEAR sites show no Solana wallet, toggle or copy; Solana site shows no NEAR wallet.
 - 2026-11-14: M0 deployed to Coolify (fallback hosts). Remaining: README, video, X post.
 - 2026-11-14: M0 build + security audit done; waiting on DNS/Coolify deploy.
 - 2026-11-14: File created. M0 active. M1–M5 set from the initial plan.

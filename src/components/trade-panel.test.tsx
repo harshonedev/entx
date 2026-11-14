@@ -5,6 +5,9 @@ import { quoteBuy, unitsForDollars } from "@/lib/engine";
 import { usd } from "@/lib/format";
 import { STARTING_CASH, priceOf, useMarket } from "@/store/market";
 import { TradePanel } from "./trade-panel";
+// These tests cover the cross-chain view (both wallets), as with the chain switch on.
+vi.mock("@/lib/env", async (orig) => ({ ...(await orig<typeof import("@/lib/env")>()), CHAIN_ON: { near: true, solana: true }, MULTICHAIN: true, CHAIN_NAMES: ["NEAR", "Solana"] }));
+
 
 const receipts = vi.hoisted(() => ({
   record: vi.fn(),

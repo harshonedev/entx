@@ -13,6 +13,17 @@ export const MODE: Mode = pick(process.env.NEXT_PUBLIC_ENTX_MODE, ["demo", "live
 /** Primary chain of this deployment. NEAR is the default. */
 export const CHAIN: Chain = pick(process.env.NEXT_PUBLIC_CHAIN, ["near", "solana"] as const, "near");
 
+/**
+ * Chains this deployment shows. Each host is single-chain: the NEAR sites never mention Solana and the
+ * Solana site never offers NEAR wallets. Cross-chain views come back with the public chain switch (M4).
+ */
+export const CHAIN_ON: Record<Chain, boolean> = { near: CHAIN === "near", solana: CHAIN === "solana" };
+
+/** True only when both chains are shown (cross-chain view, chain switch era). */
+export const MULTICHAIN = CHAIN_ON.near && CHAIN_ON.solana;
+/** Short names of the chains this deployment shows, e.g. "NEAR" or "NEAR · Solana". */
+export const CHAIN_NAMES = (["near", "solana"] as const).filter((c) => CHAIN_ON[c]).map((c) => (c === "near" ? "NEAR" : "Solana"));
+
 export const IS_DEMO = MODE === "demo";
 export const IS_LIVE = MODE === "live";
 

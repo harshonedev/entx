@@ -1,5 +1,6 @@
 "use client";
 
+import { CHAIN_ON } from "@/lib/env";
 import { useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useMarket, type Trade } from "@/store/market";
@@ -19,8 +20,8 @@ export function useReceipts() {
   const chains = useMarket((s) => s.chains);
 
   const active = {
-    solana: solConnected && chains.solana,
-    near: !!accountId && chains.near,
+    solana: CHAIN_ON.solana && solConnected && chains.solana,
+    near: CHAIN_ON.near && !!accountId && chains.near,
   };
 
   const record = useCallback(

@@ -3,7 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Shell } from "@/components/nav";
 import { TickerTape, Toasts } from "@/components/chrome";
-import { IS_LIVE } from "@/lib/env";
+import { CHAIN, CHAIN_LABEL, CHAIN_ON, IS_LIVE } from "@/lib/env";
 import "./globals.css";
 
 const uiFont = IBM_Plex_Sans({ variable: "--font-ui", subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -12,7 +12,7 @@ const codeFont = IBM_Plex_Mono({ variable: "--font-code", subsets: ["latin"], we
 export const metadata: Metadata = {
   title: "ENTX — Entertainment, now tradable",
   description:
-    "A multichain entertainment exchange on NEAR + Solana: trade movie & show markets priced by popularity, performance and sentiment.",
+    `An entertainment exchange on ${CHAIN_LABEL[CHAIN].split(" ")[0]}: trade movie & show markets priced by popularity, performance and sentiment.`,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -32,9 +32,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <footer className="border-t border-line px-4 py-4 text-xs leading-relaxed text-muted sm:px-6 lg:px-8">
               {IS_LIVE
                 ? "ENTX live on testnet · Titles, posters and EPI inputs are real (TMDB); asset prices and balances are a simulated preview ·"
-                : "ENTX demo · Titles, posters and popularity inputs are real (TMDB); spot prices, balances and oracle events are simulated ·"} Trade receipts can be written to Solana devnet (Memo) and NEAR testnet
-              (ENTX contract) · Prediction pools hold testnet NEAR on-chain (no monetary value) · Intents quotes are dry-run only · Not
-              a real-money exchange.
+                : "ENTX demo · Titles, posters and popularity inputs are real (TMDB); spot prices, balances and oracle events are simulated ·"}{" "}
+              {CHAIN_ON.near
+                ? "Trade receipts can be written to NEAR testnet (ENTX contract) · Prediction pools hold testnet NEAR on-chain (no monetary value) · Intents quotes are dry-run only ·"
+                : "Trade receipts can be written to Solana devnet (Memo program) ·"}{" "}
+              Not a real-money exchange.
               <span className="mt-2 flex items-center gap-2">
                 <a href="https://www.themoviedb.org" target="_blank" rel="noreferrer" className="cursor-pointer inline-flex items-center justify-center font-semibold text-muted hover:text-text pointer-coarse:min-h-11 pointer-coarse:min-w-11">
                   TMDB

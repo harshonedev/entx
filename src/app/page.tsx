@@ -13,7 +13,7 @@ import { LiveFeed } from "@/components/chrome";
 import { Poster } from "@/components/poster";
 import { ContractProofStrip } from "@/components/onchain-epi";
 import { Change, SimBadge } from "@/components/ui";
-import { IS_LIVE } from "@/lib/env";
+import { CHAIN, CHAIN_LABEL, CHAIN_ON, IS_LIVE } from "@/lib/env";
 
 const TABS = [
   { id: "all", label: "Most traded" },
@@ -76,7 +76,7 @@ export default function Discover() {
               ) : (
                 <>
                   <SimBadge>Hackathon demo</SimBadge>
-                  Prices and trades are simulated. The NEAR and Solana records are real testnet state.
+                  Prices and trades are simulated. The {CHAIN_LABEL[CHAIN]} records are real on-chain state.
                 </>
               )}
             </p>
@@ -109,7 +109,7 @@ export default function Discover() {
           </div>
         </section>
 
-        <ContractProofStrip />
+        {CHAIN_ON.near && <ContractProofStrip />}
       </div>
 
       <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">

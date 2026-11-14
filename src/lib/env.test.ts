@@ -44,4 +44,14 @@ describe("env", () => {
     const env = await load({ NEXT_PUBLIC_URL_NEAR_DEMO: "javascript:alert(1)" });
     expect(env.HOSTS.nearDemo).toBe("https://demo.entx.space");
   });
+
+  it("shows only its own chain on a single-chain deployment", async () => {
+    const near = await load({ NEXT_PUBLIC_CHAIN: "near" });
+    expect(near.CHAIN_ON).toEqual({ near: true, solana: false });
+    expect(near.CHAIN_NAMES).toEqual(["NEAR"]);
+    expect(near.MULTICHAIN).toBe(false);
+    const sol = await load({ NEXT_PUBLIC_CHAIN: "solana" });
+    expect(sol.CHAIN_ON).toEqual({ near: false, solana: true });
+    expect(sol.CHAIN_NAMES).toEqual(["Solana"]);
+  });
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { CHAIN_ON, MULTICHAIN } from "@/lib/env";
 import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Check, ShieldCheck } from "lucide-react";
@@ -334,9 +335,13 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
 
       <div className="mt-4 flex items-start gap-2 border-t border-line pt-3 text-xs leading-relaxed text-muted">
         <ShieldCheck size={14} className={clsx("mt-0.5 shrink-0", connected ? "text-sol" : "text-faint")} />
-        {connected
+        {receipts.any
           ? `Each trade's receipt will be signed and written to ${[receipts.active.solana && "Solana devnet (Memo)", receipts.active.near && "NEAR testnet (record_trade, 0.01 Ⓝ storage deposit, excess refunded)"].filter(Boolean).join(" + ")}. Prices remain simulated.`
-          : "Optional: connect a Solana or NEAR wallet to sign an on-chain receipt for each trade. NEAR receipts hold a 0.01 Ⓝ storage deposit; the unused part is refunded."}
+          : MULTICHAIN
+            ? "Optional: connect a Solana or NEAR wallet to sign an on-chain receipt for each trade. NEAR receipts hold a 0.01 Ⓝ storage deposit; the unused part is refunded."
+            : CHAIN_ON.near
+            ? "Optional: connect a NEAR wallet to sign an on-chain receipt for each trade. Each receipt holds a 0.01 Ⓝ storage deposit; the unused part is refunded."
+            : "Optional: connect a Solana wallet to sign a devnet memo receipt for each trade."}
       </div>
     </div>
   );
