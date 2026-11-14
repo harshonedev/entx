@@ -1,5 +1,6 @@
 "use client";
 
+import { CHAIN_ON } from "@/lib/env";
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { ChevronDown, Wallet } from "lucide-react";
@@ -33,10 +34,11 @@ export function WalletMenu() {
     };
   }, [open]);
 
-  const solKey = sol.publicKey?.toBase58();
-  const count = (near.accountId ? 1 : 0) + (solKey ? 1 : 0);
+  const solKey = CHAIN_ON.solana ? sol.publicKey?.toBase58() : undefined;
+  const nearId = CHAIN_ON.near ? near.accountId : null;
+  const count = (nearId ? 1 : 0) + (solKey ? 1 : 0);
   const label =
-    count === 0 ? "Connect wallet" : count === 2 ? "2 wallets" : (near.accountId ?? (solKey ? shortKey(solKey) : ""));
+    count === 0 ? "Connect wallet" : count === 2 ? "2 wallets" : (nearId ?? (solKey ? shortKey(solKey) : ""));
 
   const rows = [
     {
@@ -59,7 +61,7 @@ export function WalletMenu() {
       disconnect: () => void sol.disconnect(),
       disabled: false,
     },
-  ];
+  ].filter((r) => CHAIN_ON[r.key === "sol" ? "solana" : "near"]);
 
   return (
     <div ref={root} className="relative">
@@ -78,7 +80,7 @@ export function WalletMenu() {
           <Wallet size={14} />
         ) : (
           <span className="flex -space-x-0.5">
-            {near.accountId && <span className="h-1.5 w-1.5 rounded-full bg-near" />}
+            {nearId && <span className="h-1.5 w-1.5 rounded-full bg-near" />}
             {solKey && <span className="h-1.5 w-1.5 rounded-full bg-sol" />}
           </span>
         )}

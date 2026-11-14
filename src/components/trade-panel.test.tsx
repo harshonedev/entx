@@ -5,6 +5,9 @@ import { quoteBuy, unitsForDollars } from "@/lib/engine";
 import { usd } from "@/lib/format";
 import { STARTING_CASH, priceOf, useMarket } from "@/store/market";
 import { TradePanel } from "./trade-panel";
+// These tests cover the cross-chain view (both wallets), as with the chain switch on.
+vi.mock("@/lib/env", async (orig) => ({ ...(await orig<typeof import("@/lib/env")>()), CHAIN_ON: { near: true, solana: true }, MULTICHAIN: true, CHAIN_NAMES: ["NEAR", "Solana"] }));
+
 
 const receipts = vi.hoisted(() => ({
   record: vi.fn(),
@@ -135,6 +138,21 @@ describe("TradePanel", () => {
     expect(input().value).toBe(String(maxBuy));
   });
 
+  it("blocks a units order at or above the pool reserve instead of pricing it negative (regression)", async () => {
+    render(<TradePanel asset={asset} />);
+    await userEvent.click(screen.getByRole("button", { name: "Units" }));
+    const reserve = initial.markets[asset.id].pool.units;
+    for (const q of [reserve, reserve + 1, reserve * 10]) {
+      await setAmount(String(q));
+      const btn = screen.getByRole("button", { name: "Exceeds pool liquidity" });
+      expect(btn).toBeDisabled();
+      // Points at what cash can actually buy instead of an unaffordable pool max.
+      expect(screen.getByRole("button", { name: /^Your cash covers \d+ units · use that$/ })).toBeInTheDocument();
+    }
+    expect(screen.getByText("Total cost").nextSibling?.textContent).toBe("—");
+    expect(useMarket.getState().cash).toBe(STARTING_CASH);
+  });
+
   it("Max fills the largest affordable dollar amount", async () => {
     render(<TradePanel asset={asset} />);
     await userEvent.click(screen.getByRole("button", { name: /^All your cash:/ }));
@@ -255,7 +273,7 @@ describe("TradePanel", () => {
     receipts.active = { solana: true, near: false };
     receipts.record.mockResolvedValue(undefined);
     render(<TradePanel asset={asset} />);
-    expect(screen.getByText(/written to Solana devnet \(Memo\)\. Prices remain simulated\./)).toBeInTheDocument();
+    expect(screen.getByText(/written to Solana devnet \(Memo\)\. It is a self-attested record of a simulated trade, not a settlement\./)).toBeInTheDocument();
     await userEvent.click(submitBtn());
     expect(receipts.record).toHaveBeenCalledTimes(1);
     expect(receipts.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "BUY", refId: asset.id }));

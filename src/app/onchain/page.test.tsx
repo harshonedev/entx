@@ -13,6 +13,9 @@ vi.mock("@/lib/solana", () => ({
 vi.mock("@/components/intents-panel", () => ({ IntentsPanel: () => <div data-testid="intents-panel" /> }));
 
 import OnchainPage from "./page";
+// These tests cover the cross-chain view (both wallets), as with the chain switch on.
+vi.mock("@/lib/env", async (orig) => ({ ...(await orig<typeof import("@/lib/env")>()), CHAIN_ON: { near: true, solana: true }, MULTICHAIN: true, CHAIN_NAMES: ["NEAR", "Solana"] }));
+
 
 const NEAR = "1000000000000000000000000";
 const asset = ASSETS[0];

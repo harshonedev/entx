@@ -13,6 +13,7 @@ import { LiveFeed } from "@/components/chrome";
 import { Poster } from "@/components/poster";
 import { ContractProofStrip } from "@/components/onchain-epi";
 import { Change, SimBadge } from "@/components/ui";
+import { CHAIN, CHAIN_LABEL, CHAIN_ON, IS_LIVE } from "@/lib/env";
 
 const TABS = [
   { id: "all", label: "Most traded" },
@@ -62,12 +63,22 @@ export default function Discover() {
               Entertainment, <span className="text-accent">now tradable.</span>
             </h1>
             <p className="mt-2 max-w-[62ch] text-pretty text-sm leading-relaxed text-muted">
-              Movies and shows trade like assets. Prices react to box office, streaming demand, social buzz and
+              Movies and shows trade like assets. Prices react to box office, TMDB popularity, audience votes and
               audience ratings, rolled into one live score: the Entertainment Popularity Index (EPI).
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
-              <SimBadge>Hackathon demo</SimBadge>
-              Prices and trades are simulated. The NEAR and Solana records are real testnet state.
+              {IS_LIVE ? (
+                <>
+                  <SimBadge>Live · testnet</SimBadge>
+                  Titles and EPI inputs are real TMDB data. Prediction pools are real on-chain state. Asset trading is a
+                  preview with simulated prices until the shared market launches.
+                </>
+              ) : (
+                <>
+                  <SimBadge>Hackathon demo</SimBadge>
+                  Prices and trades are simulated. The {CHAIN_LABEL[CHAIN]} records are real on-chain state.
+                </>
+              )}
             </p>
           </div>
           <div className="flex flex-col gap-2">
@@ -82,6 +93,7 @@ export default function Discover() {
             >
               Trade {spot.title} <ArrowRight size={15} />
             </Link>
+            {!IS_LIVE && (
             <button
               onClick={() => {
                 randomOracle(spot.id);
@@ -92,11 +104,12 @@ export default function Discover() {
             >
               <Zap size={15} className="text-accent" /> Watch news move {spot.title}
             </button>
+            )}
           </div>
           </div>
         </section>
 
-        <ContractProofStrip />
+        {CHAIN_ON.near && <ContractProofStrip />}
       </div>
 
       <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">

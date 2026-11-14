@@ -98,7 +98,7 @@ describe("DemoControls", () => {
     }
     // No "#1 on streaming" for a film that's still in theaters.
     expect(screen.queryByRole("button", { name: /#1 on streaming/ })).toBeNull();
-    expect(screen.getByRole("button", { name: /Box office beats forecast/ })).toHaveTextContent("Box office +14 · Social +6");
+    expect(screen.getByRole("button", { name: /Box office beats forecast/ })).toHaveTextContent("Box office +14 · Votes +6");
     expect(screen.getByRole("button", { name: /Reviews disappoint/ })).toHaveTextContent("Rating -22");
   });
 

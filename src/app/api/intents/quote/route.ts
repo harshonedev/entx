@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIp, own, readJson } from "@/lib/http";
 
 /**
  * NEAR Intents (1Click API) dry-run quote proxy.
@@ -28,30 +29,54 @@ const ORIGINS: Record<string, { decimals: number; refund: string }> = {
   "nep141:wrap.near": { decimals: 24, refund: "wrap.near" },
 };
 
+// Public, unauthenticated route that spends the operator's 1Click quota: per-IP and global limits.
+const PER_IP_MS = 2_000;
+const GLOBAL_MS = 200;
+const ipHits = new Map<string, number>();
+let lastHit = 0;
+
+function admit(req: Request): boolean {
+  const now = Date.now();
+  const ip = clientIp(req);
+  if (now - lastHit < GLOBAL_MS || now - (ipHits.get(ip) ?? 0) < PER_IP_MS) return false;
+  lastHit = now;
+  ipHits.set(ip, now);
+  if (ipHits.size > 5_000) ipHits.clear();
+  return true;
+}
+
 export async function POST(req: Request) {
-  let body: { originAsset?: string; amount?: number; refundTo?: string; recipient?: string };
-  try {
-    body = await req.json();
-  } catch {
+  const body = await readJson<{ originAsset?: string; amount?: number; refundTo?: string; recipient?: string }>(req);
+  if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const origin = body.originAsset ? ORIGINS[body.originAsset] : undefined;
+  const origin = own(ORIGINS, body.originAsset);
   const amount = Number(body.amount);
   if (!origin || !Number.isFinite(amount) || amount <= 0 || amount > 1e7) {
     return NextResponse.json({ error: "Unsupported asset or amount" }, { status: 400 });
   }
 
+  if (!admit(req)) {
+    return NextResponse.json({ error: "Too many quote requests, try again shortly" }, { status: 429 });
+  }
+
   const units = BigInt(Math.round(amount * 1e6)) * BigInt(10) ** BigInt(origin.decimals) / BigInt(1e6);
   // Only mainnet NEAR accounts are valid recipients; testnet demo accounts fall back to a placeholder.
-  const recipient = body.recipient?.endsWith(".near") ? body.recipient : "intents.near";
-  const refundTo = body.refundTo && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(body.refundTo) && body.originAsset?.startsWith("nep141:sol")
+  const recipient =
+    typeof body.recipient === "string" && body.recipient.length <= 64 && /^[a-z0-9._-]+\.near$/.test(body.recipient)
+      ? body.recipient
+      : "intents.near";
+  const refundTo = typeof body.refundTo === "string" && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(body.refundTo) && body.originAsset?.startsWith("nep141:sol")
     ? body.refundTo
     : origin.refund;
 
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (process.env.ONECLICK_JWT) headers.authorization = `Bearer ${process.env.ONECLICK_JWT}`;
 
-  const res = await fetch(`${ONECLICK}/quote`, {
+  let res: Response;
+  try {
+  res = await fetch(`${ONECLICK}/quote`, {
+    signal: AbortSignal.timeout(8_000),
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -70,6 +95,9 @@ export async function POST(req: Request) {
     }),
     cache: "no-store",
   });
+  } catch {
+    return NextResponse.json({ error: "1Click did not respond in time" }, { status: 504 });
+  }
   const json = await res.json().catch(() => ({}));
   if (!res.ok || !json.quote) {
     return NextResponse.json(

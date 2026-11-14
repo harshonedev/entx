@@ -14,6 +14,7 @@ import { useReceipts } from "@/lib/receipts";
 import { Poster } from "./poster";
 import { Flash } from "./ui";
 import { NearStakePanel } from "./near-stake";
+import { CHAIN } from "@/lib/env";
 
 const AMOUNTS = [10, 25, 50, 100];
 
@@ -236,7 +237,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
 
       {fillId && <FillReceipt tradeId={fillId} quoted={quoted} onDone={clearFill} />}
 
-      {!st.resolved && staking && <NearStakePanel marketId={p.id} />}
+      {!st.resolved && staking && CHAIN === "near" && <NearStakePanel marketId={p.id} />}
 
       {mine.length > 0 && (
         <div className="mt-3 space-y-1 border-t border-line pt-3 text-xs">
@@ -256,7 +257,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
       {!st.resolved && (
         <div className="mt-auto pt-3">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-            {!staking && (
+            {!staking && CHAIN === "near" && (
               <button
                 onClick={() => setStaking(true)}
                 className="cursor-pointer inline-flex min-h-6 items-center gap-1.5 font-medium text-near hover:underline pointer-coarse:min-h-11"

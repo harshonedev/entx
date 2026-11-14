@@ -1,5 +1,6 @@
 "use client";
 
+import { CHAIN_ON } from "@/lib/env";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ExternalLink } from "lucide-react";
@@ -150,9 +151,11 @@ export function ContractProofStrip() {
           )}
         </>
       )}
-      <span className="text-muted">
-        + <span className="text-sol">Solana devnet</span> memo per trade
-      </span>
+      {CHAIN_ON.solana && (
+        <span className="text-muted">
+          + <span className="text-sol">Solana devnet</span> memo per trade
+        </span>
+      )}
       <Link
         href="/onchain"
         className="cursor-pointer inline-flex items-center gap-1 font-medium text-text hover:text-near sm:ml-auto pointer-coarse:min-h-11"

@@ -10,6 +10,9 @@ vi.mock("./solana", () => ({ useNotarize: () => solana }));
 vi.mock("./near", () => ({ useNearNotarize: () => near, useNear: () => ({ accountId: state.accountId }) }));
 
 import { useReceipts } from "./receipts";
+// These tests cover the cross-chain view (both wallets), as with the chain switch on.
+vi.mock("@/lib/env", async (orig) => ({ ...(await orig<typeof import("@/lib/env")>()), CHAIN_ON: { near: true, solana: true }, MULTICHAIN: true, CHAIN_NAMES: ["NEAR", "Solana"] }));
+
 
 const trade = { id: "t" } as Trade;
 

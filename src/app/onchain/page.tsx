@@ -1,5 +1,6 @@
 "use client";
 
+import { CHAIN_ON } from "@/lib/env";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
@@ -92,8 +93,7 @@ export default function OnchainPage() {
           <h1 className="text-[22px] font-semibold tracking-[-0.01em]">On-chain</h1>
           <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-muted">
             What ENTX puts on-chain, read live from the chains. NEAR holds the market registry, EPI oracle reports,
-            trade receipts and on-chain prediction pools in testnet NEAR. Solana devnet holds memo receipts. Intents route
-            cross-chain funding.
+            trade receipts and on-chain prediction pools in testnet NEAR. Intents route cross-chain funding.
           </p>
         </div>
         <button
@@ -309,7 +309,7 @@ export default function OnchainPage() {
                 <p className="text-sm text-text">No trade receipts on this contract yet.</p>
                 <p className="mt-1 max-w-prose text-xs leading-relaxed text-muted">
                   With a NEAR wallet connected, every buy, sell or bet calls <code>record_trade</code> and lands here with
-                  a NearBlocks link. Connect a Solana wallet too and the receipt carries the linked devnet memo signature.
+                  a NearBlocks link.
                 </p>
                 <Link
                   href={`/asset/${spot.id}`}
@@ -379,6 +379,7 @@ export default function OnchainPage() {
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <IntentsPanel />
+          {CHAIN_ON.solana && (
           <div className="panel p-4 text-xs leading-relaxed text-muted">
             <h2 className="h-panel mb-2">Solana devnet</h2>
             Each trade can also be signed as a JSON memo through the SPL Memo program{" "}
@@ -386,6 +387,7 @@ export default function OnchainPage() {
             connected, the NEAR receipt stores the Solana signature in <code>chain_ref</code>, linking the two
             records.
           </div>
+          )}
         </aside>
       </section>
     </div>

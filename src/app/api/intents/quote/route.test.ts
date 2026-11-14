@@ -6,17 +6,27 @@ const SOL = "nep141:sol.omft.near";
 const USDC_SOL = "nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near";
 const ETH = "nep141:eth.omft.near";
 
-const req = (body: unknown) =>
+// The route rate-limits per IP and globally.
+let clock = Date.now();
+/** Builds a request without moving the clock (for rate-limit tests). */
+const reqNow = (body: unknown) =>
   new Request("http://localhost/api/intents/quote", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: typeof body === "string" ? body : JSON.stringify(body),
   });
+/** Builds a request one minute after the previous one, past every rate-limit window. */
+const req = (body: unknown) => {
+  if (vi.isFakeTimers()) vi.setSystemTime((clock += 60_000));
+  return reqNow(body);
+};
 
 let fetchMock: ReturnType<typeof vi.fn>;
 const sent = () => JSON.parse(fetchMock.mock.calls[0][1].body);
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime((clock += 60_000));
   vi.stubEnv("ONECLICK_JWT", "");
   fetchMock = vi.fn().mockResolvedValue({
     ok: true,
@@ -26,6 +36,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock);
 });
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
@@ -113,5 +124,21 @@ describe("POST /api/intents/quote", () => {
   it("502 when ok but no quote", async () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
     expect((await POST(req({ originAsset: SOL, amount: 1 }))).status).toBe(502);
+  });
+
+  it("rate-limits repeat callers", async () => {
+    expect((await POST(reqNow({ originAsset: SOL, amount: 1 }))).status).toBe(200);
+    expect((await POST(reqNow({ originAsset: SOL, amount: 1 }))).status).toBe(429);
+  });
+
+  it("rejects oversized bodies and inherited asset keys", async () => {
+    expect((await POST(req({ originAsset: SOL, amount: 1, pad: "x".repeat(5_000) }))).status).toBe(400);
+    expect((await POST(req({ originAsset: "constructor", amount: 1 }))).status).toBe(400);
+    expect((await POST(req({ originAsset: "__proto__", amount: 1 }))).status).toBe(400);
+  });
+
+  it("504 when 1Click times out", async () => {
+    fetchMock.mockRejectedValueOnce(new DOMException("timeout", "TimeoutError"));
+    expect((await POST(req({ originAsset: SOL, amount: 1 }))).status).toBe(504);
   });
 });

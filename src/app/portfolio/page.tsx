@@ -1,5 +1,6 @@
 "use client";
 
+import { CHAIN_NAMES, CHAIN_ON } from "@/lib/env";
 import { useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
@@ -73,11 +74,11 @@ export default function PortfolioPage() {
           </div>
           <p className="mt-1 text-sm text-muted">
             {[
-              connected && publicKey ? `Solana ${shortKey(publicKey.toBase58())} (devnet)` : null,
-              nearAccount ? `NEAR ${nearAccount} (testnet)` : null,
+              CHAIN_ON.solana && connected && publicKey ? `Solana ${shortKey(publicKey.toBase58())} (devnet)` : null,
+              CHAIN_ON.near && nearAccount ? `NEAR ${nearAccount} (testnet)` : null,
             ]
               .filter(Boolean)
-              .join(" · ") || "Connect a Solana and/or NEAR wallet to anchor trade receipts on-chain."}
+              .join(" · ") || `Connect a ${CHAIN_NAMES.join(" and/or ")} wallet to anchor trade receipts on-chain.`}
           </p>
         </div>
         {confirmReset ? (
@@ -318,8 +319,8 @@ export default function PortfolioPage() {
                     <th className="py-2 text-right font-medium">Qty</th>
                     <th className="py-2 text-right font-medium">Price</th>
                     <th className="py-2 text-right font-medium">Total</th>
-                    <th className="py-2 text-right font-medium">Solana receipt</th>
-                    <th className="py-2 pr-4 text-right font-medium">NEAR receipt</th>
+                    {CHAIN_ON.solana && <th className="py-2 pr-4 text-right font-medium">Solana receipt</th>}
+                    {CHAIN_ON.near && <th className="py-2 pr-4 text-right font-medium">NEAR receipt</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -344,7 +345,8 @@ export default function PortfolioPage() {
                         {t.kind === "YES" || t.kind === "NO" ? cents(t.price) : usd(t.price)}
                       </td>
                       <td data-label="Total" className={clsx("num py-2 text-right text-xs", CELL)}>{usd(t.total)}</td>
-                      <td data-label="Solana receipt" className={clsx("py-2 text-right text-xs", CELL)}>
+                      {CHAIN_ON.solana && (
+                      <td data-label="Solana receipt" className={clsx("py-2 pr-4 text-right text-xs", CELL)}>
                         {t.sig && t.sigStatus === "confirmed" ? (
                           <a
                             href={explorerTx(t.sig)}
@@ -366,6 +368,8 @@ export default function PortfolioPage() {
                           <span className="text-faint">—</span>
                         )}
                       </td>
+                      )}
+                      {CHAIN_ON.near && (
                       <td data-label="NEAR receipt" className={clsx("py-2 pr-4 text-right text-xs", CELL)}>
                         {t.nearTx && t.nearStatus === "confirmed" ? (
                           <a
@@ -391,6 +395,7 @@ export default function PortfolioPage() {
                           <span className="text-faint">—</span>
                         )}
                       </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

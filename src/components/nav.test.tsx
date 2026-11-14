@@ -25,6 +25,9 @@ vi.mock("next/image", () => ({
 }));
 
 import { Shell } from "./nav";
+// These tests cover the cross-chain view (both wallets), as with the chain switch on.
+vi.mock("@/lib/env", async (orig) => ({ ...(await orig<typeof import("@/lib/env")>()), CHAIN_ON: { near: true, solana: true }, MULTICHAIN: true, CHAIN_NAMES: ["NEAR", "Solana"] }));
+
 
 const initial = useMarket.getState();
 

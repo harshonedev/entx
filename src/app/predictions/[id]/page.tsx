@@ -15,6 +15,7 @@ import { Poster } from "@/components/poster";
 import { ProbabilityChart } from "@/components/probability-chart";
 import { PICK_SIDE_EVENT, PredictionTicket } from "@/components/prediction-ticket";
 import { NearStakePanel } from "@/components/near-stake";
+import { CHAIN, IS_LIVE } from "@/lib/env";
 import { LiveFeed } from "@/components/chrome";
 import { Change, Dim, Flash, SimBadge, Sparkline, signTone } from "@/components/ui";
 
@@ -45,6 +46,12 @@ export default function PredictionMarketPage() {
   const delta = change?.pts ?? null;
   const span = !change ? "" : change.seconds >= 3540 ? "past hour" : `past ${Math.max(1, Math.round(change.seconds / 60))} min`;
   const mine = positions.filter((x) => x.marketId === p.id);
+
+  const stakePanel = !resolved && CHAIN === "near" && (
+    <div className="panel p-4 [&>*:first-child]:mt-0 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+      <NearStakePanel marketId={p.id} />
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -124,15 +131,14 @@ export default function PredictionMarketPage() {
           aria-label="Place a bet"
           className="scroll-mt-20 space-y-4 xl:col-start-2 xl:row-span-2 xl:row-start-1"
         >
+          {IS_LIVE && stakePanel}
+
+          {IS_LIVE && <p className="px-1 text-xs text-muted">Preview below: simulated odds and play money, not on-chain.</p>}
           <PredictionTicket p={p} />
 
           {mine.length > 0 && <YourPosition p={p} yp={yp} resolved={resolved} />}
 
-          {!resolved && (
-            <div className="panel p-4 [&>*:first-child]:mt-0 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
-              <NearStakePanel marketId={p.id} />
-            </div>
-          )}
+          {!IS_LIVE && stakePanel}
 
           <div className="panel p-4">
             <h2 className="h-panel inline-flex items-center gap-1.5">
