@@ -24,7 +24,7 @@ describe("EPI page", () => {
     render(<EpiPage />);
     expect(screen.getByRole("heading", { level: 1, name: "Entertainment Popularity Index" })).toBeInTheDocument();
     expect(screen.getByText("TMDB inputs · simulated updates")).toBeInTheDocument();
-    for (const h of ["#", "Title", "EPI", "24h", "Box office", "Streaming", "Social", "Rating", "Confidence", "Trend"]) {
+    for (const h of ["#", "Title", "EPI", "24h", "Box office", "Popularity", "Votes", "Rating", "Confidence", "Trend"]) {
       expect(screen.getByRole("columnheader", { name: h })).toBeInTheDocument();
     }
   });

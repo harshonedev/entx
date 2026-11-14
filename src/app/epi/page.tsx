@@ -29,13 +29,13 @@ const SOURCES = [
     model: "Studio reports, theatrical trackers",
   },
   {
-    name: "Streaming demand",
+    name: "Popularity (proxy)",
     now: "TMDB seed",
     detail: "TMDB popularity, ranked within the catalogue",
     model: "Platform top-10 charts, hours viewed",
   },
   {
-    name: "Social buzz",
+    name: "Audience activity (proxy)",
     now: "TMDB seed",
     detail: "TMDB vote count",
     model: "Trailer views, mentions, search interest",
@@ -71,8 +71,8 @@ export default function EpiPage() {
                 <th className="py-2.5 pl-4 text-right font-medium">EPI</th>
                 <th className="py-2.5 pl-4 text-right font-medium">24h</th>
                 {KEYS.map((k) => (
-                  <th key={k} className="hidden whitespace-nowrap py-2.5 pl-4 font-medium lg:table-cell">
-                    {k === "boxOffice" ? "Box office" : k === "critics" ? "Rating" : EPI_LABELS[k].split(" ")[0]}
+                  <th key={k} title={EPI_LABELS[k]} className="hidden whitespace-nowrap py-2.5 pl-4 font-medium lg:table-cell">
+                    {k === "boxOffice" ? "Box office" : k === "critics" ? "Rating" : k === "streaming" ? "Popularity" : "Votes"}
                   </th>
                 ))}
                 <th className="hidden py-2.5 pl-4 pr-2 text-right font-medium 2xl:table-cell">Confidence</th>

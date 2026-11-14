@@ -10,8 +10,8 @@ import { useMarket } from "@/store/market";
 
 const SHORT: Record<keyof EpiParts, string> = {
   boxOffice: "Box office",
-  streaming: "Streaming",
-  social: "Social",
+  streaming: "Popularity",
+  social: "Votes",
   critics: "Rating",
 };
 

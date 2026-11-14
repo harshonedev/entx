@@ -63,7 +63,7 @@ export default function Discover() {
               Entertainment, <span className="text-accent">now tradable.</span>
             </h1>
             <p className="mt-2 max-w-[62ch] text-pretty text-sm leading-relaxed text-muted">
-              Movies and shows trade like assets. Prices react to box office, streaming demand, social buzz and
+              Movies and shows trade like assets. Prices react to box office, TMDB popularity, audience votes and
               audience ratings, rolled into one live score: the Entertainment Popularity Index (EPI).
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
