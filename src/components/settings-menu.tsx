@@ -24,7 +24,7 @@ const withPath = (base: string) =>
   typeof window === "undefined" ? base : `${base}${window.location.pathname}${window.location.search}`;
 
 /** Says which deployment this is, and links to the other mode. Always visible so judges can compare both. */
-export function ModeBadge({ className }: { className?: string }) {
+export function ModeBadge({ cell = false, className }: { cell?: boolean; className?: string }) {
   const other = MODE === "demo" ? "live" : "demo";
   return (
     <a
@@ -34,16 +34,15 @@ export function ModeBadge({ className }: { className?: string }) {
       }}
       title={`You are on the ${MODE} site (${CHAIN_LABEL[CHAIN]}). Open the ${other} site.`}
       className={clsx(
-        "cursor-pointer inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded border px-2.5 text-[12px] font-medium transition-colors pointer-coarse:h-11",
-        MODE === "live" ? "border-up/40 text-up hover:bg-up/10" : "border-line-2 text-muted hover:text-text",
+        "cursor-pointer inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[12px] font-medium transition-colors",
+        // In the dateline it is one more hairline cell; standalone it is a bordered chip.
+        cell ? "h-full border-r border-line pr-4" : "h-9 border px-2.5 pointer-coarse:h-11",
+        MODE === "live"
+          ? clsx("text-up", !cell && "border-up/40 hover:bg-up/10")
+          : clsx("text-text hover:text-accent", !cell && "border-line-2"),
         className,
       )}
     >
-      {MODE === "live" ? (
-        <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
-      ) : (
-        <span aria-hidden className="size-1.5 rounded-full border border-current" />
-      )}
       {MODE === "live" ? "Live" : "Demo"}
       <span className="text-faint">·</span>
       <span className="text-muted">{other === "live" ? "Go live" : "Try demo"}</span>

@@ -28,10 +28,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const toggle = () => screen.getByRole("button", { name: "Demo controls" });
+const toggle = () => screen.getByRole("button", { name: "Simulate market events" });
 const openPanel = async () => {
   await userEvent.click(toggle());
-  return screen.getByRole("dialog", { name: "Demo controls" });
+  return screen.getByRole("dialog", { name: "Simulate market events" });
 };
 
 describe("DemoControls", () => {
@@ -52,7 +52,7 @@ describe("DemoControls", () => {
     await userEvent.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
     await openPanel();
-    await userEvent.click(screen.getByRole("button", { name: "Close demo controls" }));
+    await userEvent.click(screen.getByRole("button", { name: "Close simulation controls" }));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 

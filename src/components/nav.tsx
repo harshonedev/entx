@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import {
   Droplets,
   Menu,
@@ -149,6 +150,10 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
           </ul>
         </nav>
         <div className="space-y-4 border-t-2 border-ink p-4">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <ModeBadge />
+            <span className="text-muted">{MULTICHAIN ? CHAIN_NAMES.join(" · ") : CHAIN_LABEL[CHAIN]}</span>
+          </div>
           <AccountCard onNavigate={onClose} />
           <ReceiptToggles />
         </div>
@@ -178,12 +183,15 @@ function AccountFigure() {
   return (
     <Link
       href="/portfolio"
-      aria-label={`Portfolio value ${usd(total)}, ${pct(ret)} all time`}
       className="cursor-pointer inline-flex h-full items-center gap-2 border-l border-line pl-4 hover:text-accent"
     >
-      <span className="text-muted">Portfolio</span>
-      <span className="num font-semibold">{usd(total)}</span>
-      <span className={clsx("num", signTone(ret))}>{pct(ret)}</span>
+      {/* No aria-label: the accessible name is the visible text, so speech users can say what they see. */}
+      <span className="text-muted">Portfolio</span>{" "}
+      <span className="num font-semibold">{usd(total)}</span>{" "}
+      <span className={clsx("num", signTone(ret))}>
+        {pct(ret)}{" "}
+        <span className="sr-only">all time</span>
+      </span>
     </Link>
   );
 }
@@ -191,8 +199,10 @@ function AccountFigure() {
 function ReceiptToggles({ inline = false }: { inline?: boolean }) {
   const chains = useMarket((s) => s.chains);
   const setChains = useMarket((s) => s.setChains);
-  const { accountId } = useNear();
+  const near = useNear();
+  const accountId = near.accountId;
   const { connected: solConnected } = useWallet();
+  const solModal = useWalletModal();
   // A receipt toggle only means something once that chain's wallet is connected.
   const live = { solana: solConnected, near: !!accountId };
   const missing = MULTICHAIN
@@ -201,6 +211,25 @@ function ReceiptToggles({ inline = false }: { inline?: boolean }) {
   const allLive = (["solana", "near"] as const).every((k) => !CHAIN_ON[k] || live[k]);
   const hintId = inline ? "receipts-hint-inline" : "receipts-hint";
   const labelId = inline ? "receipts-label-inline" : "receipts-label";
+  const anyLive = (["solana", "near"] as const).some((k) => CHAIN_ON[k] && live[k]);
+  // In the dateline a row of dead switches reads as broken; before any wallet is connected, offer the connect instead.
+  if (inline && !anyLive) {
+    const useNearWallet = CHAIN_ON.near;
+    return (
+      <button
+        type="button"
+        onClick={() => (useNearWallet ? near.connect() : solModal.setVisible(true))}
+        disabled={useNearWallet && !near.ready}
+        className="cursor-pointer inline-flex h-full items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-accent disabled:cursor-wait"
+      >
+        Receipts off
+        <span aria-hidden className="text-faint">·</span>
+        <span className="font-medium text-text underline decoration-line-2 underline-offset-[3px] hover:decoration-current">
+          Connect {useNearWallet ? "NEAR" : CHAIN_NAMES[0]} to sign them
+        </span>
+      </button>
+    );
+  }
   return (
     <div role="group" aria-labelledby={labelId} className={clsx(inline && "flex h-full items-center gap-1")}>
       <div id={labelId} className={clsx(inline ? "mr-1 text-muted" : "label mb-2")}>
@@ -209,10 +238,10 @@ function ReceiptToggles({ inline = false }: { inline?: boolean }) {
       <div className={clsx(inline ? "flex items-center gap-1" : "space-y-1")}>
         {(
           [
-            ["solana", inline ? "Solana" : "Solana devnet", "bg-sol"],
-            ["near", inline ? "NEAR" : "NEAR testnet", "bg-near"],
+            ["solana", inline ? "Solana" : "Solana devnet"],
+            ["near", inline ? "NEAR" : "NEAR testnet"],
           ] as const
-        ).filter(([k]) => CHAIN_ON[k]).map(([k, label, dot]) => {
+        ).filter(([k]) => CHAIN_ON[k] && (!inline || live[k])).map(([k, label]) => {
           const on = live[k] && chains[k];
           return (
           <button
@@ -225,11 +254,10 @@ function ReceiptToggles({ inline = false }: { inline?: boolean }) {
             title={live[k] ? undefined : `Connect a ${missing} wallet to sign receipts for your trades.`}
             className={clsx(
               "flex items-center gap-2 text-[12.5px] transition-colors",
-              inline ? "h-7 px-2" : "h-8 w-full px-1",
+              inline ? "h-9 px-2" : "h-8 w-full px-1",
               live[k] ? "cursor-pointer text-text hover:bg-panel-2" : "cursor-not-allowed text-faint",
             )}
           >
-            <span className={clsx("h-1.5 w-1.5 rounded-full", dot, !on && "opacity-30")} />
             <span>{label}</span>
             <span className={clsx("relative h-3.5 w-6 border border-ink transition-colors", inline ? "" : "ml-auto", on ? "bg-ink" : "bg-transparent")}>
               <span
@@ -312,8 +340,8 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
 /** Dateline strip under the top bar: environment, market-wide stats, receipt toggles and portfolio value. */
 function Dateline() {
   return (
-    <section aria-label="Market status" className="@container hidden h-10 shrink-0 items-center gap-4 border-b border-ink bg-bg px-6 text-[12px] md:flex">
-      <ModeBadge />
+    <section aria-label="Market status" className="@container hidden h-10 shrink-0 items-center gap-4 border-y border-t-bar-rule border-b-ink bg-bg px-6 text-[12px] md:flex">
+      <ModeBadge cell />
       <StatChips />
       <div className="ml-auto flex h-full shrink-0 items-center gap-4">
         <ReceiptToggles inline />
@@ -333,10 +361,7 @@ function StatChips() {
   const chips: [string, ReactNode, string][] = [
     [
       "Network",
-      <span key="n" className="flex items-center gap-1.5">
-        <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
-        {MULTICHAIN ? CHAIN_NAMES.join(" · ") : CHAIN_LABEL[CHAIN]}
-      </span>,
+      <span key="n">{MULTICHAIN ? CHAIN_NAMES.join(" · ") : CHAIN_LABEL[CHAIN]}</span>,
       "@min-[860px]:flex",
     ],
     ["All titles 24h", <Change key="c" value={avgChg} />, "@min-[980px]:flex"],
@@ -346,7 +371,7 @@ function StatChips() {
   return (
     <div className="flex h-full min-w-0 items-center overflow-hidden">
       {chips.map(([k, v, show]) => (
-        <div key={k} className={clsx("hidden h-full shrink-0 items-center gap-2 whitespace-nowrap border-l border-line px-4", show)}>
+        <div key={k} className={clsx("hidden h-full shrink-0 items-center gap-2 whitespace-nowrap border-l border-line px-4 first:border-l-0 first:pl-0", show)}>
           <span className="text-muted">{k}</span>
           <span className="font-medium text-text">{v}</span>
         </div>
@@ -368,6 +393,16 @@ const marketItem = (p: (typeof PREDICTIONS)[number]): SearchItem => ({
   marketId: p.id,
 });
 
+const noSubscribe = () => () => {};
+/** "⌘K" on Apple platforms and on the server render, "Ctrl K" elsewhere (the handler accepts both). */
+function useShortcutLabel() {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => (/Mac|iPhone|iPad/i.test(navigator.userAgent) ? "⌘K" : "Ctrl K"),
+    () => "⌘K",
+  );
+}
+
 /** ⌘K search over titles (title or ticker) and prediction markets (question text), grouped, one listbox. */
 function AssetSearch() {
   const router = useRouter();
@@ -378,6 +413,7 @@ function AssetSearch() {
   const [hi, setHi] = useState(0);
   // Phones only: the field lives behind a search button and opens as a full-width bar over the header.
   const [expanded, setExpanded] = useState(false);
+  const shortcut = useShortcutLabel();
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -489,7 +525,7 @@ function AssetSearch() {
             aria-activedescendant={open && results[hi] ? `search-opt-${results[hi].id}` : undefined}
             className="w-full min-w-0 bg-transparent text-[12.5px] text-bar-ink outline-none placeholder:text-bar-ink/55"
           />
-          <kbd className="hidden border border-bar-ink/20 px-1.5 py-0.5 text-[11px] text-bar-ink/60 sm:inline lg:hidden xl:inline">⌘K</kbd>
+          <kbd className="hidden border border-bar-ink/20 px-1.5 py-0.5 text-[11px] text-bar-ink/60 sm:inline lg:hidden xl:inline">{shortcut}</kbd>
         </div>
       </div>
       {open && results.length > 0 && (

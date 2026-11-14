@@ -8,6 +8,7 @@ const nav = vi.hoisted(() => ({ path: "/", push: vi.fn() }));
 const wallet = vi.hoisted(() => ({ connected: false, publicKey: null }));
 const near = vi.hoisted(() => ({ accountId: null as string | null, ready: true, connect: vi.fn(), disconnect: vi.fn() }));
 const airdrop = vi.hoisted(() => vi.fn());
+const solModal = vi.hoisted(() => ({ setVisible: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.path,
@@ -15,6 +16,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("@solana/wallet-adapter-react", () => ({ useWallet: () => wallet }));
+vi.mock("@solana/wallet-adapter-react-ui", () => ({ useWalletModal: () => solModal }));
 vi.mock("@/lib/near", () => ({ useNear: () => near }));
 vi.mock("@/lib/solana", () => ({ useAirdrop: () => airdrop }));
 vi.mock("./wallet-menu", () => ({ WalletMenu: () => <button>wallet-menu</button> }));
@@ -46,6 +48,7 @@ beforeEach(() => {
   nav.push.mockReset();
   wallet.connected = false;
   near.accountId = null;
+  near.connect.mockReset();
   airdrop.mockReset();
 });
 
@@ -75,13 +78,13 @@ describe("Shell", () => {
   it("keeps the dateline strip: environment badge, network, receipts and portfolio", () => {
     render(<Shell>x</Shell>);
     expect(within(mainNav()).getByRole("link", { name: "On-chain" })).toBeVisible();
-    expect(screen.getByRole("group", { name: "Receipts" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Portfolio value/ })).toHaveAttribute("href", "/portfolio");
+    expect(screen.getByRole("button", { name: /Receipts off/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^Portfolio \$/ })).toHaveAttribute("href", "/portfolio");
   });
 
   it("shows portfolio value from the store", async () => {
     render(<Shell>x</Shell>);
-    const card = screen.getByRole("link", { name: /Portfolio value/ });
+    const card = screen.getByRole("link", { name: /^Portfolio \$/ });
     expect(card).toHaveAttribute("href", "/portfolio");
     expect(card).toHaveAccessibleName(/(^|[^+])0\.00% all time/);
     act(() => useMarket.setState({ cash: 1100 }));
@@ -89,11 +92,22 @@ describe("Shell", () => {
   });
 
   describe("receipt toggles", () => {
-    it("are disabled with a hint when no wallet is connected", async () => {
+    it("the strip offers to connect instead of showing dead switches", async () => {
       const user = userEvent.setup();
       render(<Shell>x</Shell>);
-      const sol = screen.getByRole("button", { name: /^Solana/ });
-      const nr = screen.getByRole("button", { name: /^NEAR/ });
+      const cta = screen.getByRole("button", { name: /^Receipts off.*Connect NEAR to sign them$/ });
+      expect(screen.queryByRole("group", { name: "Receipts" })).not.toBeInTheDocument();
+      await user.click(cta);
+      expect(near.connect).toHaveBeenCalledOnce();
+    });
+
+    it("are disabled with a hint in the drawer when no wallet is connected", async () => {
+      const user = userEvent.setup();
+      render(<Shell>x</Shell>);
+      await user.click(screen.getByRole("button", { name: "Open menu" }));
+      const drawer = within(screen.getByRole("dialog", { name: "Navigation" }));
+      const sol = drawer.getByRole("button", { name: /^Solana/ });
+      const nr = drawer.getByRole("button", { name: /^NEAR/ });
       // aria-disabled, not disabled: the rows stay focusable and describe why they are off.
       expect(sol).toHaveAttribute("aria-disabled", "true");
       expect(nr).toHaveAttribute("aria-disabled", "true");
