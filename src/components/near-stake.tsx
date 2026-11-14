@@ -138,7 +138,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
         <button
           onClick={connect}
           disabled={!ready}
-          className="cursor-pointer mt-2 h-11 w-full sm:h-9 rounded border border-near/40 py-1.5 text-xs font-semibold text-near hover:bg-near/10"
+          className="cursor-pointer mt-2 h-9 w-full rounded border border-near/40 py-1.5 text-xs font-semibold text-near hover:bg-near/10 pointer-coarse:h-11"
         >
           Connect a NEAR wallet to stake (testnet, no real value)
         </button>
@@ -152,7 +152,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
                 onClick={() => setAmount(a)}
                 aria-pressed={amount === a}
                 className={clsx(
-                  "cursor-pointer num min-h-11 sm:min-h-9 rounded border px-2 py-1 text-xs disabled:cursor-not-allowed",
+                  "cursor-pointer num min-h-9 rounded border px-2 py-1 text-xs disabled:cursor-not-allowed pointer-coarse:min-h-11",
                   amount === a ? "border-near text-near" : "border-line text-muted hover:text-text",
                 )}
               >
@@ -167,7 +167,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
                   onClick={() => setPending(side)}
                   aria-pressed={pending === side}
                   className={clsx(
-                    "cursor-pointer min-h-11 rounded px-3 py-1 text-xs font-semibold sm:min-h-9 disabled:cursor-not-allowed disabled:opacity-50",
+                    "cursor-pointer min-h-9 rounded px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-11",
                     pending === side
                       ? side === "YES"
                         ? "bg-up text-black"

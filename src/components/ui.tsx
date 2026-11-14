@@ -84,7 +84,7 @@ export function Sparkline({
  * since the cell itself becomes a flex row and its own `truncate` shows no ellipsis.
  */
 export const STACK_CELL =
-  "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:px-4 max-sm:py-1 max-sm:text-right max-sm:before:shrink-0 max-sm:before:text-xs max-sm:before:text-muted max-sm:before:content-[attr(data-label)] max-sm:[&>*]:min-w-0 max-sm:[&>*]:break-words";
+  "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:px-4 max-sm:py-1 max-sm:text-right max-sm:before:shrink-0 max-sm:before:text-xs max-sm:before:text-muted max-sm:before:content-[attr(data-label)] max-sm:wrap-anywhere max-sm:[&>*]:min-w-0";
 
 /**
  * Labels a section's numbers as simulated. Keep one per section (page header or panel heading), not per number.

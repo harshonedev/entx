@@ -87,13 +87,13 @@ export default function PortfolioPage() {
                 clearProbHistory();
                 setConfirmReset(false);
               }}
-              className="cursor-pointer inline-flex min-h-11 items-center rounded-lg bg-down px-3 font-semibold text-black sm:min-h-8"
+              className="cursor-pointer inline-flex min-h-8 items-center rounded-lg bg-down px-3 font-semibold text-black pointer-coarse:min-h-11"
             >
               Confirm reset
             </button>
             <button
               onClick={() => setConfirmReset(false)}
-              className="cursor-pointer inline-flex min-h-11 items-center rounded-lg border border-line px-3 text-muted hover:text-text sm:min-h-8"
+              className="cursor-pointer inline-flex min-h-8 items-center rounded-lg border border-line px-3 text-muted hover:text-text pointer-coarse:min-h-11"
             >
               Cancel
             </button>
@@ -101,7 +101,7 @@ export default function PortfolioPage() {
         ) : (
           <button
             onClick={() => setConfirmReset(true)}
-            className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-text sm:min-h-0"
+            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-text pointer-coarse:min-h-11"
           >
             <RotateCcw size={13} /> Reset demo
           </button>
@@ -208,7 +208,7 @@ export default function PortfolioPage() {
                             onClick={() => sellAll(id)}
                             aria-label={`Sell all ${num(h.units, h.units % 1 ? 2 : 0)} ${a.ticker}`}
                             title={`Sell all units at the pool price, about ${usd(val)} before slippage`}
-                            className="cursor-pointer inline-flex min-h-11 items-center whitespace-nowrap rounded border border-line-2 px-3 text-xs font-medium text-muted hover:border-down/50 hover:text-down max-sm:w-full max-sm:justify-center sm:min-h-8"
+                            className="cursor-pointer inline-flex min-h-8 items-center whitespace-nowrap rounded border border-line-2 px-3 text-xs font-medium text-muted hover:border-down/50 hover:text-down max-sm:w-full max-sm:justify-center pointer-coarse:min-h-11"
                           >
                             Sell all
                           </button>
@@ -348,7 +348,7 @@ export default function PortfolioPage() {
                             href={explorerTx(t.sig)}
                             target="_blank"
                             rel="noreferrer"
-                            className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-sol hover:underline sm:min-h-0"
+                            className="cursor-pointer inline-flex items-center gap-1 text-sol hover:underline pointer-coarse:min-h-11"
                           >
                             {t.sig.slice(0, 8)}… <ExternalLink size={11} />
                           </a>
@@ -357,7 +357,7 @@ export default function PortfolioPage() {
                             <Loader2 size={11} className="animate-spin" /> confirming
                           </span>
                         ) : connected && t.kind !== "PAYOUT" ? (
-                          <button onClick={() => notarize(t)} className="cursor-pointer inline-flex min-h-11 items-center text-sol hover:underline sm:min-h-0">
+                          <button onClick={() => notarize(t)} className="cursor-pointer inline-flex items-center text-sol hover:underline pointer-coarse:min-h-11">
                             {t.sigStatus === "failed" ? "Retry" : "Record"}
                           </button>
                         ) : (
@@ -370,7 +370,7 @@ export default function PortfolioPage() {
                             href={nearTxUrl(t.nearTx)}
                             target="_blank"
                             rel="noreferrer"
-                            className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-near hover:underline sm:min-h-0"
+                            className="cursor-pointer inline-flex items-center gap-1 text-near hover:underline pointer-coarse:min-h-11"
                           >
                             {t.nearTx.slice(0, 8)}… <ExternalLink size={11} />
                           </a>
@@ -381,7 +381,7 @@ export default function PortfolioPage() {
                         ) : nearAccount && t.kind !== "PAYOUT" ? (
                           <button
                             onClick={() => nearNotarize(t, t.sig ? `solana:devnet:${t.sig}` : undefined)}
-                            className="cursor-pointer inline-flex min-h-11 items-center text-near hover:underline sm:min-h-0"
+                            className="cursor-pointer inline-flex items-center text-near hover:underline pointer-coarse:min-h-11"
                           >
                             {t.nearStatus === "failed" ? "Retry" : "Record"}
                           </button>

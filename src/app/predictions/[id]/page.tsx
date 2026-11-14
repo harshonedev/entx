@@ -50,7 +50,7 @@ export default function PredictionMarketPage() {
     <div className="space-y-4">
       <Link
         href="/predictions"
-        className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 text-xs text-muted hover:text-text sm:min-h-0"
+        className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted hover:text-text pointer-coarse:min-h-11"
       >
         <ArrowLeft size={13} /> Prediction markets
       </Link>
@@ -294,7 +294,7 @@ function LinkedTitle({ p }: { p: PredictionSeed }) {
           </div>
           <Link
             href={`/asset/${asset.id}#trade`}
-            className="cursor-pointer inline-flex h-11 items-center rounded bg-panel-2 px-3 text-xs font-medium hover:bg-white/[0.06] sm:h-9"
+            className="cursor-pointer inline-flex h-9 items-center rounded bg-panel-2 px-3 text-xs font-medium hover:bg-white/[0.06] pointer-coarse:h-11"
           >
             Trade {asset.ticker}
           </Link>

@@ -56,7 +56,7 @@ export function OnchainEpi({ assetId }: { assetId: string }) {
       target="_blank"
       rel="noreferrer"
       title="Last value the trusted oracle published to NEAR testnet: this title's TMDB baseline adjusted by the latest news event. It doesn't accumulate."
-      className="cursor-pointer num mt-1 inline-flex min-h-11 items-center gap-1 text-xs text-near hover:underline sm:min-h-6"
+      className="cursor-pointer num mt-1 inline-flex min-h-6 items-center gap-1 text-xs text-near hover:underline pointer-coarse:min-h-11"
     >
       Oracle EPI · NEAR {epi.toFixed(1)} <ExternalLink size={10} aria-hidden />
     </a>
@@ -110,7 +110,7 @@ export function ContractProofStrip() {
         href={nearAccountUrl(NEAR_CONTRACT)}
         target="_blank"
         rel="noreferrer"
-        className="cursor-pointer num inline-flex min-h-11 min-w-0 items-center gap-1 break-all text-near hover:underline sm:min-h-0"
+        className="cursor-pointer num inline-flex min-w-0 items-center gap-1 break-all text-near hover:underline pointer-coarse:min-h-11"
       >
         {NEAR_CONTRACT} <ExternalLink size={11} aria-hidden className="shrink-0" />
       </a>
@@ -143,7 +143,7 @@ export function ContractProofStrip() {
               href={nearAccountUrl(oracle)}
               target="_blank"
               rel="noreferrer"
-              className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-muted hover:text-near sm:min-h-0"
+              className="cursor-pointer inline-flex items-center gap-1 text-muted hover:text-near pointer-coarse:min-h-11"
             >
               Trusted oracle <ExternalLink size={11} aria-hidden />
             </a>
@@ -155,7 +155,7 @@ export function ContractProofStrip() {
       </span>
       <Link
         href="/onchain"
-        className="cursor-pointer inline-flex min-h-11 items-center gap-1 font-medium text-text hover:text-near sm:ml-auto sm:min-h-0"
+        className="cursor-pointer inline-flex items-center gap-1 font-medium text-text hover:text-near sm:ml-auto pointer-coarse:min-h-11"
       >
         Verify on-chain <ArrowRight size={13} aria-hidden />
       </Link>
