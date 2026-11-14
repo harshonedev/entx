@@ -110,7 +110,7 @@ export function ContractProofStrip() {
         href={nearAccountUrl(NEAR_CONTRACT)}
         target="_blank"
         rel="noreferrer"
-        className="cursor-pointer num inline-flex min-w-0 items-center gap-1 break-all text-near hover:underline"
+        className="cursor-pointer num inline-flex min-h-11 min-w-0 items-center gap-1 break-all text-near hover:underline sm:min-h-0"
       >
         {NEAR_CONTRACT} <ExternalLink size={11} aria-hidden className="shrink-0" />
       </a>
@@ -143,7 +143,7 @@ export function ContractProofStrip() {
               href={nearAccountUrl(oracle)}
               target="_blank"
               rel="noreferrer"
-              className="cursor-pointer inline-flex items-center gap-1 text-muted hover:text-near"
+              className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-muted hover:text-near sm:min-h-0"
             >
               Trusted oracle <ExternalLink size={11} aria-hidden />
             </a>
