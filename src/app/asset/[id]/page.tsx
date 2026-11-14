@@ -15,7 +15,7 @@ import { OrderBook } from "@/components/order-book";
 import { PredictionCard } from "@/components/prediction-card";
 import { LiveFeed } from "@/components/chrome";
 import { AnalystCard } from "@/components/analyst-card";
-import { Change, Flash, SimBadge, Sparkline } from "@/components/ui";
+import { Change, Dim, Flash, SimBadge, Sparkline } from "@/components/ui";
 
 export default function AssetPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,12 +50,12 @@ export default function AssetPage() {
         <Poster asset={asset} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-accent px-1.5 py-0.5 text-xs font-bold text-accent-ink">{asset.ticker}</span>
+            <span className="rounded-sm bg-panel-2 px-1.5 py-0.5 text-xs font-medium text-text">{asset.ticker}</span>
             <span className="text-xs text-muted">
               {asset.kind === "movie" ? "Movie" : "Series"} · {asset.genre} · {asset.studio} · {asset.status}
             </span>
           </div>
-          <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">{asset.title}</h1>
+          <h1 className="mt-1.5 text-[22px] font-semibold tracking-[-0.01em] sm:text-3xl">{asset.title}</h1>
           <p className="mt-0.5 text-sm italic text-muted">“{asset.tagline}”</p>
         </div>
         <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
@@ -64,14 +64,14 @@ export default function AssetPage() {
               <span className="label">Unit price</span>
               <SimBadge />
             </div>
-            <div className="num mt-1 text-3xl font-bold">
-              <Flash value={price}>{usd(price)}</Flash>
+            <div className="num mt-1 text-[30px] font-medium tracking-[-0.02em]">
+              <Flash value={price}><Dim text={usd(price)} /></Flash>
             </div>
             <Change value={change24h(m)} className="text-sm" />
           </div>
           <div>
             <div className="label">EPI</div>
-            <div className="num mt-1 text-2xl font-bold text-accent">
+            <div className="num mt-1 text-2xl font-semibold">
               <Flash value={m.epi}>{m.epi.toFixed(1)}</Flash>
             </div>
             <Sparkline points={m.epiHistory.slice(-30).map((h) => h.value)} width={80} height={18} />
@@ -93,7 +93,7 @@ export default function AssetPage() {
         <div className="space-y-4">
           <div className="panel p-3">
             <div className="flex items-center justify-between px-1 pb-2">
-              <span className="label">{asset.ticker} / USD · 15s candles</span>
+              <span className="h-panel">{asset.ticker} / USD · 15s candles</span>
               <span className="flex items-center gap-1.5 text-[11px] text-muted">
                 <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" /> Live simulation
               </span>
@@ -110,7 +110,7 @@ export default function AssetPage() {
 
           {related.length > 0 && (
             <div>
-              <div className="label mb-2">Prediction markets on {asset.ticker}</div>
+              <div className="h-panel mb-2">Prediction markets on {asset.ticker}</div>
               <div className="grid gap-4 md:grid-cols-2">
                 {related.map((p) => (
                   <PredictionCard key={p.id} p={p} compact />
@@ -124,7 +124,7 @@ export default function AssetPage() {
           <TradePanel asset={asset} />
           {held && (
             <div className="panel p-4">
-              <div className="label">Your position</div>
+              <div className="h-panel">Your position</div>
               <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <div className="text-xs text-faint">Units</div>
@@ -150,7 +150,7 @@ export default function AssetPage() {
           )}
           <OrderBook assetId={asset.id} />
           <div className="panel p-4">
-            <div className="label mb-1">Activity</div>
+            <div className="h-panel mb-1">Activity</div>
             <LiveFeed refId={asset.id} limit={8} />
           </div>
         </aside>

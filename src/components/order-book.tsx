@@ -45,7 +45,7 @@ export function OrderBook({ assetId }: { assetId: string }) {
   return (
     <div className="panel overflow-hidden">
       <div className="flex items-center justify-between px-3 pb-1 pt-3">
-        <span className="label">Market depth</span>
+        <span className="h-panel">Market depth</span>
         <span className="text-[10px] text-faint">AMM-derived · simulated</span>
       </div>
       <div className="grid grid-cols-3 px-3 py-1 text-[10px] uppercase tracking-wider text-faint">

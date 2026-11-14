@@ -57,7 +57,7 @@ export function AssetTable({ assets, showMetric = true }: { assets: AssetSeed[];
                 </td>
                 <td className="hidden py-2.5 pl-6 sm:table-cell">
                   <div className="flex w-28 items-center gap-2">
-                    <span className="num w-9 text-xs font-semibold text-accent">{m.epi.toFixed(1)}</span>
+                    <span className="num w-9 text-xs font-medium">{m.epi.toFixed(1)}</span>
                     <EpiMeter value={m.epi} />
                   </div>
                 </td>

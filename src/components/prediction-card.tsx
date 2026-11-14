@@ -63,14 +63,14 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
       {/* Probability bar */}
       <div className="mt-4">
         <div className="flex items-end justify-between">
-          <div className="num text-2xl font-bold">
+          <div className="num text-2xl font-semibold">
             <Flash value={yp}>{st.resolved ? st.resolved : `${(yp * 100).toFixed(0)}%`}</Flash>
             {!st.resolved && <span className="ml-1.5 text-xs font-normal text-muted">chance YES</span>}
           </div>
           <div className="text-xs text-muted">Vol {compactUsd(st.volume)}</div>
         </div>
-        <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-down/40">
-          <div className="h-full bg-up transition-[width] duration-700" style={{ width: `${yp * 100}%` }} />
+        <div className="mt-2 flex h-1 overflow-hidden bg-down/40">
+          <div className="h-full w-full origin-left bg-up motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out" style={{ transform: `scaleX(${yp})` }} />
         </div>
       </div>
 
@@ -90,7 +90,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               onClick={() => setSide(side === "YES" ? null : "YES")}
               className={clsx(
                 "rounded-xl border py-2.5 text-sm font-semibold transition-colors",
-                side === "YES" ? "border-up bg-up text-black" : "border-up/30 text-up hover:bg-up/10",
+                side === "YES" ? "border-up bg-up text-black" : "border-transparent bg-up/[0.08] text-up hover:bg-up/[0.14]",
               )}
             >
               Yes <span className="num font-normal opacity-80">{(yp * 100).toFixed(0)}¢</span>
@@ -99,7 +99,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               onClick={() => setSide(side === "NO" ? null : "NO")}
               className={clsx(
                 "rounded-xl border py-2.5 text-sm font-semibold transition-colors",
-                side === "NO" ? "border-down bg-down text-black" : "border-down/30 text-down hover:bg-down/10",
+                side === "NO" ? "border-down bg-down text-black" : "border-transparent bg-down/[0.08] text-down hover:bg-down/[0.14]",
               )}
             >
               No <span className="num font-normal opacity-80">{((1 - yp) * 100).toFixed(0)}¢</span>
@@ -107,7 +107,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
           </div>
 
           {side && q && (
-            <div className="mt-3 rounded-xl bg-white/[0.025] p-3">
+            <div className="mt-3 rounded bg-panel-2 p-3">
               <div className="grid grid-cols-4 gap-1.5">
                 {AMOUNTS.map((a) => (
                   <button
@@ -135,7 +135,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               <button
                 disabled={amount > cash}
                 onClick={place}
-                className="mt-3 w-full rounded-lg bg-accent py-2 text-sm font-bold text-accent-ink disabled:opacity-40"
+                className="mt-3 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-accent-ink disabled:opacity-40"
               >
                 {amount > cash ? "Insufficient balance" : `Buy ${side} · ${usd(amount, 0)}`}
               </button>

@@ -18,13 +18,13 @@ export function AnalystCard({ assetId }: { assetId: string }) {
     <div className="panel p-4">
       <div className="flex items-center gap-2">
         <Bot size={15} className="text-accent" />
-        <span className="label">ENTX Analyst</span>
+        <span className="h-panel">ENTX Analyst</span>
         <span className="ml-auto text-[10px] text-faint">Recommends only · never trades for you</span>
       </div>
       <div className="mt-3 flex items-end gap-4">
         <div
           className={clsx(
-            "rounded-lg px-2.5 py-1 text-sm font-bold",
+            "rounded-lg px-2.5 py-1 text-sm font-semibold",
             bull ? "bg-up/15 text-up" : bear ? "bg-down/15 text-down" : "bg-white/[0.06] text-text",
           )}
         >
@@ -47,10 +47,10 @@ export function AnalystCard({ assetId }: { assetId: string }) {
           <li key={f.name} className="text-xs">
             <div className="flex items-center gap-2">
               <span className="w-28 shrink-0 text-muted">{f.name}</span>
-              <div className="relative h-1.5 flex-1 rounded-full bg-white/5">
+              <div className="relative h-1 flex-1 bg-white/[0.06]">
                 <div className="absolute left-1/2 top-0 h-full w-px bg-white/15" />
                 <div
-                  className={clsx("absolute top-0 h-full rounded-full", f.score >= 0 ? "bg-up" : "bg-down")}
+                  className={clsx("absolute top-0 h-full", f.score >= 0 ? "bg-up" : "bg-down")}
                   style={
                     f.score >= 0
                       ? { left: "50%", width: `${f.score * 50}%` }

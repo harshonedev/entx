@@ -1,20 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #07080a;
-  --panel: #0d0f12;
-  --panel-2: #12151a;
-  --line: #1d2128;
-  --line-2: #2a2f38;
-  --text: #ecebe8;
-  --muted: #8b919b;
-  --faint: #5b616b;
-  --accent: #f5b544;
-  --accent-ink: #1a1203;
-  --up: #34d399;
-  --down: #f87171;
-  --sol: #9b7bff;
-  --near: #00ec97;
+  --bg: #0e0e0e;
+  --panel: #161616;
+  --panel-2: #1e1e1e;
+  --line: #232323;
+  --line-2: #2f2f2f;
+  --text: #f2f2f2;
+  /* Text ramp, measured on the darkest tile (--panel-2):
+     text 14.9:1 · muted 7.0:1 · faint 4.7:1 (all >= 4.5:1). */
+  --muted: #a8a8a8;
+  --faint: #888888;
+  --accent: #ff7a1a;
+  --accent-ink: #1a0b00;
+  /* Status: gain/loss and caution. Hues (OKLCH): up 155°, down 25°, warn 85°, accent 49°. */
+  --up: #34c77b;
+  --down: #ef5350;
+  --warn: #f0bb3b;
+  /* Chain identity. NEAR sits at 190°, 35° clear of --up so "NEAR" never reads as "gain". */
+  --sol: #9786ea;
+  --near: #21d1ca;
 }
 
 @theme inline {
@@ -30,10 +35,22 @@
   --color-accent-ink: var(--accent-ink);
   --color-up: var(--up);
   --color-down: var(--down);
+  --color-warn: var(--warn);
   --color-sol: var(--sol);
   --color-near: var(--near);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/* Flat, low-radius system: every rounded-* utility maps to 2–4px. */
+@theme {
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
 }
 
 html {
@@ -42,34 +59,98 @@ html {
 
 body {
   background: var(--bg);
+  letter-spacing: -0.003em;
   color: var(--text);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+@layer components {
+/* Numerals: proportional sans with tabular figures (no monospace). */
 .num {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 4px;
 }
 
+/* Small field / stat caption */
 .label {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12px;
   color: var(--muted);
 }
 
+/* Panel heading */
+.h-panel {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+
+/* Segmented control: tile track, white active segment */
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--panel-2);
+  border-radius: 5px; /* inner 2px + 3px inset */
+}
+.seg > button, .seg > a {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  border-radius: 2px;
+  color: var(--muted);
+  transition-property: color, background-color, scale;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+@media (hover: hover) {
+  .seg > button:hover, .seg > a:hover { color: var(--text); }
+}
+.seg > [aria-pressed="true"], .seg > [aria-selected="true"] {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 500;
+}
+}
+
+/* Press feedback: buttons (and .press links) scale to 0.96. Opt out with data-static. */
+button, .press {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :is(button:not(:disabled), .press):not([data-static]) {
+    transition-property: color, background-color, border-color, opacity, filter, scale;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+  :is(button:not(:disabled), .press):not([data-static]):active {
+    scale: 0.96;
+  }
+}
+
+/* Icon stroke tracks adjacent text weight: 1.5px rendered at any icon size. */
+.lucide {
+  stroke-width: 1.5px;
+}
+.lucide * {
+  vector-effect: non-scaling-stroke;
+}
+
 @keyframes flash-up {
-  from { background: color-mix(in oklab, var(--up) 22%, transparent); }
+  from { background: color-mix(in oklab, var(--up) 14%, transparent); }
   to { background: transparent; }
 }
 @keyframes flash-down {
-  from { background: color-mix(in oklab, var(--down) 22%, transparent); }
+  from { background: color-mix(in oklab, var(--down) 14%, transparent); }
   to { background: transparent; }
 }
 .flash-up { animation: flash-up 900ms ease-out; }
@@ -82,10 +163,15 @@ body {
 .marquee { animation: marquee 60s linear infinite; }
 
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; filter: blur(4px); translate: 0 12px; }
 }
-.toast-in { animation: toast-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+.toast-in { animation: fade-in 300ms ease-out both; }
+@media (prefers-reduced-motion: no-preference) {
+  .toast-in { animation-name: toast-in; }
+}
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
@@ -94,23 +180,33 @@ body {
 .live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee, .live-dot, .flash-up, .flash-down, .toast-in { animation: none; }
+  .marquee, .live-dot, .flash-up, .flash-down { animation: none; }
 }
 
-/* Wallet adapter button restyle */
+/* Wallet adapter button restyle: neutral, flat, matches the shell */
 .wallet-adapter-button.wallet-adapter-button-trigger {
   height: 36px;
   padding: 0 14px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-family: inherit;
-  font-weight: 600;
-  border-radius: 10px;
-  background: var(--sol);
-  color: #0b0716;
+  font-weight: 500;
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
 }
-.wallet-adapter-button.wallet-adapter-button-trigger:not([disabled]):hover {
-  background: #b29bff;
+@media (hover: hover) {
+  .wallet-adapter-button.wallet-adapter-button-trigger:not([disabled]):hover {
+    background: var(--panel-2);
+  }
 }
-.wallet-adapter-button-start-icon img { width: 18px; height: 18px; }
-.wallet-adapter-modal-wrapper { background: var(--panel); border: 1px solid var(--line); }
-
+.wallet-adapter-button-start-icon { margin-right: 8px; }
+.wallet-adapter-button-start-icon img { width: 16px; height: 16px; }
+.wallet-adapter-modal-wrapper {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: none;
+}
+.wallet-adapter-modal-list .wallet-adapter-button { border-radius: 3px; }
+.wallet-adapter-dropdown-list { border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line-2); box-shadow: none; }
+.wallet-adapter-dropdown-list-item { border-radius: 3px; }

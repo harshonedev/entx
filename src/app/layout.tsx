@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { Nav } from "@/components/nav";
+import { Shell } from "@/components/nav";
 import { TickerTape, Toasts } from "@/components/chrome";
 import "./globals.css";
 
@@ -17,16 +17,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
+      <body className="min-h-full">
         <Providers>
-          <Nav />
-          <TickerTape />
-          <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">{children}</main>
-          <footer className="border-t border-line px-6 py-4 text-center text-[11px] text-faint">
-            ENTX hackathon demo · Spot prices, balances and titles are simulated · Trade receipts can be written to
-            Solana devnet (Memo) and NEAR testnet (ENTX contract) · Prediction pools on NEAR use real testnet NEAR
-            · Intents quotes are dry-run only · Not a real-money exchange.
-          </footer>
+          <Shell>
+            <TickerTape />
+            <main className="w-full max-w-[1480px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+            <footer className="border-t border-line px-4 py-4 text-[11px] leading-relaxed text-faint sm:px-6 lg:px-8">
+              ENTX hackathon demo · Spot prices, balances and titles are simulated · Trade receipts can be written to
+              Solana devnet (Memo) and NEAR testnet (ENTX contract) · Prediction pools on NEAR use real testnet NEAR
+              · Intents quotes are dry-run only · Not a real-money exchange.
+            </footer>
+          </Shell>
           <Toasts />
         </Providers>
       </body>

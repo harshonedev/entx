@@ -50,18 +50,18 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
 
   return (
     <div className="panel p-4">
-      <div className="grid grid-cols-2 gap-1 rounded-xl bg-white/[0.03] p-1">
+      <div className="grid grid-cols-2 gap-1.5">
         {(["buy", "sell"] as const).map((s) => (
           <button
             key={s}
             onClick={() => setSide(s)}
             className={clsx(
-              "rounded-lg py-2 text-sm font-semibold capitalize transition-colors",
+              "h-11 rounded text-[13px] font-medium capitalize transition-colors",
               side === s
                 ? s === "buy"
-                  ? "bg-up text-black"
-                  : "bg-down text-black"
-                : "text-muted hover:text-text",
+                  ? "bg-up/[0.12] text-up"
+                  : "bg-down/[0.12] text-down"
+                : "bg-panel-2 text-muted hover:text-text",
             )}
           >
             {s}
@@ -78,22 +78,23 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
           Max: <span className="num">{side === "buy" ? maxBuy : num(units, 0)}</span>
         </button>
       </div>
-      <div className="mt-1.5 flex items-center rounded-xl border border-line-2 bg-bg px-3 focus-within:border-accent/60">
+      <div className="mt-1.5 flex items-center rounded bg-panel-2 px-4 ring-1 ring-transparent focus-within:ring-line-2">
         <input
           inputMode="decimal"
           value={qtyText}
           onChange={(e) => setQtyText(e.target.value.replace(/[^0-9.]/g, ""))}
-          className="num h-11 w-full bg-transparent text-lg font-semibold outline-none"
+          className="num h-14 w-full bg-transparent text-[26px] font-medium tracking-[-0.02em] outline-none"
           aria-label="Quantity"
         />
         <span className="text-sm font-semibold text-muted">{asset.ticker}</span>
       </div>
-      <div className="mt-2 grid grid-cols-4 gap-1.5">
+      <div className="seg mt-2 grid w-full grid-cols-4">
         {PRESETS.map((p) => (
           <button
             key={p}
             onClick={() => setQtyText(String(p))}
-            className="num rounded-lg border border-line py-1.5 text-xs text-muted hover:border-line-2 hover:text-text"
+            aria-pressed={qtyText === String(p)}
+            className="num"
           >
             {p}
           </button>
@@ -117,14 +118,14 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
         disabled={invalid}
         onClick={submit}
         className={clsx(
-          "mt-4 w-full rounded-xl py-3 text-sm font-bold transition-[filter,transform] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40",
-          side === "buy" ? "bg-up text-black hover:brightness-110" : "bg-down text-black hover:brightness-110",
+          "mt-4 h-12 w-full rounded text-[13.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-40",
+          side === "buy" ? "bg-accent text-accent-ink hover:brightness-110" : "bg-down text-black hover:brightness-110",
         )}
       >
         {reason ?? `${side === "buy" ? "Buy" : "Sell"} ${num(qty, qty % 1 ? 2 : 0)} ${asset.ticker} · ${usd(total)}`}
       </button>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-white/[0.025] p-3 text-xs">
+      <div className="mt-4 grid grid-cols-2 gap-3 rounded bg-panel-2 p-3 text-xs">
         <div>
           <div className="text-faint">Available</div>
           <div className="num mt-0.5 font-semibold">{usd(cash)}</div>
@@ -140,7 +141,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
       <div
         className={clsx(
           "mt-3 flex items-start gap-2 rounded-xl border p-2.5 text-[11px] leading-relaxed",
-          connected ? "border-sol/30 bg-sol/[0.06] text-text/80" : "border-line text-muted",
+          connected ? "border-line-2 bg-bg text-text/80" : "border-line text-muted",
         )}
       >
         <ShieldCheck size={14} className={clsx("mt-0.5 shrink-0", connected ? "text-sol" : "text-faint")} />
@@ -156,7 +157,7 @@ function Row({ k, v, strong, tone }: { k: string; v: string; strong?: boolean; t
   return (
     <div className="flex items-center justify-between">
       <dt className="text-muted">{k}</dt>
-      <dd className={clsx("num", strong && "text-sm font-semibold", tone === "warn" && "text-accent")}>{v}</dd>
+      <dd className={clsx("num", strong && "text-sm font-semibold", tone === "warn" && "text-warn")}>{v}</dd>
     </div>
   );
 }

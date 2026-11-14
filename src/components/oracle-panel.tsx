@@ -11,11 +11,11 @@ export function EpiBreakdown({ asset }: { asset: AssetSeed }) {
   return (
     <div className="panel p-4">
       <div className="flex items-baseline justify-between">
-        <span className="label">Entertainment Popularity Index</span>
+        <span className="h-panel">Entertainment Popularity Index</span>
         <span className="text-[11px] text-faint">Source confidence {asset.confidence}%</span>
       </div>
       <div className="mt-2 flex items-end gap-3">
-        <span className="num text-4xl font-bold text-accent">{m.epi.toFixed(1)}</span>
+        <span className="num text-4xl font-semibold text-accent">{m.epi.toFixed(1)}</span>
         <span className="mb-1.5 text-xs text-muted">/ 100</span>
       </div>
       <div className="mt-4 space-y-3">
@@ -44,8 +44,8 @@ export function OraclePanel({ asset }: { asset: AssetSeed }) {
     <div className="panel relative overflow-hidden p-4">
       <div className="flex items-center gap-2">
         <Satellite size={15} className="text-accent" />
-        <span className="label">Entertainment oracle</span>
-        <span className="ml-auto rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+        <span className="h-panel">Entertainment oracle</span>
+        <span className="ml-auto rounded-sm border border-line-2 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
           Demo control
         </span>
       </div>

@@ -64,7 +64,7 @@ export default function OnchainPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">On-chain</h1>
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em]">On-chain</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted">
             What ENTX puts on-chain, read live from the chains. NEAR holds the market registry, EPI oracle reports,
             trade receipts and real-NEAR prediction pools. Solana devnet holds memo receipts. Intents route
@@ -81,7 +81,7 @@ export default function OnchainPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div className="panel p-4 lg:col-span-2">
-          <div className="label">NEAR contract · testnet</div>
+          <div className="h-panel">NEAR contract · testnet</div>
           <a
             href={nearAccountUrl(NEAR_CONTRACT)}
             target="_blank"
@@ -108,7 +108,7 @@ export default function OnchainPage() {
       <section className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="space-y-4">
           <div className="panel overflow-x-auto">
-            <div className="label px-4 pt-4">Asset markets · on-chain EPI vs live</div>
+            <div className="h-panel px-4 pt-4">Asset markets · on-chain EPI vs live</div>
             <table className="mt-2 w-full min-w-[620px] text-sm">
               <thead>
                 <tr className="text-left text-[11px] uppercase tracking-wider text-faint">
@@ -130,7 +130,7 @@ export default function OnchainPage() {
                       </Link>
                     </td>
                     <td className="num py-2 text-right text-near">{(m.epi_x10 / 10).toFixed(1)}</td>
-                    <td className="num py-2 text-right text-accent">{local[m.id]?.epi.toFixed(1) ?? "—"}</td>
+                    <td className="num py-2 text-right">{local[m.id]?.epi.toFixed(1) ?? "—"}</td>
                     <td className="num py-2 text-right text-muted">{m.oracle_updates}</td>
                     <td className="num py-2 text-right text-muted">{m.trades}</td>
                     <td className="num py-2 pr-4 text-right text-muted">${(m.volume_micro_usd / 1e6).toFixed(2)}</td>
@@ -141,7 +141,7 @@ export default function OnchainPage() {
           </div>
 
           <div className="panel overflow-x-auto">
-            <div className="label px-4 pt-4">Prediction pools · real testnet NEAR</div>
+            <div className="h-panel px-4 pt-4">Prediction pools · real testnet NEAR</div>
             <table className="mt-2 w-full min-w-[620px] text-sm">
               <thead>
                 <tr className="text-left text-[11px] uppercase tracking-wider text-faint">
@@ -170,7 +170,7 @@ export default function OnchainPage() {
           </div>
 
           <div className="panel overflow-x-auto">
-            <div className="label px-4 pt-4">Latest NEAR trade receipts (all traders)</div>
+            <div className="h-panel px-4 pt-4">Latest NEAR trade receipts (all traders)</div>
             {receipts.length === 0 ? (
               <div className="px-4 pb-5 pt-3 text-sm text-muted">
                 No receipts yet. Connect a NEAR wallet and place a trade.
@@ -201,7 +201,7 @@ export default function OnchainPage() {
                           </a>
                         </td>
                         <td className="py-2">{r.market_id}</td>
-                        <td className="py-2 font-bold">{r.side}</td>
+                        <td className="py-2 font-semibold">{r.side}</td>
                         <td className="num py-2 text-right">
                           {(r.qty_micro / 1e6).toFixed(2)} @{" "}
                           {isPred ? `${((r.price_micro / 1e6) * 100).toFixed(1)}¢` : `$${(r.price_micro / 1e6).toFixed(2)}`}
@@ -228,7 +228,7 @@ export default function OnchainPage() {
         <aside className="space-y-4">
           <IntentsPanel />
           <div className="panel p-4 text-xs leading-relaxed text-muted">
-            <div className="label mb-2">Solana devnet</div>
+            <div className="h-panel mb-2">Solana devnet</div>
             Each trade can also be signed as a JSON memo through the SPL Memo program{" "}
             <span className="num break-all text-text/80">{MEMO_PROGRAM_ID.toBase58()}</span>. When both wallets are
             connected, the NEAR receipt stores the Solana signature in <code>chain_ref</code>, linking the two

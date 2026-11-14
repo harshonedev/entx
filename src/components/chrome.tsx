@@ -16,7 +16,7 @@ export function TickerTape() {
       aria-hidden={suffix ? true : undefined}
       tabIndex={suffix ? -1 : undefined}
       href={`/asset/${a.id}`}
-      className="flex items-center gap-2 px-5 text-xs hover:text-accent"
+      className="flex items-center gap-2 border-r border-line px-5 text-[11.5px] hover:text-accent"
     >
       <span className="font-semibold">{a.ticker}</span>
       <span className="num text-muted">{usd(priceOf(markets[a.id]))}</span>
@@ -24,7 +24,7 @@ export function TickerTape() {
     </Link>
   ));
   return (
-    <div className="overflow-hidden border-b border-line bg-panel/60 py-2">
+    <div className="overflow-hidden border-b border-line bg-bg py-2.5">
       <div className="marquee flex w-max">
         {row("")}
         {row("-dup")}
@@ -44,7 +44,7 @@ export function Toasts() {
             <div className="flex items-start gap-2">
               <span
                 className={clsx(
-                  "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                  "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
                   t.tone === "up" ? "bg-up" : t.tone === "down" ? "bg-down" : "bg-sol",
                 )}
               />
@@ -57,7 +57,7 @@ export function Toasts() {
         );
         const external = t.href?.startsWith("http");
         return (
-          <div key={t.id} className="toast-in pointer-events-auto relative rounded-xl border border-line-2 bg-panel-2 p-3 pr-8 shadow-2xl shadow-black/50">
+          <div key={t.id} className="toast-in pointer-events-auto relative rounded border border-line-2 bg-panel-2 p-3 pr-8">
             {t.href ? (
               external ? (
                 <a href={t.href} target="_blank" rel="noreferrer" className="block">{body}</a>
