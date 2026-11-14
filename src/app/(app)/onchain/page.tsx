@@ -253,7 +253,7 @@ export default function OnchainPage() {
             </div>
             <p className="max-w-prose px-4 pt-1 text-xs leading-relaxed text-muted">
               Testnet NEAR (no monetary value) staked on YES or NO through the contract. The simulated odds elsewhere in the app don&apos;t
-              touch these pools, and settling a market from Demo controls only settles the simulation: a pool here stays
+              touch these pools, and settling a market from Simulate only settles the simulation: a pool here stays
               Open until the contract&apos;s resolver settles it on-chain.
             </p>
             <table id={poolCap.tableId} className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[620px]">

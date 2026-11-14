@@ -155,7 +155,7 @@ export default function EpiPage() {
             </ul>
             <p className="mt-3 border-t border-line pt-3 text-xs text-muted">
               Every signal starts from TMDB data. After that, the values here move only with simulated news
-              events from the Demo controls in the top bar.
+              events from Simulate in the top bar.
             </p>
           </div>
         </div>

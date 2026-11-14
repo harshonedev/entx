@@ -6,7 +6,7 @@ import { useMarket } from "@/store/market";
 
 const nav = vi.hoisted(() => ({ path: "/", push: vi.fn() }));
 const wallet = vi.hoisted(() => ({ connected: false, publicKey: null }));
-const near = vi.hoisted(() => ({ accountId: null as string | null, ready: true, connect: vi.fn(), disconnect: vi.fn() }));
+const near = vi.hoisted(() => ({ accountId: null as string | null, ready: true, connect: vi.fn(async () => {}), disconnect: vi.fn(async () => {}) }));
 const airdrop = vi.hoisted(() => vi.fn());
 const solModal = vi.hoisted(() => ({ setVisible: vi.fn() }));
 
@@ -49,6 +49,9 @@ beforeEach(() => {
   wallet.connected = false;
   near.accountId = null;
   near.connect.mockReset();
+  near.connect.mockImplementation(async () => {});
+  near.ready = true;
+  solModal.setVisible.mockReset();
   airdrop.mockReset();
 });
 
@@ -78,7 +81,7 @@ describe("Shell", () => {
   it("keeps the dateline strip: environment badge, network, receipts and portfolio", () => {
     render(<Shell>x</Shell>);
     expect(within(mainNav()).getByRole("link", { name: "On-chain" })).toBeVisible();
-    expect(screen.getByRole("button", { name: /Receipts off/ })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Receipts off" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^Portfolio \$/ })).toHaveAttribute("href", "/portfolio");
   });
 
@@ -92,13 +95,33 @@ describe("Shell", () => {
   });
 
   describe("receipt toggles", () => {
-    it("the strip offers to connect instead of showing dead switches", async () => {
+    it("the strip offers a connect per chain instead of dead switches", async () => {
       const user = userEvent.setup();
       render(<Shell>x</Shell>);
-      const cta = screen.getByRole("button", { name: /^Receipts off.*Connect NEAR to sign them$/ });
-      expect(screen.queryByRole("group", { name: "Receipts" })).not.toBeInTheDocument();
-      await user.click(cta);
+      const strip = within(screen.getByRole("group", { name: "Receipts off" }));
+      await user.click(strip.getByRole("button", { name: "Connect NEAR" }));
       expect(near.connect).toHaveBeenCalledOnce();
+      await user.click(strip.getByRole("button", { name: "Connect Solana" }));
+      expect(solModal.setVisible).toHaveBeenCalledWith(true);
+    });
+
+    it("treats a closed NEAR selector as a cancel, not an unhandled error", async () => {
+      near.connect.mockImplementation(() => Promise.reject(new Error("User closed the modal")));
+      const user = userEvent.setup();
+      render(<Shell>x</Shell>);
+      await user.click(screen.getByRole("button", { name: "Connect NEAR" }));
+      expect(near.connect).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the NEAR connect focusable but inert while the connector loads", async () => {
+      near.ready = false;
+      const user = userEvent.setup();
+      render(<Shell>x</Shell>);
+      const cta = screen.getByRole("button", { name: "Connect NEAR" });
+      expect(cta).toHaveAttribute("aria-disabled", "true");
+      expect(cta).not.toBeDisabled();
+      await user.click(cta);
+      expect(near.connect).not.toHaveBeenCalled();
     });
 
     it("are disabled with a hint in the drawer when no wallet is connected", async () => {
@@ -128,7 +151,8 @@ describe("Shell", () => {
       expect(nr).not.toHaveAttribute("aria-disabled");
       expect(nr).not.toHaveAccessibleDescription();
       expect(nr).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByText("Connect a Solana wallet to sign receipts for your trades.")).toBeInTheDocument();
+      // The other chain stays reachable from the strip.
+      expect(within(screen.getByRole("group", { name: "Receipts" })).getByRole("button", { name: "Connect Solana" })).toBeInTheDocument();
       await user.click(nr);
       expect(useMarket.getState().chains.near).toBe(false);
       expect(nr).toHaveAttribute("aria-pressed", "false");
@@ -185,6 +209,15 @@ describe("Shell", () => {
 
   describe("asset search", () => {
     const search = () => screen.getByRole("combobox", { name: "Search titles and markets" });
+
+    it("phone search button focuses the field in the same tap and gets focus back on Escape", async () => {
+      const user = userEvent.setup();
+      render(<Shell>x</Shell>);
+      await user.click(screen.getByRole("button", { name: "Search titles and markets" }));
+      expect(search()).toHaveFocus();
+      await user.keyboard("{Escape}");
+      expect(screen.getByRole("button", { name: "Search titles and markets" })).toHaveFocus();
+    });
 
     it("opens grouped titles and prediction markets on focus and filters by title or ticker", async () => {
       const user = userEvent.setup();

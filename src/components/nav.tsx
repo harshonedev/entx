@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import {
   Droplets,
   Menu,
@@ -18,7 +18,7 @@ import { yesPrice } from "@/lib/engine";
 import { STARTING_CASH, change24h, portfolioValue, priceOf, useMarket } from "@/store/market";
 import { compactUsd, pct, usd } from "@/lib/format";
 import { useAirdrop } from "@/lib/solana";
-import { useNear } from "@/lib/near";
+import { useChainWallets } from "@/lib/chain-wallets";
 import { Poster } from "./poster";
 import { WalletMenu } from "./wallet-menu";
 import { DemoControls } from "./demo-controls";
@@ -196,83 +196,95 @@ function AccountFigure() {
   );
 }
 
+const RECEIPT_CHAINS = [
+  { key: "solana", short: "Solana", long: "Solana devnet" },
+  { key: "near", short: "NEAR", long: "NEAR testnet" },
+] as const;
+
 function ReceiptToggles({ inline = false }: { inline?: boolean }) {
   const chains = useMarket((s) => s.chains);
   const setChains = useMarket((s) => s.setChains);
-  const near = useNear();
-  const accountId = near.accountId;
-  const { connected: solConnected } = useWallet();
-  const solModal = useWalletModal();
-  // A receipt toggle only means something once that chain's wallet is connected.
-  const live = { solana: solConnected, near: !!accountId };
-  const missing = MULTICHAIN
-    ? live.solana ? "NEAR" : live.near ? "Solana" : "Solana or NEAR"
-    : CHAIN_NAMES[0];
-  const allLive = (["solana", "near"] as const).every((k) => !CHAIN_ON[k] || live[k]);
+  const wallets = useChainWallets();
+  const enabled = RECEIPT_CHAINS.filter((c) => CHAIN_ON[c.key]);
+  const missingChains = enabled.filter((c) => !wallets[c.key].connected).map((c) => c.short);
+  const missing = missingChains.join(" or ");
+  const anyLive = missingChains.length < enabled.length;
   const hintId = inline ? "receipts-hint-inline" : "receipts-hint";
   const labelId = inline ? "receipts-label-inline" : "receipts-label";
-  const anyLive = (["solana", "near"] as const).some((k) => CHAIN_ON[k] && live[k]);
-  // In the dateline a row of dead switches reads as broken; before any wallet is connected, offer the connect instead.
-  if (inline && !anyLive) {
-    const useNearWallet = CHAIN_ON.near;
+
+  // A switch only means something once that chain's wallet is connected.
+  const toggle = (c: (typeof RECEIPT_CHAINS)[number], label: string) => {
+    const live = wallets[c.key].connected;
+    const on = live && chains[c.key];
     return (
       <button
-        type="button"
-        onClick={() => (useNearWallet ? near.connect() : solModal.setVisible(true))}
-        disabled={useNearWallet && !near.ready}
-        className="cursor-pointer inline-flex h-full items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-accent disabled:cursor-wait"
+        key={c.key}
+        // aria-disabled (not disabled) keeps the row focusable, so screen readers reach it and hear why it is off.
+        onClick={() => live && setChains({ [c.key]: !chains[c.key] })}
+        aria-disabled={!live || undefined}
+        aria-pressed={on}
+        aria-describedby={live ? undefined : hintId}
+        title={live ? undefined : `Connect a ${missing} wallet to sign receipts for your trades.`}
+        className={clsx(
+          "flex items-center gap-2 text-[12.5px] transition-colors",
+          inline ? "h-9 px-2" : "h-8 w-full px-1",
+          live ? "cursor-pointer text-text hover:bg-panel-2" : "cursor-not-allowed text-faint",
+        )}
       >
-        Receipts off
-        <span aria-hidden className="text-faint">·</span>
-        <span className="font-medium text-text underline decoration-line-2 underline-offset-[3px] hover:decoration-current">
-          Connect {useNearWallet ? "NEAR" : CHAIN_NAMES[0]} to sign them
+        <span>{label}</span>
+        <span className={clsx("relative h-3.5 w-6 border border-ink transition-colors", inline ? "" : "ml-auto", on ? "bg-ink" : "bg-transparent")}>
+          <span
+            className={clsx(
+              "absolute left-[1px] top-[1px] h-2.5 w-2.5 motion-safe:transition-[translate,background-color] motion-safe:duration-150 motion-safe:ease-out",
+              on ? "translate-x-2.5 bg-bg" : "bg-line-2",
+            )}
+          />
         </span>
       </button>
     );
-  }
-  return (
-    <div role="group" aria-labelledby={labelId} className={clsx(inline && "flex h-full items-center gap-1")}>
-      <div id={labelId} className={clsx(inline ? "mr-1 text-muted" : "label mb-2")}>
-        {inline ? "Receipts" : "On-chain receipts"}
-      </div>
-      <div className={clsx(inline ? "flex items-center gap-1" : "space-y-1")}>
-        {(
-          [
-            ["solana", inline ? "Solana" : "Solana devnet"],
-            ["near", inline ? "NEAR" : "NEAR testnet"],
-          ] as const
-        ).filter(([k]) => CHAIN_ON[k] && (!inline || live[k])).map(([k, label]) => {
-          const on = live[k] && chains[k];
+  };
+
+  // In the dateline a dead switch reads as broken: a chain without a wallet gets its connect action instead,
+  // so every enabled chain stays reachable from the strip whether or not another one is connected.
+  if (inline) {
+    return (
+      <div role="group" aria-labelledby={labelId} className="flex h-full items-center gap-1">
+        <div id={labelId} className="mr-1 whitespace-nowrap text-muted">
+          {anyLive ? "Receipts" : "Receipts off"}
+        </div>
+        {enabled.map((c) => {
+          if (wallets[c.key].connected) return toggle(c, c.short);
+          const { ready, connect } = wallets[c.key];
           return (
-          <button
-            key={k}
-            // aria-disabled (not disabled) keeps the row focusable, so screen readers reach it and hear why it is off.
-            onClick={() => live[k] && setChains({ [k]: !chains[k] })}
-            aria-disabled={!live[k] || undefined}
-            aria-pressed={on}
-            aria-describedby={live[k] ? undefined : hintId}
-            title={live[k] ? undefined : `Connect a ${missing} wallet to sign receipts for your trades.`}
-            className={clsx(
-              "flex items-center gap-2 text-[12.5px] transition-colors",
-              inline ? "h-9 px-2" : "h-8 w-full px-1",
-              live[k] ? "cursor-pointer text-text hover:bg-panel-2" : "cursor-not-allowed text-faint",
-            )}
-          >
-            <span>{label}</span>
-            <span className={clsx("relative h-3.5 w-6 border border-ink transition-colors", inline ? "" : "ml-auto", on ? "bg-ink" : "bg-transparent")}>
-              <span
-                className={clsx(
-                  "absolute left-[1px] top-[1px] h-2.5 w-2.5 motion-safe:transition-[translate,background-color] motion-safe:duration-150 motion-safe:ease-out",
-                  on ? "translate-x-2.5 bg-bg" : "bg-line-2",
-                )}
-              />
-            </span>
-          </button>
+            <button
+              key={c.key}
+              type="button"
+              // aria-disabled while the connector loads, so the control stays in the tab order and says why.
+              onClick={() => ready && connect()}
+              aria-disabled={!ready || undefined}
+              title={ready ? undefined : `The ${c.short} wallet is still loading.`}
+              className={clsx(
+                "inline-flex h-9 items-center whitespace-nowrap px-2 text-[12.5px] font-medium underline decoration-line-2 underline-offset-[3px] transition-colors",
+                ready ? "cursor-pointer text-text hover:text-accent hover:decoration-current" : "cursor-wait text-faint",
+              )}
+            >
+              Connect {c.short}
+              {enabled.length === 1 && " to sign them"}
+            </button>
           );
         })}
       </div>
-      {!allLive && (
-        <p id={hintId} className={clsx(inline ? "sr-only" : "mt-2 text-xs leading-snug text-muted")}>
+    );
+  }
+
+  return (
+    <div role="group" aria-labelledby={labelId}>
+      <div id={labelId} className="label mb-2">
+        On-chain receipts
+      </div>
+      <div className="space-y-1">{enabled.map((c) => toggle(c, c.long))}</div>
+      {missing && (
+        <p id={hintId} className="mt-2 text-xs leading-snug text-muted">
           Connect a {missing} wallet to sign receipts for your trades.
         </p>
       )}
@@ -415,23 +427,34 @@ function AssetSearch() {
   const [expanded, setExpanded] = useState(false);
   const shortcut = useShortcutLabel();
   const input = useRef<HTMLInputElement>(null);
+  const opener = useRef<HTMLButtonElement>(null);
+  const refocusOpener = useRef(false);
+
+  // The field is display:none on phones until expanded. Render it synchronously, then focus inside the same
+  // event: iOS Safari only raises the keyboard for a focus() that runs within the user's tap.
+  const openSearch = useCallback(() => {
+    flushSync(() => setExpanded(true));
+    input.current?.focus();
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setExpanded(true);
-        input.current?.focus();
+        openSearch();
         setOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [openSearch]);
 
-  // The field is display:none on phones until expanded, so focus once it has rendered.
+  // Escape on phones collapses the field; hand focus back to the search button instead of dropping it on <body>.
   useEffect(() => {
-    if (expanded) input.current?.focus();
+    if (!expanded && refocusOpener.current) {
+      refocusOpener.current = false;
+      opener.current?.focus();
+    }
   }, [expanded]);
 
   const term = q.trim().toLowerCase();
@@ -472,8 +495,9 @@ function AssetSearch() {
           The accent border on the wrapper is the focus indicator (the bare input never needs its own outline). */}
       {!expanded && (
         <button
+          ref={opener}
           type="button"
-          onClick={() => setExpanded(true)}
+          onClick={openSearch}
           aria-label="Search titles and markets"
           className="cursor-pointer grid h-9 w-9 place-items-center border border-bar-ink/20 bg-bar-field text-bar-ink/75 transition-colors hover:text-bar-ink sm:hidden pointer-coarse:h-11 pointer-coarse:w-11"
         >
@@ -512,6 +536,7 @@ function AssetSearch() {
               } else if (e.key === "Enter" && results[hi]) {
                 go(results[hi].href);
               } else if (e.key === "Escape") {
+                refocusOpener.current = expanded;
                 input.current?.blur();
               }
             }}

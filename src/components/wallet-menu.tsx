@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { ChevronDown, Wallet } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useNear } from "@/lib/near";
+import { useChainWallets } from "@/lib/chain-wallets";
 import { shortKey } from "@/lib/format";
 
 /**
@@ -16,7 +16,7 @@ import { shortKey } from "@/lib/format";
 export function WalletMenu() {
   const near = useNear();
   const sol = useWallet();
-  const modal = useWalletModal();
+  const wallets = useChainWallets();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
 
@@ -47,9 +47,9 @@ export function WalletMenu() {
       dot: "bg-near",
       account: near.accountId,
       purpose: "Stake on prediction pools and sign trade receipts. Each receipt holds a 0.01 Ⓝ deposit; the unused part is refunded.",
-      connect: () => near.connect(),
-      disconnect: () => near.disconnect(),
-      disabled: !near.ready,
+      connect: wallets.near.connect,
+      disconnect: wallets.near.disconnect,
+      disabled: !wallets.near.ready,
     },
     {
       key: "sol",
@@ -57,9 +57,9 @@ export function WalletMenu() {
       dot: "bg-sol",
       account: solKey ? shortKey(solKey) : null,
       purpose: "Sign trade receipts with the Memo program. Uses free devnet SOL.",
-      connect: () => modal.setVisible(true),
-      disconnect: () => void sol.disconnect(),
-      disabled: false,
+      connect: wallets.solana.connect,
+      disconnect: wallets.solana.disconnect,
+      disabled: !wallets.solana.ready,
     },
   ].filter((r) => CHAIN_ON[r.key === "sol" ? "solana" : "near"]);
 

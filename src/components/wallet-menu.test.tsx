@@ -24,8 +24,8 @@ const SOL_KEY = "So1ana1111111111111111111111111111111XyZ9";
 beforeEach(() => {
   near.accountId = null;
   near.ready = true;
-  near.connect.mockReset();
-  near.disconnect.mockReset();
+  near.connect.mockReset().mockResolvedValue(undefined);
+  near.disconnect.mockReset().mockResolvedValue(undefined);
   sol.publicKey = null;
   sol.disconnect.mockReset().mockResolvedValue(undefined);
   modal.setVisible.mockReset();
