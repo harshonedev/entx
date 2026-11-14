@@ -219,3 +219,72 @@ footer.footer--statement {
 }
 @media (min-width: 1024px) and (max-width: 1279px) { #trade .panel { --p-h: 280px; } }
 @media (max-width: 639px) { .epi-rows li { padding: 8px 0; } #epi .stack-5 { gap: var(--s-4); } }
+
+/* hero--collage (dealt): the paper ground, the board as the window cut by the frame's right and bottom
+   edges, one YES/NO ticket 300 wide, 32 in from the frame's lower-left */
+.hero__art { --ground-bg: var(--p-surface); border: 1px solid var(--ink); }
+.hero__art > .ly-piece--main.hw { background: var(--stock); border: 1px solid var(--ink); border-right: 0; border-bottom: 0; }
+.hw .bd { padding-right: var(--ly-cut-room); }
+.hw .bd__t img { width: 26px; height: 38px; object-fit: cover; border: 1px solid var(--ink); flex: none; }
+.hw .bd__table td { height: 56px; }
+.hero__art > .ly-piece--note.hn { left: var(--s-6); bottom: var(--s-6); width: 300px; z-index: 2; }
+.hn .pc-q { font-size: 19px; }
+.hero__proof { color: var(--ink); }
+@media (max-width: 1023px) { .hw .bd__table td { height: 48px; } }
+@media (max-width: 639px) { .hw .bd__table th:nth-child(3), .hw .bd__table td:nth-child(3) { display: table-cell; } .hw .bd__wire { display: none; } }
+
+/* the markets: one lead market with its poster big, four more as linked rows */
+.mk-wall { margin-top: var(--s-7); row-gap: var(--s-6); align-items: stretch; }
+.mk-lead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--ink); background: var(--stock); color: var(--ink); text-decoration: none; min-height: 0; }
+.mk__pic { position: relative; overflow: hidden; border-right: 1px solid var(--ink); aspect-ratio: 2 / 3; }
+.mk__pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mk-lead__body { display: grid; gap: var(--s-4); align-content: start; padding: var(--s-6); }
+.mk-lead__body .pc-kicker { font-size: 13px; }
+.mk-lead h3 { font: 700 32px/1.05 var(--font-display); text-transform: uppercase; letter-spacing: 0.01em; }
+.mk-lead .pc-yesno { margin-top: auto; align-self: end; }
+.mk-lead .pc-yesno span { font-size: 18px; padding: 12px 0; }
+.mk-list { display: grid; border-top: 2px solid var(--ink); align-content: start; }
+.mk-list li { border-bottom: 1px solid var(--hair); }
+.mk-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: var(--s-4); align-items: center; padding: var(--s-3) 0; color: var(--ink); text-decoration: none; }
+.mk-row img { width: 56px; height: 84px; object-fit: cover; border: 1px solid var(--ink); }
+.mk-row__q { display: grid; gap: 4px; }
+.mk-row__q .pc-kicker { font-size: 13px; }
+.mk-row__q b { font: 600 19px/1.15 var(--font-display); text-transform: uppercase; letter-spacing: 0.01em; }
+.mk-row__odds { display: grid; gap: 6px; min-width: 92px; }
+.mk-row__odds span { font: 700 15px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; padding: 8px 10px; border: 1px solid var(--ink); }
+.mk-row__odds .yes { background: var(--gain); border-color: var(--gain); color: #fff; }
+.mk-row__odds .no { color: var(--loss); }
+@media (max-width: 1023px) { .mk-lead, .mk-list { grid-column: 1 / -1; } .mk__pic { aspect-ratio: auto; min-height: 280px; } }
+@media (max-width: 639px) {
+  .mk-lead { grid-template-columns: 1fr; }
+  .mk__pic { border-right: 0; border-bottom: 1px solid var(--ink); min-height: 0; aspect-ratio: 16 / 9; }
+  .mk__pic img { object-position: 50% 25%; }
+  .mk-lead__body { padding: var(--s-4); }
+  .mk-lead h3 { font-size: 24px; }
+  .mk-list li:nth-child(n+3) { display: none; }
+  .mk-row { grid-template-columns: 44px minmax(0, 1fr); }
+  .mk-row img { width: 44px; height: 66px; }
+  .mk-row__odds { grid-column: 2; display: flex; }
+  .mk-row__odds span { flex: 1; }
+}
+
+/* the 2x2: shorter paper panels, the ticket centred in its panel */
+#trade .panel { --p-h: clamp(220px, calc(100svh - 560px), 330px); }
+@media (max-width: 639px) {
+  .hw .bd__table td.l { width: 100%; max-width: 0; }
+  .hw .bd__t > div { min-width: 0; }
+  .hw .bd__t b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px; }
+  .hw .bd__table td { white-space: nowrap; height: 48px; }
+  .hw .bd__table td.rk { font-size: 22px; width: 32px; }
+}
+@media (max-width: 639px) { #trade .group + .grid .panel { display: none; } }
+.mk-lead__body { grid-template-rows: auto auto auto 1fr; }
+.mk-lead__body .pc-fact { align-self: end; color: var(--ink); font-size: 15px; border-top: 1px solid var(--ink); padding-top: var(--s-3); }
+/* the lead market sits on the page's columns: poster on three, its words from the fourth column's line */
+@media (min-width: 1024px) {
+  .mk-lead { grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: var(--gutter); }
+  .mk-lead > .mk__pic { grid-column: 1 / span 3; }
+  .mk-lead > .mk-lead__body { grid-column: 4 / span 3; padding-left: 0; }
+}
+@media (max-width: 639px) { #markets { --hm: 2; } .mk-list li:nth-child(n+3) { display: list-item; } }
+@media (max-width: 639px) { .mk__pic { aspect-ratio: 2 / 3; } .mk__pic img { object-position: 50% 30%; } }

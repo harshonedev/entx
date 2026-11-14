@@ -18,14 +18,13 @@ import { NEAR_CONTRACT, nearAccountUrl } from "@/lib/near-config";
 type Asset = (typeof catalog.assets)[number];
 
 const ORACLE = "entx-oracle-1794654167.testnet";
+const REPO = "https://github.com/harshonedev/entx";
 const assets = catalog.assets as Asset[];
 const predictions = catalog.predictions;
 const epiOf = (a: Asset) => computeEpi(a.epiParts as EpiParts);
 const ranked = [...assets].sort((a, b) => epiOf(b) - epiOf(a));
 const byId = (id: string) => assets.find((a) => a.id === id)!;
 const titleCount = assets.length;
-const movieCount = assets.filter((a) => a.kind === "movie").length;
-const showCount = titleCount - movieCount;
 const predictionCount = predictions.length;
 const poster = (a: Asset, size: "w342" | "w500" | "w780") => a.posterUrl.replace("/w342/", `/${size}/`);
 const money = (n: number) => `$${n.toFixed(2)}`;
@@ -37,16 +36,17 @@ const pred = (id: string) => predictions.find((p) => p.id === id)!;
 const lead = ranked[0]; // the board's open item
 const heart = byId("heart-of-the-beast"); // the EPI section's poster
 const evil = byId("resident-evil");
-const spidey = byId("spider-man-brand-new-day");
-const avengers = byId("avengers-doomsday");
-const rings = byId("the-lord-of-the-rings-the-rings-of-power");
-const mobland = byId("mobland");
 const navCards = [byId("godzilla-minus-zero"), byId("ebenezer"), byId("visionquest")];
 
 const pSpidey = pred("spider-man-brand-new-day-box-office-0");
-const pAvengers = predictions.find((p) => p.assetId === "avengers-doomsday")!;
-const pRings = predictions.find((p) => p.assetId === rings.id && p.category === "Renewal")!;
 const pOdyssey = predictions.find((p) => p.assetId === "the-odyssey")!;
+const wall = [
+  pred("avengers-doomsday-box-office-2"),
+  pred("the-lord-of-the-rings-the-rings-of-power-renewal"),
+  pred("resident-evil-popularity-7"),
+  pred("12-12-12-renewal-5"),
+  pred("heart-of-the-beast-box-office-8"),
+].map((p) => ({ p, a: byId(p.assetId) }));
 
 // the demo oracle event "Box office beats forecast": box office +14, votes +6 (src/lib/assets.ts)
 const evilAfter = computeEpi({
@@ -103,7 +103,7 @@ const hub = {
 
 
 export default function Landing() {
-  const board = ranked.slice(0, 6);
+  const board = ranked.slice(0, 8);
   return (
     <>
       <header className="nav nav--tone">
@@ -119,8 +119,8 @@ export default function Landing() {
               <div className="nav__menu">
                 <div className="wrap grid">
                   {[
-                    ["#markets", "The board", `${titleCount} titles ranked by EPI`, navCards[0]],
-                    ["#trade", "Prediction markets", `${predictionCount} YES/NO markets on what happens next`, navCards[1]],
+                    ["#top", "The board", `${titleCount} titles ranked by EPI`, navCards[0]],
+                    ["#markets", "Prediction markets", `${predictionCount} YES/NO markets on what happens next`, navCards[1]],
                     ["#onchain", "On-chain proof", "Registry, oracle, receipts and pools on NEAR", navCards[2]],
                   ].map(([href, name, line, a]) => (
                     <a key={name as string} className="menu-card span-4" href={href as string}>
@@ -147,133 +147,90 @@ export default function Landing() {
       </header>
 
       <main id="top">
-        {/* HERO: triptych. The h1, a collage of the app's own pieces on real TMDB posters, one large button. */}
-        <section className="hero hero--triptych" data-enter="" aria-labelledby="hero-h">
-          <div className="wrap">
-            <div className="hero-text grid hero__grid">
-              <div className="span-3">
-                <h1 id="hero-h">Movie and TV exchange on NEAR</h1>
-                <p className="hero__lead">
-                  One score, the EPI, built from TMDB box office, popularity, votes and ratings, prices {titleCount} movies and shows and {predictionCount} YES or NO markets.
-                </p>
-              </div>
-              <div className="ly-collage span-6 start-4" role="img" aria-label={`ENTX screens: the EPI card for ${evil.title}, a YES/NO ticket on ${spidey.title} and a renewal market on ${rings.title}, over their TMDB posters`}>
-                <div className="ly-collage__set is-on">
-                  <div className="ly-piece" style={{ left: "4%", top: "6%", width: "46%", height: "62%" }}>
-                    <img src={poster(evil, "w500")} alt="" fetchPriority="high" data-source="client" data-subject="TMDB poster" />
-                  </div>
-                  <div className="ly-piece pc-card" style={{ left: "54%", top: "10%", width: "42%" }}>
-                    <span className="pc-kicker">EPI · {evil.ticker}</span>
-                    <strong className="pc-big">{one(epiOf(evil))}</strong>
-                    {WEIGHTS.map(([k, label]) => (
-                      <div className="pc-row" key={k}><span>{label}</span><b>{one(evil.epiParts[k])}</b></div>
-                    ))}
-                  </div>
-                  <div className="ly-piece pc-card pc-price" style={{ left: "30%", top: "74%", width: "66%", height: "22%" }}>
-                    <span className="pc-kicker">{evil.title} · {evil.status}</span>
-                    <div className="pc-priceline"><strong>{money(evil.basePrice)}</strong><span className="pc-sim">Simulated</span></div>
-                  </div>
-                </div>
-                <div className="ly-collage__set" aria-hidden="true">
-                  <div className="ly-piece pc-card pc-ticket" style={{ left: "4%", top: "6%", width: "52%" }}>
-                    <span className="pc-kicker">{pSpidey.category} · closes in {pSpidey.closesInDays} days</span>
-                    <p className="pc-q">{pSpidey.question}</p>
-                    <div className="pc-yesno"><span className="yes">Yes {cents(pSpidey.yesProb)}</span><span className="no">No {cents(1 - pSpidey.yesProb)}</span></div>
-                    <span className="pc-fine">A share pays $1 if right</span>
-                  </div>
-                  <div className="ly-piece" style={{ left: "60%", top: "6%", width: "36%", height: "48%" }}>
-                    <img src={poster(spidey, "w500")} alt="" data-source="client" data-subject="TMDB poster" />
-                  </div>
-                  <div className="ly-piece" style={{ left: "4%", top: "56%", width: "28%", height: "40%" }}>
-                    <img src={poster(avengers, "w342")} alt="" data-source="client" data-subject="TMDB poster" />
-                  </div>
-                  <div className="ly-piece pc-card pc-ticket" style={{ left: "36%", top: "60%", width: "60%", height: "36%" }}>
-                    <span className="pc-kicker">{pAvengers.category} · closes in {pAvengers.closesInDays} days</span>
-                    <p className="pc-q">{pAvengers.question}</p>
-                    <div className="pc-yesno"><span className="yes">Yes {cents(pAvengers.yesProb)}</span><span className="no">No {cents(1 - pAvengers.yesProb)}</span></div>
-                  </div>
-                </div>
-                <div className="ly-collage__set" aria-hidden="true">
-                  <div className="ly-piece" style={{ left: "4%", top: "6%", width: "40%", height: "54%" }}>
-                    <img src={poster(rings, "w500")} alt="" data-source="client" data-subject="TMDB poster" />
-                  </div>
-                  <div className="ly-piece pc-card pc-wire" style={{ left: "48%", top: "10%", width: "48%" }}>
-                    <span className="pc-wire__tag">Oracle wire</span>
-                    <p>Box office beats forecast: {evil.title} EPI {one(epiOf(evil))} to {one(evilAfter)}. Report signed on NEAR testnet.</p>
-                  </div>
-                  <div className="ly-piece pc-card pc-ticket" style={{ left: "4%", top: "64%", width: "50%" }}>
-                    <span className="pc-kicker">{pRings.category} · closes in {pRings.closesInDays} days</span>
-                    <p className="pc-q">{pRings.question}</p>
-                    <div className="pc-yesno"><span className="yes">Yes {cents(pRings.yesProb)}</span><span className="no">No {cents(1 - pRings.yesProb)}</span></div>
-                  </div>
-                  <div className="ly-piece" style={{ left: "60%", top: "42%", width: "36%", height: "54%" }}>
-                    <img src={poster(mobland, "w500")} alt="" data-source="client" data-subject="TMDB poster" />
-                  </div>
-                </div>
-              </div>
-              <div className="span-3 start-10 hero__cta">
+        {/* HERO: collage (dealt). The h1 and two actions on span-5; the app's own board on the paper ground,
+            cut by the frame's right and bottom edges, with one YES/NO ticket over its lower-left corner that
+            steps through a stake (layout.js data-ly-steps). */}
+        <section className="hero hero--collage" data-enter="" aria-labelledby="hero-h">
+          <div className="wrap"><div className="hero-text grid hero__grid">
+            <div className="hero__text span-5">
+              <h1 id="hero-h">Movie and TV exchange on NEAR</h1>
+              <p className="hero__lead">
+                One score, the EPI, built from TMDB box office, popularity, votes and ratings, prices {titleCount} movies and shows and {predictionCount} YES or NO markets.
+              </p>
+              <div className="btn-row">
                 <Link className="btn btn--primary" href="/markets">Open the markets{arrow}</Link>
+                <Link className="btn btn--secondary" href="/onchain">Check the contract</Link>
               </div>
+              <p className="hero__proof">Built for NEAR Hackathon 2026. Pools stake testnet NEAR; prices are simulated.</p>
             </div>
-          </div>
-        </section>
-
-        {/* APP-FRAME: the app's own board, ranked by EPI, beside the open title's ticket */}
-        <section className="section" id="markets" aria-labelledby="markets-h">
-          <div className="wrap">
-            <div className="grid grid--top">
-              <h2 id="markets-h" className="span-5">{titleCount} titles, ranked by EPI</h2>
-              <div className="span-6 start-7 stack-4">
-                <p className="t-lead">Each row shows a title, its ticker, its EPI and a price. The EPI inputs are real TMDB data; prices and trades are simulated off-chain.</p>
-                <a className="link" href="#epi">See how the EPI is built</a>
-              </div>
-            </div>
-            <div className="ui app" role="img" aria-label={`The ENTX board: ${titleCount} titles ranked by EPI with simulated prices, and the ticket for ${lead.title}`}>
-              <div className="app__pane app__pane--list">
+            <div className="hero__art span-6 start-7" role="img" aria-label={`The ENTX board ranked by EPI, led by ${lead.title}, and a YES/NO ticket on ${pSpidey.question}`}>
+              <div className="ly-piece ly-piece--main hw" aria-hidden="true">
                 <div className="bd">
                   <div className="bd__mast">
                     <strong>The board</strong>
-                    <span>Ranked by EPI · prices simulated · EPI from TMDB inputs</span>
+                    <span>Ranked by EPI</span>
                   </div>
-                  <div className="bd__wire"><b>Oracle wire</b><span>Box office beats forecast: {evil.title} EPI {one(epiOf(evil))} to {one(evilAfter)}</span><em>Demo event</em></div>
-                  <div className="bd__tabs"><span className="is-on">All titles {titleCount}</span><span>Movies {movieCount}</span><span>Shows {showCount}</span></div>
+                  <div className="bd__wire"><b>Oracle wire</b><span>{evil.title} EPI {one(epiOf(evil))} to {one(evilAfter)}</span></div>
                   <table className="bd__table">
                     <thead><tr><th>Rank</th><th className="l">Title</th><th>Price</th><th className="s">EPI</th></tr></thead>
                     <tbody>
                       {board.map((a, i) => (
                         <tr key={a.id} className={i === 0 ? "is-sel" : undefined}>
                           <td className="rk">{i + 1}</td>
-                          <td className="l"><div className="bd__t"><u style={{ background: a.colors[0] }} /><div><b>{a.title}</b><small>{a.ticker} · {a.kind === "movie" ? "Movie" : "Show"} · {a.status}</small></div></div></td>
+                          <td className="l"><div className="bd__t"><img src={poster(a, "w342")} alt="" width="26" height="38" data-source="client" data-subject="TMDB poster" /><div><b>{a.title}</b><small>{a.ticker} · {a.kind === "movie" ? "Movie" : "Show"}</small></div></div></td>
                           <td className="pr">{money(a.basePrice)}</td>
-                          <td><i className="bd__bar" style={{ width: `${Math.round(epiOf(a) * 0.6)}px` }} />{one(epiOf(a))}</td>
+                          <td>{one(epiOf(a))}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-              <div className="app__pane app__pane--open">
-                <div className="tk">
-                  <div className="tk__head">
-                    <img src={poster(lead, "w342")} alt="" width="64" height="96" data-source="client" data-subject="TMDB poster" />
-                    <div><strong>{lead.title}</strong><span>{lead.ticker} · {lead.kind === "movie" ? "Movie" : "Show"} · {lead.status} · Rank 1</span></div>
-                  </div>
-                  <div className="tk__px"><b>{money(lead.basePrice)}</b><span className="pc-sim">Simulated</span></div>
-                  <dl className="tk__kv">
-                    <div><dt>EPI</dt><dd>{one(epiOf(lead))}</dd></div>
-                    <div><dt>Box office</dt><dd>{one(lead.epiParts.boxOffice)}</dd></div>
-                    <div><dt>Rating</dt><dd>{one(lead.epiParts.critics)}</dd></div>
-                  </dl>
-                  <div className="tk__tabs"><span className="is-buy">Buy</span><span>Sell</span></div>
-                  <div className="tk__in"><span>10 units</span><small>NEAR testnet wallet</small></div>
-                  <div className="tk__rows">
-                    <div><span>Avg price (simulated)</span><span>{money(lead.basePrice)}</span></div>
-                    <div><span>Receipt</span><span>record_trade on NEAR</span></div>
-                    <div><span>Linked markets</span><span>{predictions.filter((p) => p.assetId === lead.id).length} YES/NO</span></div>
-                  </div>
-                  <span className="tk__go">Buy {lead.ticker}</span>
-                                  </div>
+              <div className="ly-piece ly-piece--note pc-ticket pc-ticket--ui hn" aria-hidden="true" data-ly-steps="700">
+                <span className="pc-kicker">{pSpidey.category} · closes in {pSpidey.closesInDays} days</span>
+                <p className="pc-q">{pSpidey.question}</p>
+                <div className="pc-yesno"><span className="yes">Yes {cents(pSpidey.yesProb)}</span><span className="no">No {cents(1 - pSpidey.yesProb)}</span></div>
+                <div className="tk__rows">
+                  <div data-step=""><span>Stake</span><span>0.1 testnet NEAR on YES</span></div>
+                  <div data-step=""><span>Pays if right</span><span>$1 a share</span></div>
+                  <div data-step=""><span>Signed</span><span>stake on NEAR testnet</span></div>
+                </div>
               </div>
+            </div>
+          </div></div>
+        </section>
+
+        {/* MARKETS: a poster wall of four live YES/NO markets, each linked to the prediction board */}
+        <section className="section" id="markets" aria-labelledby="markets-h">
+          <div className="wrap">
+            <div className="grid grid--top">
+              <h2 id="markets-h" className="span-5">{predictionCount} markets on what happens next</h2>
+              <div className="span-6 start-7 stack-4">
+                <p className="t-lead">Box office, awards, renewals and popularity. A share costs its price in cents and pays $1 if right, so the price is the odds.</p>
+                <Link className="link" href="/predictions">See every prediction market</Link>
+              </div>
+            </div>
+            <div className="grid mk-wall">
+              <Link className="mk-lead span-6" href="/predictions">
+                <div className="mk__pic"><img className="frame__img" src={poster(wall[0].a, "w780")} alt={`${wall[0].a.title} poster`} loading="lazy" data-source="client" data-subject="TMDB poster" /></div>
+                <div className="mk-lead__body">
+                  <span className="pc-kicker">{wall[0].p.category} · closes in {wall[0].p.closesInDays} days</span>
+                  <h3>{wall[0].p.question}</h3>
+                  <div className="pc-yesno"><span className="yes">Yes {cents(wall[0].p.yesProb)}</span><span className="no">No {cents(1 - wall[0].p.yesProb)}</span></div>
+                  <p className="pc-fact">{wall[0].a.title} holds an EPI of {one(epiOf(wall[0].a))}. When the oracle reports a new EPI on NEAR, these odds move with it.</p>
+                </div>
+              </Link>
+              <ul className="mk-list span-6">
+                {wall.slice(1).map(({ p, a }) => (
+                  <li key={p.id}>
+                    <Link className="mk-row" href="/predictions">
+                      <img src={poster(a, "w342")} alt={`${a.title} poster`} width="72" height="108" loading="lazy" data-source="client" data-subject="TMDB poster" />
+                      <span className="mk-row__q"><span className="pc-kicker">{p.category} · closes in {p.closesInDays} days</span><b>{p.question}</b></span>
+                      <span className="mk-row__odds"><span className="yes">Yes {cents(p.yesProb)}</span><span className="no">No {cents(1 - p.yesProb)}</span></span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
@@ -424,6 +381,7 @@ export default function Landing() {
                   <li><img data-icon="si:near" src="/assets/icons/near.svg" alt="" width="40" height="40" />NEAR testnet</li>
                   <li><img data-icon="si:solana" src="/assets/icons/solana.svg" alt="" width="40" height="40" />Solana devnet</li>
                 </ul>
+                <a className="link" href={REPO}>Read the source on GitHub</a>
               </div>
               <div className="faq span-6 start-7">
                 <div className="faq__item"><h3>Is this real money?</h3><p>No. Prices, AMM trades and balances are simulated off-chain. Prediction pools stake testnet NEAR, which has no monetary value.</p></div>
@@ -453,7 +411,7 @@ export default function Landing() {
                 <p className="footer__lede">An entertainment exchange for movies and TV, built for the NEAR Hackathon 2026.</p>
               </div>
               <div className="span-2 footer__col"><h3>App</h3><ul><li><Link href="/markets">Markets</Link></li><li><Link href="/predictions">Predictions</Link></li><li><Link href="/epi">EPI</Link></li></ul></div>
-              <div className="span-2 footer__col"><h3>Proof</h3><ul><li><Link href="/onchain">On-chain</Link></li><li><a href={nearAccountUrl(NEAR_CONTRACT)}>Contract</a></li><li><a href={nearAccountUrl(ORACLE)}>Oracle</a></li></ul></div>
+              <div className="span-2 footer__col"><h3>Proof</h3><ul><li><Link href="/onchain">On-chain</Link></li><li><a href={nearAccountUrl(NEAR_CONTRACT)}>Contract</a></li><li><a href={nearAccountUrl(ORACLE)}>Oracle</a></li><li><a href={REPO}>Source</a></li></ul></div>
               <div className="span-2 footer__col"><h3>Page</h3><ul><li><a href="#epi">EPI</a></li><li><a href="#trade">Trading</a></li><li><a href="#faq">Questions</a></li></ul></div>
             </div>
             <div className="footer__legal">
