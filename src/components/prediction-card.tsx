@@ -15,6 +15,7 @@ import { Poster } from "./poster";
 import { Flash } from "./ui";
 import { NearStakePanel } from "./near-stake";
 import { CHAIN } from "@/lib/env";
+import { defaultAmount } from "@/lib/amounts";
 
 const AMOUNTS = [10, 25, 50, 100];
 
@@ -26,8 +27,9 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
   const receipts = useReceipts();
   const [side, setSide] = useState<"YES" | "NO" | null>(null);
   // Until a preset is picked, the bet is $25, or the largest preset cash covers, so the ticket opens ready.
+  // Pinned once a bet is placed or reviewed, so a cash change elsewhere can't alter an open review.
   const [picked, setAmount] = useState<number | null>(null);
-  const amount = picked ?? (cash >= 25 ? 25 : (AMOUNTS.filter((a) => a <= cash).pop() ?? AMOUNTS[0]));
+  const amount = picked ?? defaultAmount(cash, AMOUNTS);
   // Real-NEAR staking is a second path, mounted only on request so 9 cards don't each poll RPC.
   const [staking, setStaking] = useState(false);
   const [rules, setRules] = useState(false);
@@ -73,6 +75,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
 
   const place = (e: React.MouseEvent) => {
     if (!side) return;
+    setAmount(amount);
     if (needsReview && !reviewing) {
       setReview({ key: betKey, at: e.timeStamp });
       return;

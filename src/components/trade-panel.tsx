@@ -9,6 +9,7 @@ import { quoteBuy, quoteSell, unitsForDollars, FEE } from "@/lib/engine";
 import { priceOf, useMarket } from "@/store/market";
 import { num, pct, usd } from "@/lib/format";
 import { useReceipts } from "@/lib/receipts";
+import { defaultAmount } from "@/lib/amounts";
 import { Flash } from "./ui";
 import { FillReceipt } from "./fill-receipt";
 
@@ -19,13 +20,15 @@ const FILLED_MS = 2500;
 export function TradePanel({ asset }: { asset: AssetSeed }) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   // null = the visitor hasn't typed yet: the ticket then offers $25, or whatever cash covers if that's less,
-  // so the primary action never opens disabled. It follows cash until the first edit (the store hydrates late).
+  // so the primary action never opens disabled. It follows cash until the first edit (the store hydrates late),
+  // and is pinned the moment an order is submitted, so a cash change elsewhere can't alter an open review.
   const [typed, setQtyText] = useState<string | null>(null);
   // Fans think in dollars ("$25 of The Odyssey"); traders think in units. Both enter the same order.
   const [mode, setMode] = useState<"units" | "usd">("usd");
   const m = useMarket((s) => s.markets[asset.id]);
   const cash = useMarket((s) => s.cash);
-  const qtyText = typed ?? (cash >= 25 ? "25" : cash >= 1 ? String(Math.floor(cash)) : "");
+  const fallback = defaultAmount(cash);
+  const qtyText = typed ?? (fallback > 0 ? String(fallback) : "");
   const held = useMarket((s) => s.holdings[asset.id]);
   const buy = useMarket((s) => s.buy);
   const sell = useMarket((s) => s.sell);
@@ -121,6 +124,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
   };
 
   const submit = (e: React.MouseEvent) => {
+    setQtyText(qtyText);
     if (needsReview) setConfirming(true, e.timeStamp);
     else execute();
   };
@@ -331,7 +335,11 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
         <div className="mt-2 text-xs text-muted">
           <button
             className="cursor-pointer text-text underline underline-offset-2 pointer-coarse:min-h-11"
-            onClick={() => setQtyText(mode === "units" ? String(units) : String(Math.floor(quoteSell(m.pool, units).proceeds)))}
+            // Exactly the holding, in units: a dollar figure would round down and leave a fraction unsold.
+            onClick={() => {
+              setMode("units");
+              setQtyText(String(units));
+            }}
           >
             Sell all {num(units, units % 1 ? 2 : 0)} {asset.ticker}
           </button>

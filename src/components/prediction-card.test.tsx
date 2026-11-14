@@ -165,6 +165,17 @@ describe("PredictionCard", () => {
     expect(btn).toBeDisabled();
   });
 
+  it("pins the default bet once its review opens", async () => {
+    useMarket.setState({ cash: 30 });
+    const user = userEvent.setup();
+    render(<PredictionCard p={p} />);
+    await user.click(yesBtn());
+    await user.click(screen.getByRole("button", { name: "Bet $25 on YES" }));
+    expect(screen.getByRole("button", { name: /^Confirm · \$25 on YES/ })).toBeInTheDocument();
+    act(() => useMarket.setState({ cash: 27 }));
+    expect(screen.getByRole("button", { name: /^Confirm · \$25 on YES/ })).toBeInTheDocument();
+  });
+
   it("defaults the bet to the largest preset cash covers", async () => {
     useMarket.setState({ cash: 12 });
     const user = userEvent.setup();

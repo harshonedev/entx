@@ -63,6 +63,11 @@ export interface MarketState {
   lastEventAt?: number;
   /** Last NEAR tx that published this market's EPI via the trusted oracle (Oracle EPI · NEAR). */
   oracleTx?: string;
+  /**
+   * The latest news that moved this title, kept per title so the asset page's oracle wire doesn't depend on the
+   * shared, capped feed. `tx` is the NEAR report for this exact news, set only when its own publish lands.
+   */
+  lastNews?: { id: string; text: string; ts: number; tx?: string };
 }
 
 export interface PredictionState {
@@ -264,7 +269,7 @@ function appendCandle(list: Candle[], price: number): Candle[] {
  * Ask the trusted oracle service to publish this title's EPI on the NEAR contract (report_epi). The server
  * computes an absolute value (seeded baseline + this one event), so the on-chain EPI doesn't accumulate clicks.
  */
-async function publishToNear(assetId: string, eventId: string) {
+async function publishToNear(assetId: string, eventId: string, newsId: string) {
   if (typeof window === "undefined") return;
   try {
     const res = await fetch("/api/oracle", {
@@ -287,7 +292,18 @@ async function publishToNear(assetId: string, eventId: string) {
     const a = ASSET_BY_ID[assetId];
     const st = useMarket.getState();
     useMarket.setState({
-      markets: { ...st.markets, [assetId]: { ...st.markets[assetId], oracleTx: hash } },
+      markets: {
+        ...st.markets,
+        [assetId]: {
+          ...st.markets[assetId],
+          oracleTx: hash,
+          // Credit the report to the news that triggered it, never to a later one that landed in the meantime.
+          lastNews:
+            st.markets[assetId].lastNews?.id === newsId
+              ? { ...st.markets[assetId].lastNews!, tx: hash }
+              : st.markets[assetId].lastNews,
+        },
+      },
       feed: pushFeed(st.feed, {
         type: "chain",
         tone: "neutral",
@@ -571,6 +587,8 @@ export const useMarket = create<Store>()(
         }
 
         const up = epi >= m.epi;
+        const newsId = `${assetId}:${ev.id}:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`;
+        const newsText = `${ev.detail(a)} · App EPI ${m.epi.toFixed(1)} → ${epi.toFixed(1)}`;
         set({
           markets: {
             ...s.markets,
@@ -582,6 +600,7 @@ export const useMarket = create<Store>()(
               metricValue: m.metricValue * ev.metricMult,
               momentum: m.momentum + move,
               lastEventAt: Date.now(),
+              lastNews: { id: newsId, text: newsText, ts: Date.now() },
             },
           },
           predictions,
@@ -590,7 +609,7 @@ export const useMarket = create<Store>()(
             tone: up ? "up" : "down",
             refId: assetId,
             tag: ev.label,
-            text: `NEWS · ${ev.detail(a)} · App EPI ${m.epi.toFixed(1)} → ${epi.toFixed(1)}`,
+            text: `NEWS · ${newsText}`,
           }),
         });
         get().toast({
@@ -599,7 +618,7 @@ export const useMarket = create<Store>()(
           tone: up ? "up" : "down",
           href: `/asset/${assetId}`,
         });
-        void publishToNear(assetId, ev.id);
+        void publishToNear(assetId, ev.id, newsId);
       },
 
       randomOracle: (assetId) => {

@@ -27,7 +27,8 @@ export default function AssetPage() {
   const m = useMarket((s) => (asset ? s.markets[asset.id] : undefined));
   const held = useMarket((s) => (asset ? s.holdings[asset.id] : undefined));
   const [step, setStep] = useState(15);
-  const oracleEpi = useOracleEpi(asset?.id);
+  const oracle = useOracleEpi(asset?.id);
+  const oracleEpi = oracle.status === "ok" ? oracle.value : null;
 
   if (!asset || !m) return <NotListed />;
 
@@ -52,8 +53,7 @@ export default function AssetPage() {
       <section aria-label={`${asset.title} overview`} className="space-y-3">
       <div className="masthead items-start gap-y-4">
         <div className="flex min-w-0 flex-1 basis-80 items-start gap-3 sm:gap-4">
-          <Poster asset={asset} size="sm" className="sm:hidden" />
-          <Poster asset={asset} size="md" className="hidden sm:block" />
+          <Poster asset={asset} size="responsive" />
           <div className="min-w-0">
             <h1 className="h-display">{asset.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -100,16 +100,21 @@ export default function AssetPage() {
                     <ExternalLink size={11} aria-hidden />
                   </a>
                 ) : (
-                  <span className="text-faint">Reading…</span>
+                  <span className="text-faint">
+                    {oracle.status === "loading" ? "Reading…" : oracle.status === "missing" ? "Not published yet" : "Unavailable right now"}
+                  </span>
                 )}
               </dd>
             </div>
           </dl>
-          {epiGap !== null && epiGap !== 0 && (
+          {epiGap !== null && (
             <details className="mt-1 text-xs">
               <summary className="cursor-pointer inline-flex min-h-6 list-none items-center text-muted hover:text-text pointer-coarse:min-h-11">
                 <span className="underline decoration-line-2 underline-offset-2">
-                  <span className="num">Session is {Math.abs(epiGap).toFixed(1)} {epiGap > 0 ? "higher" : "lower"}</span> · why?
+                  <span className="num">
+                    {epiGap === 0 ? "Session matches NEAR" : `Session is ${Math.abs(epiGap).toFixed(1)} ${epiGap > 0 ? "higher" : "lower"}`}
+                  </span>{" "}
+                  · why two?
                 </span>
               </summary>
               <p className="mt-1 leading-snug text-faint text-pretty">
@@ -275,39 +280,41 @@ function Stat({ k, source, children, className }: { k: string; source?: string; 
  * A NEAR report for that news links to the explorer. With no news yet, it falls back to the on-chain report.
  */
 function AssetWire({ asset }: { asset: AssetSeed }) {
-  const feed = useMarket((s) => s.feed);
+  // Only this title's own state: the shared feed is capped across all titles and churns every tick.
+  const news = useMarket((s) => s.markets[asset.id]?.lastNews);
   const oracleTx = useMarket((s) => s.markets[asset.id]?.oracleTx);
-  const news = feed.find((f) => f.refId === asset.id && f.type === "oracle");
-  // The NEAR report published for that news lands in the feed after it (feed is newest first).
-  const chain = news ? feed.slice(0, feed.indexOf(news)).find((f) => f.refId === asset.id && f.type === "chain") : undefined;
+  const ago = useTimeAgo(news?.ts);
   return (
-    <div role="status" className="wire flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 text-[13px]">
+    <div className="wire flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 text-[13px]">
       <span className="cond text-[14px] font-bold uppercase tracking-[0.08em] text-accent">Oracle wire</span>
-      {news ? (
-        <>
-          <span className="min-w-0 flex-1">{news.text.replace(/^NEWS · /, "")}</span>
-          <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted">
-            {timeAgo(news.ts)} · simulated news
-            {chain?.href && (
-              <a href={chain.href} target="_blank" rel="noreferrer" className="cursor-pointer inline-flex items-center gap-1 text-near hover:underline pointer-coarse:min-h-11">
-                Signed on NEAR <ExternalLink size={11} aria-hidden />
-              </a>
+      {/* Only the headline is a live region, so new news is announced once and ticking timestamps are not. */}
+      <span role="status" className="min-w-0 flex-1">
+        {news ? (
+          news.text
+        ) : (
+          <span className="text-muted">
+            No news on {asset.ticker} this session. The price follows its EPI from TMDB inputs
+            {oracleTx ? (
+              <>
+                {"; "}
+                <a href={nearTxUrl(oracleTx)} target="_blank" rel="noreferrer" className="cursor-pointer text-near hover:underline">
+                  last oracle report on NEAR
+                </a>
+                .
+              </>
+            ) : (
+              "."
             )}
           </span>
-        </>
-      ) : (
-        <span className="min-w-0 flex-1 text-muted">
-          No news on {asset.ticker} this session. The price follows its EPI from TMDB inputs
-          {oracleTx ? (
-            <>
-              {"; "}
-              <a href={nearTxUrl(oracleTx)} target="_blank" rel="noreferrer" className="cursor-pointer text-near hover:underline">
-                last oracle report on NEAR
-              </a>
-              .
-            </>
-          ) : (
-            "."
+        )}
+      </span>
+      {news && (
+        <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted">
+          {ago} · simulated news
+          {news.tx && (
+            <a href={nearTxUrl(news.tx)} target="_blank" rel="noreferrer" className="cursor-pointer inline-flex items-center gap-1 text-near hover:underline pointer-coarse:min-h-11">
+              Signed on NEAR <ExternalLink size={11} aria-hidden />
+            </a>
           )}
         </span>
       )}
@@ -315,24 +322,40 @@ function AssetWire({ asset }: { asset: AssetSeed }) {
   );
 }
 
-/** The EPI a trusted oracle last published to NEAR for this title (null until read, or if unavailable). */
-function useOracleEpi(assetId: string | undefined) {
+/** "12s ago" that keeps moving on its own clock, not only when unrelated state happens to re-render. */
+function useTimeAgo(ts: number | undefined) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (ts === undefined) return;
+    const t = setInterval(() => tick((n) => n + 1), 15_000);
+    return () => clearInterval(t);
+  }, [ts]);
+  return ts === undefined ? "" : timeAgo(ts);
+}
+
+type OracleRead = { status: "loading" } | { status: "ok"; value: number } | { status: "missing" } | { status: "error" };
+
+/**
+ * The EPI a trusted oracle last published to NEAR for this title. "missing" when the contract has no market for
+ * it, "error" when the RPC read fails, so the page never shows "Reading…" forever.
+ */
+function useOracleEpi(assetId: string | undefined): OracleRead {
   const oracleTx = useMarket((s) => (assetId ? s.markets[assetId]?.oracleTx : undefined));
-  const [epi, setEpi] = useState<{ id: string; value: number } | null>(null);
+  const [read, setRead] = useState<{ id: string; r: OracleRead } | null>(null);
 
   useEffect(() => {
     if (!assetId) return;
     let live = true;
     nearView<NearMarket | null>("get_market", { market_id: assetId })
-      .then((r) => live && r && setEpi({ id: assetId, value: r.epi_x10 / 10 }))
-      .catch(() => {});
+      .then((m) => live && setRead({ id: assetId, r: m ? { status: "ok", value: m.epi_x10 / 10 } : { status: "missing" } }))
+      .catch(() => live && setRead({ id: assetId, r: { status: "error" } }));
     return () => {
       live = false;
     };
     // Re-read after this browser publishes a new report.
   }, [assetId, oracleTx]);
 
-  return epi && epi.id === assetId ? epi.value : null;
+  return read && read.id === assetId ? read.r : { status: "loading" };
 }
 
 /** Unknown id: say so, then offer the busiest markets instead of a dead end. */

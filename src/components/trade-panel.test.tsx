@@ -48,6 +48,32 @@ describe("TradePanel", () => {
     expect(screen.getByText(usd(STARTING_CASH))).toBeInTheDocument();
   });
 
+  it("'Sell all' in dollar mode sells the exact holding, switching to units", async () => {
+    const st = useMarket.getState();
+    useMarket.setState({ holdings: { ...st.holdings, [asset.id]: { units: 3.37, cost: 50 } } });
+    render(<TradePanel asset={asset} />);
+    await userEvent.click(screen.getByRole("button", { name: "Sell" }));
+    await setAmount("5000");
+    await userEvent.click(screen.getByRole("button", { name: /^Sell all 3\.37 ODYSS$/ }));
+    expect(screen.getByRole("button", { name: "Units" })).toHaveAttribute("aria-pressed", "true");
+    expect(input().value).toBe("3.37");
+    await userEvent.click(submitBtn());
+    expect(useMarket.getState().holdings[asset.id]?.units ?? 0).toBeCloseTo(0, 9);
+  });
+
+  it("pins the default amount once a review opens, so a cash change elsewhere can't alter it", async () => {
+    useMarket.setState({ cash: 30 });
+    render(<TradePanel asset={asset} />);
+    expect(input().value).toBe("25");
+    await userEvent.click(submitBtn());
+    expect(screen.getByText("Review large order")).toBeInTheDocument();
+    // Cash drops under the order from elsewhere: the amount stays what was reviewed, and the ticket says why it
+    // can't fill, instead of silently swapping in a smaller order.
+    act(() => useMarket.setState({ cash: 20 }));
+    expect(input().value).toBe("25");
+    expect(actionBtn()).toHaveAccessibleName(/^Not enough cash/);
+  });
+
   it("buys a small order immediately and updates cash and holdings", async () => {
     render(<TradePanel asset={asset} />);
     await userEvent.click(submitBtn());

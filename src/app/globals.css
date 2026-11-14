@@ -301,8 +301,8 @@ body {
   .btn-primary:not(:disabled):hover { background: var(--ink-hover); }
 }
 
-/* Ticket: white paper on the newsprint (the lightest stock at night), dotted hairlines between its key/value rows. */
-/* The working ticket: white paper, edged in Rule Grey so it reads as its own sheet on panel stock. */
+/* Ticket: white paper (the lightest stock at night) edged in Rule Grey so it reads as its own sheet on panel stock;
+   dotted hairlines between its key/value rows. */
 .ticket {
   background: var(--paper);
   border-left-color: var(--line-2);
