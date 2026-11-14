@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { metadata as siteMetadata } from "@/lib/site-meta";
+import { themeScript } from "@/lib/theme-script";
 
 export { viewport } from "@/lib/site-meta";
 
@@ -28,6 +29,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" data-type="software" data-radius="sharp" data-buttons="solid" data-motion="" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
@@ -44,6 +46,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
         <link rel="stylesheet" href="/assets/ui/notify/fragment.css" />
         <link rel="stylesheet" href="/assets/diagrams/diagram.css" />
         <link rel="stylesheet" href="/site/landing.css" />
+        <link rel="stylesheet" href="/site/landing-dark.css" />
         <script dangerouslySetInnerHTML={{ __html: enterGuard }} />
         <link rel="modulepreload" href="/assets/moments/moments.js" />
         <link rel="modulepreload" href="/assets/moments/lib.js" />

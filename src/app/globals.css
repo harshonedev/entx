@@ -23,6 +23,52 @@
   /* Chain identity. */
   --sol: #6b4fd0;
   --near: #0b746f;
+  /* Paper tiers and press furniture. */
+  --paper: #ffffff;
+  --ink-hover: #2c2c2c;
+  --accent-fill: #d6261f;
+  --accent-fill-hover: #b81f19;
+  --on-status: #ffffff;
+  --bar: #141414;
+  --bar-ink: #f4f1ea;
+  --bar-field: #262626;
+  --scrim: rgb(20 20 20 / 0.6);
+  --lift: 0 8px 24px rgb(20 20 20 / 0.18);
+  --grid: rgb(20 20 20 / 0.06);
+}
+
+/* Night Edition: the same chart read under lamp light. Ink and paper trade places; tiers step lighter
+   toward the working ticket, rules turn cream, colours brighten to hold 4.5:1. No glow, no new shadows.
+   Contrast on --bg #12110f: text 15.2:1 · muted 7.2:1 · faint 5.7:1 · accent 5.6:1. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12110f;
+  --panel: #1b1a17;
+  --panel-2: #24221e;
+  --line: #35322c;
+  --line-2: #504b41;
+  --ink: #ece6d8;
+  --text: #ece6d8;
+  --muted: #a69f90;
+  --faint: #938c7d;
+  --accent: #f45a4a;
+  --accent-ink: #ffffff;
+  --up: #4cc085;
+  --down: #f47c86;
+  --warn: #e3a63f;
+  --sol: #a493f7;
+  --near: #3fc6b9;
+  --paper: #25231f;
+  --ink-hover: #d4cdbd;
+  --accent-fill: #d6261f;
+  --accent-fill-hover: #b81f19;
+  --on-status: #12110f;
+  --bar: #0a0908;
+  --bar-ink: #ece6d8;
+  --bar-field: #1d1c19;
+  --scrim: rgb(0 0 0 / 0.7);
+  --lift: 0 8px 24px rgb(0 0 0 / 0.55);
+  --grid: rgb(236 230 216 / 0.06);
 }
 
 @theme inline {
@@ -42,12 +88,22 @@
   --color-warn: var(--warn);
   --color-sol: var(--sol);
   --color-near: var(--near);
+  --color-paper: var(--paper);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-fill-hover: var(--accent-fill-hover);
+  --color-on-status: var(--on-status);
+  --color-bar: var(--bar);
+  --color-bar-ink: var(--bar-ink);
+  --color-bar-field: var(--bar-field);
+  --shadow-lift: var(--lift);
   --font-sans: var(--font-ui);
   --font-mono: var(--font-code);
 }
 
 /* Printed-matter system: square corners everywhere (rounded-full stays for dots). */
 @theme {
+  /* bare `rounded` / `rounded-t` read --radius (default .25rem), not the scale below */
+  --radius: 0px;
   --radius-xs: 0px;
   --radius-sm: 0px;
   --radius-md: 0px;
@@ -59,6 +115,9 @@
 
 html {
   color-scheme: light;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {
@@ -210,12 +269,12 @@ body {
   letter-spacing: 0.08em;
 }
 @media (hover: hover) {
-  .btn-primary:not(:disabled):hover { background: #2c2c2c; }
+  .btn-primary:not(:disabled):hover { background: var(--ink-hover); }
 }
 
-/* Ticket: white paper on the newsprint, dotted hairlines between its key/value rows. */
+/* Ticket: white paper on the newsprint (the lightest stock at night), dotted hairlines between its key/value rows. */
 .ticket {
-  background: #ffffff;
+  background: var(--paper);
 }
 .kv-dotted > div {
   display: flex;
@@ -298,12 +357,12 @@ button, .press {
   font-family: inherit;
   font-weight: 500;
   border-radius: 0;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--accent-ink);
 }
 @media (hover: hover) {
   .wallet-adapter-button.wallet-adapter-button-trigger:not([disabled]):hover {
-    background: #b81f19;
+    background: var(--accent-fill-hover);
   }
 }
 .wallet-adapter-button-start-icon { margin-right: 8px; }

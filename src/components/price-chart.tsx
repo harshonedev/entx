@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "@/lib/theme";
 import { useEffect, useMemo, useRef } from "react";
 import {
   CandlestickSeries,
@@ -57,6 +58,8 @@ export function PriceChart({
   // Canvas can't resolve CSS variables, so token colours are read once at mount.
   const colors = useRef({ up: "#1d7446", down: "#c4221b", text: "#141414" });
   const lastLen = useRef(0);
+  // Canvas colours are read from tokens, so the chart is rebuilt when the edition changes.
+  const theme = useTheme();
   const raw = useMarket((s) => s.candles[assetId]);
   const feed = useMarket((s) => s.feed);
   // Rounded so the line only moves when the EPI does, not on every tick.
@@ -97,8 +100,8 @@ export function PriceChart({
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "rgba(20,20,20,0.06)" },
-        horzLines: { color: "rgba(20,20,20,0.06)" },
+        vertLines: { color: token("--grid") },
+        horzLines: { color: token("--grid") },
       },
       rightPriceScale: { borderColor: token("--line") },
       timeScale: { borderColor: token("--line"), timeVisible: true, secondsVisible: step < 60, rightOffset: 12 },
@@ -123,7 +126,7 @@ export function PriceChart({
       series.current = null;
       markersApi.current = null;
     };
-  }, [assetId, height, step]);
+  }, [assetId, height, step, theme]);
 
   // Dashed line at the price the EPI supports, so the anchor behind every move is visible.
   useEffect(() => {
@@ -132,7 +135,7 @@ export function PriceChart({
     const opts = { price: fair, color: colors.current.text, lineWidth: 1 as const, lineStyle: 2, axisLabelVisible: true, title: "EPI fair value" };
     if (fairLine.current) fairLine.current.applyOptions(opts);
     else fairLine.current = s.createPriceLine(opts);
-  }, [fair, assetId, height, step]);
+  }, [fair, assetId, height, step, theme]);
 
   useEffect(() => {
     const s = series.current;
@@ -162,7 +165,7 @@ export function PriceChart({
       s.setData(data);
     }
     lastLen.current = candles.length;
-  }, [candles]);
+  }, [candles, theme]);
 
   useEffect(() => {
     const { up, down, text } = colors.current;
@@ -191,7 +194,7 @@ export function PriceChart({
       markers.sort((a, b) => (a.time as number) - (b.time as number));
     }
     markersApi.current?.setMarkers(markers);
-  }, [events, candles]);
+  }, [events, candles, theme]);
 
   return (
     <div

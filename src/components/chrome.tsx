@@ -111,7 +111,7 @@ export function Toasts() {
         );
         const external = t.href?.startsWith("http");
         return (
-          <div key={t.id} className="toast-in pointer-events-auto relative border-2 border-ink bg-panel p-3 pr-8 shadow-[0_8px_24px_rgba(20,20,20,0.18)]">
+          <div key={t.id} className="toast-in pointer-events-auto relative border-2 border-ink bg-panel p-3 pr-8 shadow-lift">
             {t.href ? (
               external ? (
                 <a href={t.href} target="_blank" rel="noreferrer" className="cursor-pointer block">{body}</a>

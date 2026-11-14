@@ -110,8 +110,8 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
                 "cond cursor-pointer flex h-12 items-center justify-center gap-2 border text-[18px] font-bold uppercase tracking-[0.06em] transition-colors",
                 on
                   ? s === "YES"
-                    ? "border-up bg-up text-white"
-                    : "border-down bg-down text-white"
+                    ? "border-up bg-up text-on-status"
+                    : "border-down bg-down text-on-status"
                   : s === "YES"
                     ? "border-up text-up hover:bg-up/[0.08]"
                     : "border-down text-down hover:bg-down/[0.08]",
