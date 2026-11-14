@@ -243,13 +243,12 @@ function Sidebar({
           href="/"
           onClick={onNavigate}
           aria-label="ENTX home"
-          className="cursor-pointer flex items-center gap-2.5 rounded"
+          className="cursor-pointer relative flex h-7 items-center rounded text-text"
           {...tipProps("Home")}
         >
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-text text-bg">
-            <LogoMark className="h-3 w-auto" />
-          </span>
-          <Wordmark className={clsx(fade, "h-3 w-auto text-text")} />
+          {/* The bare E overlays the wordmark's own E, so collapsing reads as "NTX" fading away. */}
+          <LogoMark className={clsx("absolute left-0 h-3.5 w-auto", animate && "motion-safe:transition-opacity motion-safe:duration-150", collapsed ? "opacity-100" : "opacity-0")} />
+          <Wordmark className={clsx(fade, "h-3.5 w-auto")} />
         </Link>
       </div>
 
