@@ -43,7 +43,7 @@ export default function AssetPage() {
 
   return (
     <div className="space-y-4">
-      <Link href="/" className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted hover:text-text pointer-coarse:min-h-11">
+      <Link href="/markets" className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted hover:text-text pointer-coarse:min-h-11">
         <ArrowLeft size={13} /> Discover
       </Link>
 
@@ -59,7 +59,7 @@ export default function AssetPage() {
               {releaseInfo(asset).label}
             </span>
           </div>
-          <h1 className="mt-1.5 text-[22px] font-semibold tracking-[-0.01em] sm:text-3xl">{asset.title}</h1>
+          <h1 className="h-display mt-2">{asset.title}</h1>
           <p className="mt-0.5 text-sm text-muted">{asset.tagline}</p>
           <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs">
             <Stat k="24h volume" source="Simulated">
@@ -283,7 +283,7 @@ function NotListed() {
 
   return (
     <div className="mx-auto max-w-md py-20 text-center">
-      <h1 className="text-lg font-semibold">Asset not listed</h1>
+      <h1 className="h-display">Asset not listed</h1>
       <p className="mt-1 text-sm text-muted text-pretty">
         There is no ENTX market at this address. It may have been mistyped or delisted.
       </p>
@@ -295,7 +295,7 @@ function NotListed() {
               <li key={a.id}>
                 <Link
                   href={`/asset/${a.id}`}
-                  className="cursor-pointer flex min-h-11 items-center gap-3 px-3 py-2 hover:bg-white/[0.02]"
+                  className="cursor-pointer flex min-h-11 items-center gap-3 px-3 py-2 hover:bg-ink/[0.035]"
                 >
                   <Poster asset={a} size="sm" />
                   <span className="min-w-0 flex-1">
@@ -312,7 +312,7 @@ function NotListed() {
           </ul>
         </section>
       )}
-      <Link href="/" className="cursor-pointer mt-5 inline-flex min-h-11 items-center text-sm text-accent hover:underline">
+      <Link href="/markets" className="cursor-pointer mt-5 inline-flex min-h-11 items-center text-sm text-accent hover:underline">
         Browse all markets
       </Link>
     </div>

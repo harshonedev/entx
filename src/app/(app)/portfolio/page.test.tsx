@@ -70,7 +70,7 @@ describe("Portfolio page", () => {
     const empty = panelOf("Nothing traded yet");
     expect(within(empty).getByRole("link", { name: /^Trade / }).getAttribute("href")).toMatch(/^\/asset\//);
     expect(within(empty).getByRole("link", { name: "Browse predictions" })).toHaveAttribute("href", "/predictions");
-    expect(within(empty).getByRole("link", { name: "All markets" })).toHaveAttribute("href", "/");
+    expect(within(empty).getByRole("link", { name: "All markets" })).toHaveAttribute("href", "/markets");
     expect(screen.queryByRole("heading", { name: "Holdings" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Open predictions" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Trade history" })).toBeNull();
@@ -81,7 +81,7 @@ describe("Portfolio page", () => {
       useMarket.getState().predict(PREDICTIONS[0].id, "YES", 10);
     });
     render(<PortfolioPage />);
-    expect(within(panelOf("Holdings")).getByRole("link", { name: /Discover titles to trade/ })).toHaveAttribute("href", "/");
+    expect(within(panelOf("Holdings")).getByRole("link", { name: /Discover titles to trade/ })).toHaveAttribute("href", "/markets");
     expect(screen.queryByRole("heading", { name: "Nothing traded yet" })).toBeNull();
   });
 

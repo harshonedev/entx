@@ -44,12 +44,12 @@ export default function EpiPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Entertainment Popularity Index</h1>
+      <div className="masthead block">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h1 className="h-display">Entertainment Popularity Index</h1>
           <SimBadge>TMDB inputs · simulated updates</SimBadge>
         </div>
-        <p className="mt-1 max-w-2xl text-sm text-muted">
+        <p className="mt-3 max-w-2xl text-sm text-muted">
           One 0–100 score per title, blended from four signal families. The EPI is the oracle input that
           moves ENTX markets — when it changes, traders reprice.
         </p>
@@ -79,7 +79,7 @@ export default function EpiPage() {
                 const hist = m.epiHistory;
                 const ref = hist[Math.max(0, hist.length - 25)]?.value ?? m.epi;
                 return (
-                  <tr key={a.id} className="border-t border-line hover:bg-white/[0.02]">
+                  <tr key={a.id} className="border-t border-line hover:bg-ink/[0.035]">
                     <td className="num w-10 py-2.5 pl-4 text-muted sm:w-12">{i + 1}</td>
                     <td className="py-2.5 pr-4">
                       <Link href={`/asset/${a.id}`} className="cursor-pointer flex items-center gap-3 hover:text-accent">
@@ -97,8 +97,8 @@ export default function EpiPage() {
                     {KEYS.map((k) => (
                       <td key={k} className="hidden py-2.5 pl-4 lg:table-cell">
                         <div className="flex items-center gap-2">
-                          <div className="hidden h-1 w-12 overflow-hidden bg-white/[0.06] 2xl:block">
-                            <div className="h-full bg-white/60" style={{ width: `${m.epiParts[k]}%` }} />
+                          <div className="hidden h-1 w-12 overflow-hidden bg-ink/[0.07] 2xl:block">
+                            <div className="h-full bg-ink/70" style={{ width: `${m.epiParts[k]}%` }} />
                           </div>
                           <span className="num text-xs text-muted">{m.epiParts[k].toFixed(0)}</span>
                         </div>

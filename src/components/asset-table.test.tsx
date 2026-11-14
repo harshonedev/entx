@@ -76,7 +76,7 @@ describe("AssetTable", () => {
     unmount();
     render(<AssetTable assets={assets} showMetric={false} />);
     expect(within(table()).queryByRole("columnheader", { name: "Signal" })).toBeNull();
-    expect(within(table()).getAllByRole("columnheader")).toHaveLength(6);
+    expect(within(table()).getAllByRole("columnheader")).toHaveLength(7);
   });
 
   it("draws a trend sparkline only once candle history exists", () => {

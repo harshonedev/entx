@@ -165,9 +165,9 @@ export function RealBadge({ children = "On-chain · NEAR testnet" }: { children?
 
 export function EpiMeter({ value, className }: { value: number; className?: string }) {
   return (
-    <div className={clsx("h-1 w-full overflow-hidden bg-white/[0.06]", className)}>
+    <div className={clsx("h-1 w-full overflow-hidden bg-ink/[0.07]", className)}>
       <div
-        className="h-full origin-left bg-white/70 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out"
+        className="h-full origin-left bg-ink motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out"
         style={{ transform: `scaleX(${Math.min(100, Math.max(0, value)) / 100})` }}
       />
     </div>

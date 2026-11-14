@@ -25,7 +25,7 @@ export function AnalystCard({ assetId }: { assetId: string }) {
         <div
           className={clsx(
             "rounded-lg px-2.5 py-1 text-sm font-semibold",
-            bull ? "bg-up/15 text-up" : bear ? "bg-down/15 text-down" : "bg-white/[0.06] text-text",
+            bull ? "bg-up/15 text-up" : bear ? "bg-down/15 text-down" : "bg-ink/[0.07] text-text",
           )}
         >
           {sig.lean ? `Lean ${sig.rating.toLowerCase()}` : sig.rating}
@@ -62,8 +62,8 @@ export function AnalystCard({ assetId }: { assetId: string }) {
             <li key={f.name} className="text-xs">
               <div className="flex items-center gap-2">
                 <span className="w-28 shrink-0 text-muted">{f.name}</span>
-                <div className="relative h-1 flex-1 bg-white/[0.06]">
-                  <div className="absolute left-1/2 top-0 h-full w-px bg-white/15" />
+                <div className="relative h-1 flex-1 bg-ink/[0.07]">
+                  <div className="absolute left-1/2 top-0 h-full w-px bg-ink/25" />
                   <div
                     className={clsx("absolute top-0 h-full", f.score >= 0 ? "bg-up" : "bg-down")}
                     style={

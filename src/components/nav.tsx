@@ -3,21 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
-  Blocks,
-  BriefcaseBusiness,
   Droplets,
-  Gauge,
-  LayoutGrid,
   Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   Search,
-  Target,
   X,
-  type LucideIcon,
 } from "lucide-react";
 import { ASSETS } from "@/lib/assets";
 import { PREDICTIONS } from "@/lib/predictions";
@@ -32,90 +24,35 @@ import { DemoControls } from "./demo-controls";
 import { ModeBadge, SettingsMenu } from "./settings-menu";
 import { CHAIN, CHAIN_LABEL, CHAIN_NAMES, CHAIN_ON, IS_DEMO, MULTICHAIN } from "@/lib/env";
 import { Change, Dim, signTone } from "./ui";
-import { LogoMark, Wordmark } from "./logo";
+import { Wordmark } from "./logo";
 
-type NavLink = { href: string; label: string; icon: LucideIcon };
+type NavLink = { href: string; label: string };
 
 const LINKS: NavLink[] = [
-  { href: "/", label: "Discover", icon: LayoutGrid },
-  { href: "/predictions", label: "Predictions", icon: Target },
-  { href: "/epi", label: "EPI", icon: Gauge },
-  { href: "/portfolio", label: "Portfolio", icon: BriefcaseBusiness },
-  { href: "/onchain", label: "On-chain", icon: Blocks },
+  { href: "/markets", label: "Discover" },
+  { href: "/predictions", label: "Predictions" },
+  { href: "/epi", label: "EPI" },
+  { href: "/portfolio", label: "Portfolio" },
+  { href: "/onchain", label: "On-chain" },
 ];
 
 const isActive = (href: string, path: string) =>
-  href === "/" ? path === "/" || path.startsWith("/asset") : path.startsWith(href);
-
-/**
- * Desktop sidebar collapsed state, persisted in localStorage and shared across tabs. Expanded by default so
- * first-time visitors see every section by name (On-chain included); a stored choice always wins.
- */
-const COLLAPSE_KEY = "entx:sidebar-collapsed";
-const collapseListeners = new Set<() => void>();
-let collapsedMemory = false;
-
-function readCollapsed() {
-  try {
-    return localStorage.getItem(COLLAPSE_KEY) === "1";
-  } catch {
-    return collapsedMemory;
-  }
-}
-
-function writeCollapsed(value: boolean) {
-  collapsedMemory = value;
-  try {
-    localStorage.setItem(COLLAPSE_KEY, value ? "1" : "0");
-  } catch {}
-  collapseListeners.forEach((l) => l());
-}
-
-function subscribeCollapsed(listener: () => void) {
-  collapseListeners.add(listener);
-  const onStorage = (e: StorageEvent) => e.key === COLLAPSE_KEY && listener();
-  window.addEventListener("storage", onStorage);
-  return () => {
-    collapseListeners.delete(listener);
-    window.removeEventListener("storage", onStorage);
-  };
-}
+  href === "/markets" ? path === "/markets" || path.startsWith("/asset") : path.startsWith(href);
 
 const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** App frame: collapsible left sidebar on desktop, off-canvas drawer on mobile, sticky top bar. */
+/** App frame: ink top bar with the section nav, a dateline strip (market stats, receipts, portfolio), then the page. */
 export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const collapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
-  // Only animate width after a user toggle, so a saved "expanded" preference doesn't play on page load.
-  const [animate, setAnimate] = useState(false);
-  const toggleCollapsed = () => {
-    setAnimate(true);
-    writeCollapsed(!collapsed);
-  };
   const closeMenu = useCallback(() => setOpen(false), []);
 
   return (
-    <div className="flex min-h-screen">
-      <aside
-        id="app-sidebar"
-        className={clsx(
-          // z-50: sticky makes its own stacking context; the rail tooltip must paint over main + topbar.
-          "sticky top-0 z-50 hidden h-screen shrink-0 overflow-hidden border-r border-line bg-bg lg:block",
-          animate && "motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]",
-          collapsed ? "w-16" : "w-60",
-        )}
-      >
-        <Sidebar collapsed={collapsed} animate={animate} onToggleCollapsed={toggleCollapsed} />
-      </aside>
-
+    <div className="flex min-h-screen flex-col">
+      <Topbar onMenu={() => setOpen(true)} />
+      <Dateline />
       {open && <MobileDrawer onClose={closeMenu} />}
-
-      <div className="flex min-w-0 flex-1 flex-col overflow-x-clip">
-        <Topbar onMenu={() => setOpen(true)} />
-        {children}
-      </div>
+      <div className="flex min-w-0 flex-1 flex-col items-center overflow-x-clip">{children}</div>
     </div>
   );
 }
@@ -172,160 +109,50 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
     };
   }, [onClose]);
 
+  const path = usePathname();
   return (
     <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
-      <div ref={backdrop} aria-hidden="true" className="cursor-pointer absolute inset-0 bg-black/70" onClick={onClose} />
-      <aside ref={panel} className="relative h-full w-64 border-r border-line bg-bg">
-        <button
-          onClick={onClose}
-          className="cursor-pointer absolute right-3 top-[18px] grid h-7 w-7 place-items-center rounded text-muted transition-[background-color,color] hover:bg-panel hover:text-text"
-          aria-label="Close menu"
-        >
-          <X size={16} />
-        </button>
-        <Sidebar onNavigate={onClose} />
-      </aside>
-    </div>
-  );
-}
-
-function Sidebar({
-  onNavigate,
-  collapsed = false,
-  animate = false,
-  onToggleCollapsed,
-}: {
-  onNavigate?: () => void;
-  collapsed?: boolean;
-  animate?: boolean;
-  onToggleCollapsed?: () => void;
-}) {
-  const path = usePathname();
-  // Instant label tooltip for the collapsed rail (hover and keyboard focus). Fixed-positioned so the
-  // rail's overflow clip doesn't cut it off.
-  const [tip, setTip] = useState<{ label: string; top: number } | null>(null);
-  const hideTip = () => setTip(null);
-  const tipProps = (label: string) =>
-    collapsed
-      ? {
-          onPointerEnter: (e: React.PointerEvent<HTMLElement>) => showTip(label, e.currentTarget),
-          onFocus: (e: React.FocusEvent<HTMLElement>) => showTip(label, e.currentTarget),
-          onPointerLeave: hideTip,
-          onBlur: hideTip,
-        }
-      : {};
-  const showTip = (label: string, el: HTMLElement) => {
-    const r = el.getBoundingClientRect();
-    setTip({ label, top: r.top + r.height / 2 });
-  };
-
-  const motion = animate ? "motion-safe:duration-200 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]" : "";
-  // Labels stay in the DOM (accessible names) and fade with the rail instead of popping.
-  const fade = clsx(
-    "whitespace-nowrap",
-    animate && "motion-safe:transition-opacity motion-safe:duration-150",
-    collapsed ? "opacity-0" : "opacity-100",
-  );
-  const item = (active: boolean) =>
-    clsx(
-      "cursor-pointer group flex h-10 items-center gap-3 overflow-hidden rounded px-1.5",
-      animate && "motion-safe:transition-[width,background-color,color]",
-      motion,
-      collapsed ? "w-10" : "w-full",
-      active ? "bg-panel text-text" : "text-muted hover:bg-panel hover:text-text",
-    );
-
-  return (
-    // Fixed inner width on desktop: the rail clips this column, so nothing reflows while it animates.
-    <div className="flex h-full w-full flex-col lg:w-60">
-      <div className="flex h-16 shrink-0 items-center px-[18px]">
-        <Link
-          href="/"
-          onClick={onNavigate}
-          aria-label="ENTX home"
-          className="cursor-pointer relative flex h-7 items-center rounded text-text"
-          {...tipProps("Home")}
-        >
-          {/* The bare E overlays the wordmark's own E, so collapsing reads as "NTX" fading away. */}
-          <LogoMark className={clsx("absolute left-0 h-3.5 w-auto", animate && "motion-safe:transition-opacity motion-safe:duration-150", collapsed ? "opacity-100" : "opacity-0")} />
-          <Wordmark className={clsx(fade, "h-3.5 w-auto")} />
-        </Link>
-      </div>
-
-      {onToggleCollapsed && (
-        <div className="px-3 pt-2">
+      <div ref={backdrop} aria-hidden="true" className="cursor-pointer absolute inset-0 bg-ink/60" onClick={onClose} />
+      <aside ref={panel} className="relative flex h-full w-72 flex-col border-r-2 border-ink bg-bg">
+        <div className="flex h-[52px] shrink-0 items-center bg-ink px-4 text-bg">
+          <Link href="/" onClick={onClose} aria-label="ENTX home" className="cursor-pointer inline-flex min-h-11 items-center">
+            <Wordmark className="h-3.5 w-auto" />
+          </Link>
           <button
-            onClick={() => {
-              hideTip();
-              onToggleCollapsed();
-            }}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!collapsed}
-            aria-controls="app-sidebar"
-            className={clsx(item(false), "text-[13px]")}
-            {...tipProps("Expand sidebar")}
+            onClick={onClose}
+            className="cursor-pointer ml-auto grid h-11 w-11 place-items-center text-bg/70 transition-colors hover:text-bg"
+            aria-label="Close menu"
           >
-            <span className="grid h-7 w-7 shrink-0 place-items-center text-faint group-hover:text-text">
-              {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-            </span>
-            <span className={fade} aria-hidden="true">
-              Collapse
-            </span>
+            <X size={18} />
           </button>
         </div>
-      )}
-
-      <nav aria-label="Main" className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 pt-2">
-        <ul className="space-y-1">
-          {LINKS.map(({ href, label, icon: Icon }) => {
-            const active = isActive(href, path);
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  onClick={onNavigate}
-                  aria-current={active ? "page" : undefined}
-                  className={clsx(item(active), "text-[13.5px]")}
-                  {...tipProps(label)}
-                >
-                  <span
+        <nav aria-label="Main" className="flex-1 overflow-y-auto overscroll-contain px-4 pt-2">
+          <ul>
+            {LINKS.map(({ href, label }) => {
+              const active = isActive(href, path);
+              return (
+                <li key={href} className="border-b border-line">
+                  <Link
+                    href={href}
+                    onClick={onClose}
+                    aria-current={active ? "page" : undefined}
                     className={clsx(
-                      "grid h-7 w-7 shrink-0 place-items-center rounded",
-                      active ? "bg-accent/[0.14] text-accent" : "text-faint group-hover:text-text",
+                      "cond cursor-pointer flex h-12 items-center text-[20px] font-bold uppercase tracking-[0.04em]",
+                      active ? "text-accent" : "text-text hover:text-accent",
                     )}
                   >
-                    <Icon size={15} />
-                  </span>
-                  <span className={fade}>{label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div
-        inert={collapsed}
-        aria-hidden={collapsed || undefined}
-        className={clsx(
-          "space-y-4 p-4",
-          animate && "motion-safe:transition-[opacity,visibility] motion-safe:duration-150",
-          collapsed && "invisible opacity-0",
-        )}
-      >
-        <AccountCard onNavigate={onNavigate} />
-        <ReceiptToggles />
-      </div>
-
-      {collapsed && tip && (
-        <div
-          aria-hidden="true"
-          style={{ top: tip.top }}
-          className="pointer-events-none fixed left-[72px] z-50 -translate-y-1/2 whitespace-nowrap rounded border border-line-2 bg-panel-2 px-2 py-1 text-[12px] text-text"
-        >
-          {tip.label}
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+        <div className="space-y-4 border-t-2 border-ink p-4">
+          <AccountCard onNavigate={onClose} />
+          <ReceiptToggles />
         </div>
-      )}
+      </aside>
     </div>
   );
 }
@@ -334,9 +161,9 @@ function AccountCard({ onNavigate }: { onNavigate?: () => void }) {
   const total = useMarket((s) => portfolioValue(s).total);
   const ret = total / STARTING_CASH - 1;
   return (
-    <Link href="/portfolio" onClick={onNavigate} className="cursor-pointer block rounded bg-panel p-3.5 transition-colors hover:bg-panel-2">
+    <Link href="/portfolio" onClick={onNavigate} className="cursor-pointer block border border-line bg-panel p-3 transition-colors hover:bg-panel-2">
       <div className="label">Portfolio value</div>
-      <div className="num mt-1 text-[19px] font-medium tracking-[-0.02em]">
+      <div className="num mt-1 text-[19px] font-semibold tracking-[-0.01em]">
         <Dim text={usd(total)} />
       </div>
       <div className={clsx("num mt-0.5 text-xs", signTone(ret))}>{pct(ret)} all time</div>
@@ -344,7 +171,24 @@ function AccountCard({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function ReceiptToggles() {
+/** Compact portfolio figure for the dateline strip. */
+function AccountFigure() {
+  const total = useMarket((s) => portfolioValue(s).total);
+  const ret = total / STARTING_CASH - 1;
+  return (
+    <Link
+      href="/portfolio"
+      aria-label={`Portfolio value ${usd(total)}, ${pct(ret)} all time`}
+      className="cursor-pointer inline-flex h-full items-center gap-2 border-l border-line pl-4 hover:text-accent"
+    >
+      <span className="text-muted">Portfolio</span>
+      <span className="num font-semibold">{usd(total)}</span>
+      <span className={clsx("num", signTone(ret))}>{pct(ret)}</span>
+    </Link>
+  );
+}
+
+function ReceiptToggles({ inline = false }: { inline?: boolean }) {
   const chains = useMarket((s) => s.chains);
   const setChains = useMarket((s) => s.setChains);
   const { accountId } = useNear();
@@ -355,14 +199,18 @@ function ReceiptToggles() {
     ? live.solana ? "NEAR" : live.near ? "Solana" : "Solana or NEAR"
     : CHAIN_NAMES[0];
   const allLive = (["solana", "near"] as const).every((k) => !CHAIN_ON[k] || live[k]);
+  const hintId = inline ? "receipts-hint-inline" : "receipts-hint";
+  const labelId = inline ? "receipts-label-inline" : "receipts-label";
   return (
-    <div role="group" aria-labelledby="receipts-label">
-      <div id="receipts-label" className="label mb-2 px-0.5">On-chain receipts</div>
-      <div className="space-y-1">
+    <div role="group" aria-labelledby={labelId} className={clsx(inline && "flex h-full items-center gap-1")}>
+      <div id={labelId} className={clsx(inline ? "mr-1 text-muted" : "label mb-2")}>
+        {inline ? "Receipts" : "On-chain receipts"}
+      </div>
+      <div className={clsx(inline ? "flex items-center gap-1" : "space-y-1")}>
         {(
           [
-            ["solana", "Solana devnet", "bg-sol"],
-            ["near", "NEAR testnet", "bg-near"],
+            ["solana", inline ? "Solana" : "Solana devnet", "bg-sol"],
+            ["near", inline ? "NEAR" : "NEAR testnet", "bg-near"],
           ] as const
         ).filter(([k]) => CHAIN_ON[k]).map(([k, label, dot]) => {
           const on = live[k] && chains[k];
@@ -373,24 +221,21 @@ function ReceiptToggles() {
             onClick={() => live[k] && setChains({ [k]: !chains[k] })}
             aria-disabled={!live[k] || undefined}
             aria-pressed={on}
-            aria-describedby={live[k] ? undefined : "receipts-hint"}
+            aria-describedby={live[k] ? undefined : hintId}
+            title={live[k] ? undefined : `Connect a ${missing} wallet to sign receipts for your trades.`}
             className={clsx(
-              "flex h-8 w-full items-center gap-2.5 rounded px-2 text-[12.5px] text-muted transition-colors",
-              live[k] ? "cursor-pointer hover:bg-panel hover:text-text" : "cursor-not-allowed",
+              "flex items-center gap-2 text-[12.5px] transition-colors",
+              inline ? "h-7 px-2" : "h-8 w-full px-1",
+              live[k] ? "cursor-pointer text-text hover:bg-panel-2" : "cursor-not-allowed text-faint",
             )}
           >
             <span className={clsx("h-1.5 w-1.5 rounded-full", dot, !on && "opacity-30")} />
-            <span className={clsx(!live[k] && "text-faint")}>{label}</span>
-            <span
-              className={clsx(
-                "relative ml-auto h-4 w-7 rounded-sm transition-colors",
-                on ? "bg-text" : "bg-panel-2",
-              )}
-            >
+            <span>{label}</span>
+            <span className={clsx("relative h-3.5 w-6 border border-ink transition-colors", inline ? "" : "ml-auto", on ? "bg-ink" : "bg-transparent")}>
               <span
                 className={clsx(
-                  "absolute left-0.5 top-0.5 h-3 w-3 rounded-[2px] motion-safe:transition-[translate,background-color] motion-safe:duration-150 motion-safe:ease-out",
-                  on ? "translate-x-3 bg-bg" : "bg-faint",
+                  "absolute left-[1px] top-[1px] h-2.5 w-2.5 motion-safe:transition-[translate,background-color] motion-safe:duration-150 motion-safe:ease-out",
+                  on ? "translate-x-2.5 bg-bg" : "bg-line-2",
                 )}
               />
             </span>
@@ -399,7 +244,7 @@ function ReceiptToggles() {
         })}
       </div>
       {!allLive && (
-        <p id="receipts-hint" className="mt-2 px-0.5 text-xs leading-snug text-muted">
+        <p id={hintId} className={clsx(inline ? "sr-only" : "mt-2 text-xs leading-snug text-muted")}>
           Connect a {missing} wallet to sign receipts for your trades.
         </p>
       )}
@@ -410,20 +255,41 @@ function ReceiptToggles() {
 function Topbar({ onMenu }: { onMenu: () => void }) {
   const { connected } = useWallet();
   const airdrop = useAirdrop();
+  const path = usePathname();
   return (
-    <header className="@container sticky top-0 z-40 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-bg px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 flex h-[52px] shrink-0 items-center gap-1.5 bg-ink px-2 text-bg sm:gap-2 sm:px-6">
       <button
         onClick={onMenu}
-        className="cursor-pointer grid h-11 w-11 shrink-0 place-items-center rounded bg-panel text-muted hover:text-text lg:hidden"
+        className="cursor-pointer grid h-11 w-11 shrink-0 place-items-center text-bg/75 hover:text-bg lg:hidden"
         aria-label="Open menu"
       >
-        <Menu size={16} />
+        <Menu size={18} />
       </button>
-      <Link href="/" className="cursor-pointer inline-flex min-h-11 min-w-11 items-center text-[15px] font-medium tracking-[-0.01em] md:hidden" aria-label="ENTX home">
-        <Wordmark className="h-3 w-auto" />
+      <Link href="/" aria-label="ENTX home" className="cursor-pointer inline-flex min-h-11 shrink-0 items-center pr-2 lg:pr-4">
+        <Wordmark className="h-3.5 w-auto" />
       </Link>
-      <StatChips />
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <nav aria-label="Main" className="hidden h-full lg:block">
+        <ul className="flex h-full">
+          {LINKS.map(({ href, label }) => {
+            const active = isActive(href, path);
+            return (
+              <li key={href} className="h-full">
+                <Link
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={clsx(
+                    "cursor-pointer flex h-full items-center border-b-[3px] px-3.5 pt-[3px] text-[13.5px] font-medium transition-colors xl:px-4",
+                    active ? "border-accent text-bg" : "border-transparent text-bg/65 hover:text-bg",
+                  )}
+                >
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
         <AssetSearch />
         {IS_DEMO && <DemoControls />}
         <SettingsMenu />
@@ -432,7 +298,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
             onClick={airdrop}
             title="Request 1 devnet SOL to pay for on-chain receipts"
             aria-label="Request devnet SOL airdrop"
-            className="cursor-pointer grid h-9 w-9 place-items-center rounded bg-panel text-muted transition-colors hover:text-text pointer-coarse:h-11 pointer-coarse:w-11"
+            className="cursor-pointer grid h-9 w-9 place-items-center border border-bg/25 text-bg/75 transition-colors hover:text-bg pointer-coarse:h-11 pointer-coarse:w-11"
           >
             <Droplets size={15} />
           </button>
@@ -443,13 +309,27 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
   );
 }
 
+/** Dateline strip under the top bar: environment, market-wide stats, receipt toggles and portfolio value. */
+function Dateline() {
+  return (
+    <div className="@container hidden h-10 shrink-0 items-center gap-4 border-b border-ink bg-bg px-6 text-[12px] md:flex">
+      <ModeBadge />
+      <StatChips />
+      <div className="ml-auto flex h-full shrink-0 items-center gap-4">
+        <ReceiptToggles inline />
+        <AccountFigure />
+      </div>
+    </div>
+  );
+}
+
 function StatChips() {
   const markets = useMarket((s) => s.markets);
   const volume = ASSETS.reduce((t, a) => t + markets[a.id].volume24h, 0);
   const avgEpi = ASSETS.reduce((t, a) => t + markets[a.id].epi, 0) / ASSETS.length;
   const avgChg = ASSETS.reduce((t, a) => t + change24h(markets[a.id]), 0) / ASSETS.length;
-  // Each chip names the header width it needs (container query on <header>), so lower-priority stats drop out
-  // whole instead of being clipped mid-word. Testnets is the proof judges look for, so it stays longest.
+  // Each stat names the strip width it needs (container query), so lower-priority stats drop out whole
+  // instead of being clipped mid-word. Network is the proof judges look for, so it stays longest.
   const chips: [string, ReactNode, string][] = [
     [
       "Network",
@@ -457,19 +337,18 @@ function StatChips() {
         <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
         {MULTICHAIN ? CHAIN_NAMES.join(" · ") : CHAIN_LABEL[CHAIN]}
       </span>,
-      "@min-[820px]:flex",
+      "@min-[860px]:flex",
     ],
-    ["All titles 24h", <Change key="c" value={avgChg} />, "@min-[880px]:flex"],
-    ["24h Vol", <span key="v" className="num">{compactUsd(volume)}</span>, "@min-[1000px]:flex"],
-    ["Avg EPI", <span key="e" className="num">{avgEpi.toFixed(1)}</span>, "@min-[1100px]:flex"],
+    ["All titles 24h", <Change key="c" value={avgChg} />, "@min-[980px]:flex"],
+    ["24h Vol", <span key="v" className="num">{compactUsd(volume)}</span>, "@min-[1100px]:flex"],
+    ["Avg EPI", <span key="e" className="num">{avgEpi.toFixed(1)}</span>, "@min-[1200px]:flex"],
   ];
   return (
-    <div className="hidden min-w-0 items-center gap-1.5 overflow-hidden md:flex">
-      <ModeBadge />
+    <div className="flex h-full min-w-0 items-center overflow-hidden">
       {chips.map(([k, v, show]) => (
-        <div key={k} className={clsx("hidden h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded bg-panel px-3 text-[12px]", show)}>
+        <div key={k} className={clsx("hidden h-full shrink-0 items-center gap-2 whitespace-nowrap border-l border-line px-4", show)}>
           <span className="text-muted">{k}</span>
-          <span className="text-text">{v}</span>
+          <span className="font-medium text-text">{v}</span>
         </div>
       ))}
     </div>
@@ -547,7 +426,7 @@ function AssetSearch() {
     <div className="relative">
       {/* Phones: an icon-wide field that opens up on focus. sm+: always-open field. The 2px accent ring on the
           wrapper is the focus indicator (the bare input sits inside it, so it never needs its own outline). */}
-      <div className="flex h-9 w-11 items-center gap-2 overflow-hidden rounded bg-panel px-[15px] text-muted ring-1 ring-transparent focus-within:w-44 focus-within:text-text focus-within:ring-2 focus-within:ring-accent motion-safe:transition-[width] motion-safe:duration-200 sm:w-56 sm:px-3 sm:focus-within:w-56 pointer-coarse:h-11">
+      <div className="flex h-9 w-11 items-center gap-2 overflow-hidden border border-bg/20 bg-[#262626] px-[14px] text-bg/60 focus-within:w-44 focus-within:border-accent focus-within:text-bg motion-safe:transition-[width] motion-safe:duration-200 sm:w-56 sm:px-3 sm:focus-within:w-56 xl:w-64 xl:focus-within:w-64 pointer-coarse:h-11">
         <Search size={14} className="shrink-0" aria-hidden onClick={() => input.current?.focus()} />
         <input
           ref={input}
@@ -580,12 +459,12 @@ function AssetSearch() {
           aria-expanded={open}
           aria-controls="asset-search-list"
           aria-activedescendant={open && results[hi] ? `search-opt-${results[hi].id}` : undefined}
-          className="w-full min-w-0 bg-transparent text-[12.5px] text-text outline-none placeholder:text-faint"
+          className="w-full min-w-0 bg-transparent text-[12.5px] text-bg outline-none placeholder:text-bg/55"
         />
-        <kbd className="hidden rounded-sm bg-panel-2 px-1.5 py-0.5 text-xs text-muted sm:inline">⌘K</kbd>
+        <kbd className="hidden border border-bg/20 px-1.5 py-0.5 text-[11px] text-bg/60 sm:inline">⌘K</kbd>
       </div>
       {open && results.length > 0 && (
-        <div className="absolute right-0 top-11 z-50 max-h-[min(32rem,calc(100dvh-80px))] w-[min(22rem,calc(100vw-32px))] overflow-y-auto overscroll-contain rounded border border-line-2 bg-panel p-0.5 shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
+        <div className="absolute right-0 top-11 z-50 max-h-[min(32rem,calc(100dvh-80px))] w-[min(22rem,calc(100vw-32px))] overflow-y-auto overscroll-contain border-2 border-ink bg-panel p-0.5 text-text shadow-[0_8px_24px_rgba(20,20,20,0.18)]">
           {noMatch && (
             <p id="asset-search-empty" role="status" className="px-2 pb-1 pt-2 text-[12px] text-muted">
               Nothing matches &ldquo;<span className="text-text">{q.trim()}</span>&rdquo;. Most traded titles:

@@ -78,7 +78,7 @@ export default function PredictionMarketPage() {
             </span>
             <SimBadge />
           </div>
-          <h1 className="mt-2 text-balance text-[22px] font-semibold leading-tight tracking-[-0.01em] sm:text-[28px]">
+          <h1 className="cond mt-2 text-balance text-[28px] font-bold leading-[1.02] sm:text-[38px]">
             {p.question}
           </h1>
         </div>
@@ -300,7 +300,7 @@ function LinkedTitle({ p }: { p: PredictionSeed }) {
           </div>
           <Link
             href={`/asset/${asset.id}#trade`}
-            className="cursor-pointer inline-flex h-9 items-center rounded bg-panel-2 px-3 text-xs font-medium hover:bg-white/[0.06] pointer-coarse:h-11"
+            className="cursor-pointer inline-flex h-9 items-center rounded bg-panel-2 px-3 text-xs font-medium hover:bg-ink/[0.07] pointer-coarse:h-11"
           >
             Trade {asset.ticker}
           </Link>

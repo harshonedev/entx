@@ -67,7 +67,7 @@ export function SettingsMenu() {
         aria-label="Settings"
         className={clsx(
           "cursor-pointer grid h-9 w-9 place-items-center rounded transition-colors pointer-coarse:h-11 pointer-coarse:w-11",
-          open ? "bg-panel-2 text-text" : "bg-panel text-muted hover:text-text",
+          open ? "border border-bg bg-bg text-ink" : "border border-bg/25 text-bg/75 hover:border-bg/60 hover:text-bg",
         )}
       >
         <Settings size={15} />
@@ -80,7 +80,7 @@ export function SettingsMenu() {
           tabIndex={-1}
           role="dialog"
           aria-label="Settings"
-          className="fixed right-4 top-[76px] z-50 max-h-[calc(100vh-92px)] w-[min(340px,calc(100vw-32px))] overflow-y-auto rounded border border-line-2 bg-panel-2 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.5)] outline-none"
+          className="fixed right-4 top-[60px] z-50 max-h-[calc(100vh-76px)] w-[min(340px,calc(100vw-32px))] overflow-y-auto border-2 border-ink bg-panel p-4 shadow-[0_8px_24px_rgba(20,20,20,0.18)] outline-none"
         >
           <div className="flex items-center gap-2">
             <h2 className="h-panel">Settings</h2>

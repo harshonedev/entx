@@ -88,10 +88,10 @@ export default function OnchainPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="masthead">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-[-0.01em]">On-chain</h1>
-          <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-muted">
+          <h1 className="h-display">On-chain</h1>
+          <p className="mt-3 max-w-[65ch] text-sm leading-relaxed text-muted">
             What ENTX puts on-chain, read live from the chains. NEAR holds the market registry, EPI oracle reports,
             trade receipts and on-chain prediction pools in testnet NEAR. Intents route cross-chain funding.
           </p>
@@ -132,7 +132,7 @@ export default function OnchainPage() {
                   rel="noreferrer"
                   className="cursor-pointer num inline-flex items-center text-text/80 hover:text-near pointer-coarse:min-h-11"
                 >
-                  <span className="inline-flex items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5">
+                  <span className="inline-flex items-center gap-1 rounded bg-ink/[0.07] px-1.5 py-0.5">
                     {o}
                     {role && <span className="font-sans text-faint">· {role}</span>}
                     <ExternalLink size={10} aria-hidden />
@@ -313,7 +313,7 @@ export default function OnchainPage() {
                 </p>
                 <Link
                   href={`/asset/${spot.id}`}
-                  className="cursor-pointer press mt-3 inline-flex h-9 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110 pointer-coarse:h-11"
+                  className="btn-primary cursor-pointer press mt-3 h-9 px-4 text-[15px] pointer-coarse:h-11"
                 >
                   Make a trade to write the first receipt <ArrowRight size={14} aria-hidden />
                 </Link>

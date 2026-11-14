@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { ArrowRight, Radio, Zap } from "lucide-react";
 import { ASSETS } from "@/lib/assets";
 import { change24h, priceOf, useMarket } from "@/store/market";
-import { usd } from "@/lib/format";
+import { timeAgo, usd } from "@/lib/format";
 import { AssetTable } from "@/components/asset-table";
 import { ReleaseClock } from "@/components/release-clock";
 import { LiveFeed } from "@/components/chrome";
@@ -55,57 +55,68 @@ export default function Discover() {
 
   return (
     <div className="space-y-6">
-      {/* Lead: what ENTX is, the trade action, then proof that the chain side is real. */}
+      {/* Lead: masthead (what ENTX is), the oracle wire (why prices move), the trade action, then chain proof. */}
       <div className="space-y-4">
-        <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+        <section className="masthead">
           <div className="min-w-0">
-            <h1 className="text-[28px] font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[34px]">
+            <h1 className="h-display">
               Entertainment, <span className="text-accent">now tradable.</span>
             </h1>
-            <p className="mt-2 max-w-[62ch] text-pretty text-sm leading-relaxed text-muted">
+            <p className="mt-3 max-w-[64ch] text-pretty text-sm leading-relaxed text-muted">
               Movies and shows trade like assets. Prices react to box office, TMDB popularity, audience votes and
               audience ratings, rolled into one live score: the Entertainment Popularity Index (EPI).
             </p>
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
-              {IS_LIVE ? (
-                <>
-                  <SimBadge>Live · testnet</SimBadge>
-                  Titles and EPI inputs are real TMDB data. Prediction pools are real on-chain state. Asset trading is a
-                  preview with simulated prices until the shared market launches.
-                </>
-              ) : (
-                <>
-                  <SimBadge>Hackathon demo</SimBadge>
-                  Prices and trades are simulated. The {CHAIN_LABEL[CHAIN]} records are real on-chain state.
-                </>
-              )}
-            </p>
           </div>
-          <div className="flex flex-col gap-2">
-          <p className="text-xs text-muted">
-            {spotReason}: <span className="text-text">{spot.title}</span>, EPI{" "}
-            <span className="num text-text">{markets[spot.id].epi.toFixed(1)}</span>
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href={`/asset/${spot.id}`}
-              className="cursor-pointer press inline-flex h-11 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110"
-            >
-              Trade {spot.title} <ArrowRight size={15} />
-            </Link>
-            {!IS_LIVE && (
-            <button
-              onClick={() => {
-                randomOracle(spot.id);
-                router.push(`/asset/${spot.id}`);
-              }}
-              title={`Fires a simulated news event on ${spot.title} and opens its chart, so you can watch EPI and price react`}
-              className="cursor-pointer press inline-flex h-11 items-center gap-2 rounded border border-line-2 px-4 text-[13px] font-medium hover:bg-white/[0.04]"
-            >
-              <Zap size={15} className="text-accent" /> Watch news move {spot.title}
-            </button>
+          <div className="flex flex-col items-start gap-1 text-xs leading-relaxed text-muted sm:items-end sm:text-right">
+            <Dateline />
+            <span>
+              Ranked by 24h volume · Prices <span className="font-semibold text-text">simulated</span>
+            </span>
+          </div>
+        </section>
+
+        <OracleWire />
+
+        <section className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3">
+          <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+            {IS_LIVE ? (
+              <>
+                <SimBadge>Live · testnet</SimBadge>
+                Titles and EPI inputs are real TMDB data. Prediction pools are real on-chain state. Asset trading is a
+                preview with simulated prices until the shared market launches.
+              </>
+            ) : (
+              <>
+                <SimBadge>Hackathon demo</SimBadge>
+                Prices and trades are simulated. The {CHAIN_LABEL[CHAIN]} records are real on-chain state.
+              </>
             )}
-          </div>
+          </p>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-muted">
+              {spotReason}: <span className="text-text">{spot.title}</span>, EPI{" "}
+              <span className="num text-text">{markets[spot.id].epi.toFixed(1)}</span>
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={`/asset/${spot.id}`}
+                className="btn-primary cursor-pointer press h-11 px-5 text-[16px]"
+              >
+                Trade {spot.title} <ArrowRight size={16} />
+              </Link>
+              {!IS_LIVE && (
+                <button
+                  onClick={() => {
+                    randomOracle(spot.id);
+                    router.push(`/asset/${spot.id}`);
+                  }}
+                  title={`Fires a simulated news event on ${spot.title} and opens its chart, so you can watch EPI and price react`}
+                  className="cursor-pointer press inline-flex h-11 items-center gap-2 border border-ink px-4 text-[13px] font-medium hover:bg-panel-2"
+                >
+                  <Zap size={15} className="text-accent" /> Watch news move {spot.title}
+                </button>
+              )}
+            </div>
           </div>
         </section>
 
@@ -187,10 +198,10 @@ function MoverList({ title, items, empty }: { title: string; items: typeof ASSET
       <ul className="space-y-1">
         {items.map((a) => (
           <li key={a.id}>
-            <Link href={`/asset/${a.id}`} className="cursor-pointer -mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/[0.03]">
+            <Link href={`/asset/${a.id}`} className="cursor-pointer -mx-2 flex items-center gap-3 px-2 py-1.5 hover:bg-ink/[0.04]">
               <Poster asset={a} size="sm" />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{a.title}</div>
+                <div className="cond truncate text-[17px] font-bold uppercase leading-tight tracking-[0.02em]">{a.title}</div>
                 <div className="text-xs text-muted">{a.ticker}</div>
               </div>
               <div className="text-right">
@@ -201,6 +212,38 @@ function MoverList({ title, items, empty }: { title: string; items: typeof ASSET
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+const noSubscribe = () => () => {};
+
+/** Today's date as a dateline; rendered after mount so server and client never disagree. */
+function Dateline() {
+  const today = useSyncExternalStore(
+    noSubscribe,
+    () => new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
+    () => null,
+  );
+  return <span className="font-semibold uppercase tracking-[0.06em] text-text">{today ?? "\u00a0"}</span>;
+}
+
+/** The oracle wire: the latest news event that moved a price, so the cause sits above the board. */
+function OracleWire() {
+  const latest = useMarket((s) => s.feed.find((f) => f.type === "oracle"));
+  if (!latest) return null;
+  const asset = latest.refId ? ASSETS.find((a) => a.id === latest.refId) : undefined;
+  return (
+    <div role="status" className="wire flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-[13px]">
+      <span className="cond text-[14px] font-bold uppercase tracking-[0.08em] text-accent">Oracle wire</span>
+      {asset ? (
+        <Link href={`/asset/${asset.id}`} className="cursor-pointer min-w-0 hover:underline">
+          {latest.text}
+        </Link>
+      ) : (
+        <span className="min-w-0">{latest.text}</span>
+      )}
+      <span className="ml-auto text-xs text-muted">{timeAgo(latest.ts)} · simulated</span>
     </div>
   );
 }

@@ -266,7 +266,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
             <button
               onClick={() => setConfirming(false)}
               aria-keyshortcuts="Escape"
-              className="cursor-pointer h-11 rounded bg-panel-2 text-[13px] font-medium hover:bg-white/[0.06]"
+              className="cursor-pointer h-11 rounded bg-panel-2 text-[13px] font-medium hover:bg-ink/[0.07]"
             >
               Cancel
             </button>

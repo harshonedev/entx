@@ -55,7 +55,7 @@ describe("Asset page", () => {
     nav.id = "does-not-exist";
     render(<AssetPage />);
     expect(screen.getByRole("heading", { level: 1, name: "Asset not listed" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Browse all markets" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Browse all markets" })).toHaveAttribute("href", "/markets");
     const markets = useMarket.getState().markets;
     const top = [...ASSETS].sort((a, b) => markets[b.id].volume24h - markets[a.id].volume24h).slice(0, 3);
     const list = screen.getByRole("heading", { name: "Most traded right now" }).nextElementSibling as HTMLElement;
@@ -101,7 +101,7 @@ describe("Asset page", () => {
     const a = withPreds;
     const m = useMarket.getState().markets[a.id];
     expect(screen.getByRole("heading", { level: 1, name: a.title })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Discover/ })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /Discover/ })).toHaveAttribute("href", "/markets");
     const header = screen.getByRole("heading", { level: 1 }).closest("section") as HTMLElement;
     expect(header).toHaveTextContent(a.ticker);
     expect(header).toHaveTextContent(a.tagline);

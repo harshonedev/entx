@@ -97,8 +97,8 @@ export function PriceChart({
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "rgba(255,255,255,0.03)" },
-        horzLines: { color: "rgba(255,255,255,0.03)" },
+        vertLines: { color: "rgba(20,20,20,0.06)" },
+        horzLines: { color: "rgba(20,20,20,0.06)" },
       },
       rightPriceScale: { borderColor: token("--line") },
       timeScale: { borderColor: token("--line"), timeVisible: true, secondsVisible: step < 60, rightOffset: 12 },
@@ -139,16 +139,27 @@ export function PriceChart({
     if (!s || !candles?.length) return;
     // Generated lead-in draws muted, so only recorded candles carry the up/down colours.
     const muted = getComputedStyle(document.documentElement).getPropertyValue("--line-2").trim() || "#3a3a3a";
-    const data = candles.map(({ modelled, ...k }) => ({
-      ...k,
-      time: k.time as UTCTimestamp,
-      ...(modelled ? { color: muted, wickColor: muted, borderColor: muted } : {}),
-    }));
-    if (lastLen.current === 0 || Math.abs(candles.length - lastLen.current) > 1) {
+    // lightweight-charts rejects out-of-order or duplicate times (a persisted history meeting a fresh lead-in,
+    // or a throttled background tab firing ticks late), so keep strictly ascending times, last candle wins.
+    const byTime = new Map<number, (typeof candles)[number]>();
+    for (const k of candles) byTime.set(k.time, k);
+    const data = [...byTime.values()]
+      .sort((a, b) => a.time - b.time)
+      .map(({ modelled, ...k }) => ({
+        ...k,
+        time: k.time as UTCTimestamp,
+        ...(modelled ? { color: muted, wickColor: muted, borderColor: muted } : {}),
+      }));
+    try {
+      if (lastLen.current === 0 || Math.abs(candles.length - lastLen.current) > 1) {
+        s.setData(data);
+        chart.current?.timeScale().fitContent();
+      } else {
+        s.update(data[data.length - 1]);
+      }
+    } catch {
+      // An update older than the last drawn bar: redraw the whole series instead of crashing the page.
       s.setData(data);
-      chart.current?.timeScale().fitContent();
-    } else {
-      s.update(data[data.length - 1]);
     }
     lastLen.current = candles.length;
   }, [candles]);

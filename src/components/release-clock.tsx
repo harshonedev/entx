@@ -112,10 +112,10 @@ export function ReleaseClock() {
                   scroller clips anything drawn outside it. */}
               <Link
                 href={`/asset/${a.id}`}
-                className="cursor-pointer group -mx-2 mt-3 block rounded p-2 hover:bg-white/[0.03] focus-visible:outline-offset-[-2px]"
+                className="cursor-pointer group -mx-2 mt-3 block rounded p-2 hover:bg-ink/[0.04] focus-visible:outline-offset-[-2px]"
                 aria-label={`${a.title}, ${r.label}`}
               >
-                <Poster asset={a} size="lg" className="transition-[border-color] group-hover:border-white/30" />
+                <Poster asset={a} size="lg" className="transition-[border-color] group-hover:border-ink/50" />
                 <span className="mt-2 block truncate text-[13px] font-medium">{a.title}</span>
                 <Change value={change24h(markets[a.id])} className="text-xs" />
               </Link>

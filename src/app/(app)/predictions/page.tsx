@@ -13,13 +13,13 @@ export default function PredictionsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="masthead">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Prediction markets</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="h-display">Prediction markets</h1>
             <SimBadge />
           </div>
-          <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-muted">
+          <p className="mt-3 max-w-[65ch] text-sm leading-relaxed text-muted">
             Bet YES or NO on box-office targets, awards, renewals and popularity milestones. A share costs its
             price in cents and pays $1 if you&apos;re right, so 32¢ means the market sees a 32% chance. Odds move with
             trading and with news on the linked title.

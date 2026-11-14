@@ -50,22 +50,17 @@ beforeEach(() => {
 });
 
 const mainNav = () => screen.getAllByRole("navigation", { name: "Main" })[0];
-/** The rail starts expanded on a first visit; only click when a stored preference collapsed it. */
-const expandSidebar = async (user: ReturnType<typeof userEvent.setup>) => {
-  const toggle = screen.queryByRole("button", { name: "Expand sidebar" });
-  if (toggle) await user.click(toggle);
-};
 
 describe("Shell", () => {
   it("renders children and the main nav links", () => {
     render(<Shell>page body</Shell>);
     expect(screen.getByText("page body")).toBeInTheDocument();
     const links = within(mainNav()).getAllByRole("link");
-    expect(links.map((l) => l.getAttribute("href"))).toEqual(["/", "/predictions", "/epi", "/portfolio", "/onchain"]);
+    expect(links.map((l) => l.getAttribute("href"))).toEqual(["/markets", "/predictions", "/epi", "/portfolio", "/onchain"]);
   });
 
   it.each([
-    ["/", "Discover"],
+    ["/markets", "Discover"],
     ["/asset/foo", "Discover"],
     ["/predictions/abc", "Predictions"],
     ["/portfolio", "Portfolio"],
@@ -77,79 +72,28 @@ describe("Shell", () => {
     expect(current[0]).toHaveTextContent(label);
   });
 
-  describe("desktop sidebar collapse", () => {
-    it("starts expanded on a first visit so every section is labelled", () => {
-      render(<Shell>x</Shell>);
-      expect(screen.getByRole("button", { name: "Collapse sidebar" })).toHaveAttribute("aria-expanded", "true");
-      expect(within(mainNav()).getByRole("link", { name: "On-chain" })).toBeVisible();
-      expect(screen.getByRole("link", { name: /Portfolio value/ })).toBeInTheDocument();
-    });
-
-    it("restores a saved collapsed preference, hides the account panel, and expands with persistence", async () => {
-      localStorage.setItem("entx:sidebar-collapsed", "1");
-      const user = userEvent.setup();
-      render(<Shell>x</Shell>);
-      const toggle = screen.getByRole("button", { name: "Expand sidebar" });
-      expect(toggle).toHaveAttribute("aria-expanded", "false");
-      expect(screen.queryByRole("link", { name: /Portfolio value/ })).not.toBeInTheDocument();
-
-      await user.click(toggle);
-      expect(screen.getByRole("button", { name: "Collapse sidebar" })).toHaveAttribute("aria-expanded", "true");
-      expect(localStorage.getItem("entx:sidebar-collapsed")).toBe("0");
-      expect(screen.getByRole("link", { name: /Portfolio value/ })).toBeInTheDocument();
-
-      await user.click(screen.getByRole("button", { name: "Collapse sidebar" }));
-      expect(localStorage.getItem("entx:sidebar-collapsed")).toBe("1");
-    });
-
-    it("restores the saved expanded preference", () => {
-      localStorage.setItem("entx:sidebar-collapsed", "0");
-      render(<Shell>x</Shell>);
-      expect(screen.getByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
-    });
-
-    it("syncs with other tabs via the storage event", () => {
-      localStorage.setItem("entx:sidebar-collapsed", "1");
-      render(<Shell>x</Shell>);
-      expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
-      act(() => {
-        localStorage.setItem("entx:sidebar-collapsed", "0");
-        window.dispatchEvent(new StorageEvent("storage", { key: "entx:sidebar-collapsed" }));
-      });
-      expect(screen.getByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
-    });
-
-    it("shows a label tooltip on the collapsed rail", async () => {
-      localStorage.setItem("entx:sidebar-collapsed", "1");
-      const user = userEvent.setup();
-      render(<Shell>x</Shell>);
-      const link = within(mainNav()).getByRole("link", { name: "EPI" });
-      await user.hover(link);
-      const tip = document.querySelector(".fixed.left-\\[72px\\]");
-      expect(tip).toHaveTextContent("EPI");
-      await user.unhover(link);
-      expect(document.querySelector(".fixed.left-\\[72px\\]")).toBeNull();
-    });
+  it("keeps the dateline strip: environment badge, network, receipts and portfolio", () => {
+    render(<Shell>x</Shell>);
+    expect(within(mainNav()).getByRole("link", { name: "On-chain" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Receipts" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Portfolio value/ })).toHaveAttribute("href", "/portfolio");
   });
 
   it("shows portfolio value from the store", async () => {
-    const user = userEvent.setup();
     render(<Shell>x</Shell>);
-    await expandSidebar(user);
     const card = screen.getByRole("link", { name: /Portfolio value/ });
     expect(card).toHaveAttribute("href", "/portfolio");
-    expect(card).toHaveTextContent(/(^|[^+])0\.00% all time/);
+    expect(card).toHaveAccessibleName(/(^|[^+])0\.00% all time/);
     act(() => useMarket.setState({ cash: 1100 }));
-    expect(card).toHaveTextContent("+10.00% all time");
+    expect(card).toHaveAccessibleName(/\+10\.00% all time/);
   });
 
   describe("receipt toggles", () => {
     it("are disabled with a hint when no wallet is connected", async () => {
       const user = userEvent.setup();
       render(<Shell>x</Shell>);
-      await expandSidebar(user);
-      const sol = screen.getByRole("button", { name: /Solana devnet/ });
-      const nr = screen.getByRole("button", { name: /NEAR testnet/ });
+      const sol = screen.getByRole("button", { name: /^Solana/ });
+      const nr = screen.getByRole("button", { name: /^NEAR/ });
       // aria-disabled, not disabled: the rows stay focusable and describe why they are off.
       expect(sol).toHaveAttribute("aria-disabled", "true");
       expect(nr).toHaveAttribute("aria-disabled", "true");
@@ -166,8 +110,7 @@ describe("Shell", () => {
       near.accountId = "alice.testnet";
       const user = userEvent.setup();
       render(<Shell>x</Shell>);
-      await expandSidebar(user);
-      const nr = screen.getByRole("button", { name: /NEAR testnet/ });
+      const nr = screen.getByRole("button", { name: /^NEAR/ });
       expect(nr).not.toHaveAttribute("aria-disabled");
       expect(nr).not.toHaveAccessibleDescription();
       expect(nr).toHaveAttribute("aria-pressed", "true");

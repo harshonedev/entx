@@ -66,13 +66,13 @@ export default function PortfolioPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="masthead">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Portfolio</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="h-display">Portfolio</h1>
             <SimBadge>Simulated balance</SimBadge>
           </div>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-3 text-sm text-muted">
             {[
               CHAIN_ON.solana && connected && publicKey ? `Solana ${shortKey(publicKey.toBase58())} (devnet)` : null,
               CHAIN_ON.near && nearAccount ? `NEAR ${nearAccount} (testnet)` : null,
@@ -140,18 +140,18 @@ export default function PortfolioPage() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   href={`/asset/${starter.id}`}
-                  className="cursor-pointer press inline-flex h-11 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110"
+                  className="btn-primary cursor-pointer press h-11 px-5 text-[16px]"
                 >
                   Trade {starter.title} <ArrowRight size={15} />
                 </Link>
                 <Link
                   href="/predictions"
-                  className="cursor-pointer press inline-flex h-11 items-center gap-2 rounded border border-line-2 px-4 text-[13px] font-medium hover:bg-white/[0.04]"
+                  className="cursor-pointer press inline-flex h-11 items-center gap-2 rounded border border-line-2 px-4 text-[13px] font-medium hover:bg-ink/[0.05]"
                 >
                   Browse predictions
                 </Link>
                 <Link
-                  href="/"
+                  href="/markets"
                   className="cursor-pointer inline-flex h-11 items-center px-2 text-[13px] text-muted hover:text-text"
                 >
                   All markets
@@ -164,7 +164,7 @@ export default function PortfolioPage() {
             <h2 className="h-panel px-4 pt-4">Holdings</h2>
             {Object.keys(s.holdings).length === 0 ? (
               <Empty>
-                No holdings yet. <Link href="/" className="cursor-pointer text-accent">Discover titles to trade →</Link>
+                No holdings yet. <Link href="/markets" className="cursor-pointer text-accent">Discover titles to trade →</Link>
               </Empty>
             ) : (
               <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[560px]">
