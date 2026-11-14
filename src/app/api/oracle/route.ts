@@ -1,4 +1,4 @@
-import { clientIp, own, readJson } from "@/lib/http";
+import { clientIp, own, readJson, safeEqual } from "@/lib/http";
 import { NextResponse } from "next/server";
 import { Account, JsonRpcProvider, type KeyPairString } from "near-api-js";
 import { ASSET_BY_ID, EPI_WEIGHTS, ORACLE_EVENTS, computeEpi, type AssetSeed, type EpiParts } from "@/lib/assets";
@@ -53,7 +53,7 @@ type Caller = "auth" | "demo" | null;
 
 function caller(req: Request): Caller {
   const secret = process.env.ORACLE_API_SECRET;
-  if (secret && req.headers.get("authorization") === `Bearer ${secret}`) return "auth";
+  if (secret && safeEqual(req.headers.get("authorization") ?? "", `Bearer ${secret}`)) return "auth";
   if (process.env.ENTX_PUBLIC_ORACLE === "true" && sameOrigin(req)) return "demo";
   return null;
 }
@@ -185,9 +185,8 @@ export async function POST(req: Request) {
       baseline: value.baseline,
     });
   } catch (e) {
-    return NextResponse.json(
-      { error: (e instanceof Error ? e.message : String(e)).slice(0, 200) },
-      { status: 502 },
-    );
+    // Full RPC errors can name the signer and RPC internals: keep them in server logs only.
+    console.error("oracle publish failed", e);
+    return NextResponse.json({ error: "Oracle publish failed, try again shortly" }, { status: 502 });
   }
 }

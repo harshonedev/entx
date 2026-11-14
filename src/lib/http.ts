@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from "node:crypto";
+
 // Shared request helpers for public API routes.
 
 /** Max JSON body accepted by the public routes. Their payloads are a few short strings. */
@@ -55,3 +57,9 @@ function ipOrShared(value: string | null | undefined): string {
 /** Own-key lookup, so "__proto__" / "constructor" never resolve to inherited values. */
 export const own = <T>(table: Record<string, T>, key: unknown): T | undefined =>
   typeof key === "string" && Object.hasOwn(table, key) ? table[key] : undefined;
+
+/** Constant-time string comparison (hashes first, so unequal lengths don't leak through timing either). */
+export function safeEqual(a: string, b: string): boolean {
+  const h = (v: string) => createHash("sha256").update(v).digest();
+  return timingSafeEqual(h(a), h(b));
+}

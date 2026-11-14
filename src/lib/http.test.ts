@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { clientIp, own, readJson } from "./http";
+import { clientIp, own, readJson, safeEqual } from "./http";
 
 const r = (headers: Record<string, string>, body?: string) =>
   new Request("http://x/", { method: "POST", headers, body });
@@ -42,5 +42,14 @@ describe("own", () => {
     expect(own(t, "__proto__")).toBeUndefined();
     expect(own(t, "constructor")).toBeUndefined();
     expect(own(t, 5)).toBeUndefined();
+  });
+});
+
+describe("safeEqual", () => {
+  it("matches equal strings and rejects different ones of any length", () => {
+    expect(safeEqual("Bearer abc", "Bearer abc")).toBe(true);
+    expect(safeEqual("Bearer abd", "Bearer abc")).toBe(false);
+    expect(safeEqual("", "Bearer abc")).toBe(false);
+    expect(safeEqual("Bearer abc-and-more", "Bearer abc")).toBe(false);
   });
 });
