@@ -109,7 +109,8 @@ describe("useProbHistory", () => {
     await useMarket.persist.rehydrate();
     const { result } = renderHook(() => useProbHistory(P));
     const before = result.current;
-    vi.setSystemTime(new Date("2026-11-14T12:00:05Z"));
+    // Live points are bucketed to 15s, so a change in the next bucket adds a point.
+    vi.setSystemTime(new Date("2026-11-14T12:00:20Z"));
     act(() => {
       useMarket.getState().predict(P, "YES", 100);
     });
@@ -118,7 +119,7 @@ describe("useProbHistory", () => {
     expect(result.current.at(-1)!.value).toBeCloseTo(yesPrice(useMarket.getState().predictions[P].pool), 12);
   });
 
-  it("replaces the last point when updated within the same second", async () => {
+  it("replaces the last point when updated within the same 15s bucket", async () => {
     const { useMarket, useProbHistory } = await load();
     await useMarket.persist.rehydrate();
     const { result } = renderHook(() => useProbHistory(P));

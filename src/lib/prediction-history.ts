@@ -22,6 +22,11 @@ const BACKFILL_STEP = 900; // seconds → 24 hours of lead-in at 15-minute steps
 /** Same coupling as the store: YES moves by sensitivity × EPI_TO_ODDS × relative EPI change. */
 const EPI_TO_ODDS = 2.2;
 const MAX_POINTS = 2400;
+/**
+ * Live points are bucketed to this many seconds. The chart spaces points by index, not time, so one
+ * point per tick would stretch a few live minutes across most of the axis and repeat time labels.
+ */
+const LIVE_STEP = 15;
 const STORAGE_KEY = "entx:prob-history:v1";
 const SAVE_EVERY_MS = 5_000;
 
@@ -84,7 +89,7 @@ function leadIn(p: PredictionSeed, value: number, end: number, settled: boolean)
 
 function record() {
   const { predictions } = useMarket.getState();
-  const now = Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000 / LIVE_STEP) * LIVE_STEP;
   let changed = false;
   let saved: Record<string, ProbPoint[]> | null = null;
   for (const p of PREDICTIONS) {
