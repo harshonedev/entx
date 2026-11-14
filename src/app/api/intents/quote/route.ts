@@ -56,6 +56,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unsupported asset or amount" }, { status: 400 });
   }
 
+  // Amounts that round to zero base units would only burn quota on a 1Click error.
+  if (BigInt(Math.round(amount * 1e6)) * BigInt(10) ** BigInt(origin.decimals) / BigInt(1e6) <= BigInt(0)) {
+    return NextResponse.json({ error: "Amount too small" }, { status: 400 });
+  }
+
   if (!admit(req)) {
     return NextResponse.json({ error: "Too many quote requests, try again shortly" }, { status: 429 });
   }

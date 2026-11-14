@@ -2,6 +2,8 @@
 // Everything here is a simulation — no real money, no on-chain pricing.
 
 export const FEE = 0.003;
+/** Smallest order or bet, in dollars: anything below rounds to $0.00 on screen and in receipts. */
+export const MIN_ORDER = 0.01;
 export const CANDLE_SECONDS = 15;
 
 export interface Candle {

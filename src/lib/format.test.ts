@@ -9,6 +9,10 @@ describe("usd", () => {
   it("puts the minus sign before the dollar sign", () => {
     expect(usd(-12.3)).toBe("-$12.30");
   });
+  it("drops the sign when the value rounds to zero", () => {
+    expect(usd(-0.003)).toBe("$0.00");
+    expect(usd(-0.006)).toBe("-$0.01");
+  });
   it("respects custom digits", () => {
     expect(usd(1.23456, 4)).toBe("$1.2346");
     expect(usd(99.9, 0)).toBe("$100");

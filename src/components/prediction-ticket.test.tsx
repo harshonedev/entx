@@ -72,6 +72,14 @@ describe("PredictionTicket", () => {
     expect(screen.getByRole("button", { name: "Bet $12.50 on Yes" })).toBeEnabled();
   });
 
+  it("refuses bets under a cent", async () => {
+    const user = userEvent.setup();
+    render(<PredictionTicket p={p} />);
+    await user.clear(amountInput());
+    await user.type(amountInput(), "0.001");
+    expect(screen.getByRole("button", { name: "Minimum bet is $0.01" })).toBeDisabled();
+  });
+
   it("presets and Max set the amount", async () => {
     const user = userEvent.setup();
     useMarket.setState({ cash: 432.9 });

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-css-tags, @next/next/no-page-custom-font */
 import type { Metadata } from "next";
 import Script from "next/script";
-import { metadata as siteMetadata } from "@/lib/site-meta";
+import { ogImage, metadata as siteMetadata } from "@/lib/site-meta";
 import { themeScript } from "@/lib/theme-script";
 
 export { viewport } from "@/lib/site-meta";
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: { absolute: title },
   description,
   openGraph: { ...siteMetadata.openGraph, title, description },
-  twitter: { card: "summary_large_image", title, description },
+  twitter: { card: "summary_large_image", title, description, images: [ogImage] },
   other: { "site-kind": "software", "page-type": "software" },
 };
 

@@ -42,6 +42,12 @@ afterEach(() => {
 });
 
 describe("POST /api/intents/quote", () => {
+  it("400 without calling 1Click when the amount rounds to zero base units", async () => {
+    const res = await POST(req({ originAsset: SOL, amount: 1e-30 }));
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("400 on invalid JSON", async () => {
     expect((await POST(req("{"))).status).toBe(400);
   });

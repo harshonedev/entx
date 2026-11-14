@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Check, ShieldCheck } from "lucide-react";
 import type { PredictionSeed } from "@/lib/predictions";
-import { FEE, quoteBinary, yesPrice } from "@/lib/engine";
+import { FEE, MIN_ORDER, quoteBinary, yesPrice } from "@/lib/engine";
 import { useMarket } from "@/store/market";
 import { cents, num, usd } from "@/lib/format";
 import { useReceipts } from "@/lib/receipts";
@@ -63,7 +63,11 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
   const maxBet = Math.floor(cash);
 
   const reason =
-    amount <= 0 ? "Enter an amount" : amount > cash + 1e-9 ? `Not enough cash · need ${usd(amount - cash)} more` : null;
+    amount <= 0
+      ? "Enter an amount"
+      : amount < MIN_ORDER
+        ? `Minimum bet is ${usd(MIN_ORDER)}`
+        : amount > cash + 1e-9 ? `Not enough cash · need ${usd(amount - cash)} more` : null;
 
   const place = () => {
     // Fill at the live odds, but refuse if they slipped more than 1% from the payout on screen.
