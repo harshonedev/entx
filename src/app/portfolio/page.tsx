@@ -279,7 +279,7 @@ export default function PortfolioPage() {
                 <span className="num w-5 text-xs text-faint">{i + 1}</span>
                 <span className="flex-1 truncate">
                   {r.name}
-                  {"you" in r && r.you && <span className="ml-1.5 text-[10px] font-semibold text-accent">YOU</span>}
+                  {"you" in r && r.you && <span className="ml-1.5 text-[11px] font-semibold text-accent">YOU</span>}
                 </span>
                 <span className={clsx("num text-xs", r.ret >= 0 ? "text-up" : "text-down")}>{pct(r.ret, 1)}</span>
               </li>

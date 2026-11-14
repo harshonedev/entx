@@ -77,7 +77,7 @@ export function IntentsPanel() {
       <div className="flex items-center gap-2">
         <Route size={14} className="text-near" />
         <span className="h-panel">Fund from any chain · NEAR Intents</span>
-        <span className="ml-auto rounded-sm border border-line-2 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-near">
+        <span className="ml-auto rounded-sm border border-line-2 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-near">
           Live dry-run
         </span>
       </div>

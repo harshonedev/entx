@@ -19,7 +19,7 @@ export function AnalystCard({ assetId }: { assetId: string }) {
       <div className="flex items-center gap-2">
         <Bot size={15} className="text-accent" />
         <span className="h-panel">ENTX Analyst</span>
-        <span className="ml-auto text-[10px] text-faint">Recommends only · never trades for you</span>
+        <span className="ml-auto text-[11px] text-faint">Recommends only · never trades for you</span>
       </div>
       <div className="mt-3 flex items-end gap-4">
         <div

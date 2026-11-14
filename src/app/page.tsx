@@ -19,12 +19,16 @@ const TABS = [
   { id: "new", label: "Recently listed" },
 ] as const;
 
+/** Rows shown before "Show all", sized so the table ends near the right column. */
+const ROWS = 6;
+
 export default function Discover() {
   const markets = useMarket((s) => s.markets);
   const candles = useMarket((s) => s.candles);
   const randomOracle = useMarket((s) => s.randomOracle);
   const router = useRouter();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("all");
+  const [showAll, setShowAll] = useState(false);
 
   const byVolume = [...ASSETS].sort((a, b) => markets[b.id].volume24h - markets[a.id].volume24h);
   const list =
@@ -134,7 +138,10 @@ export default function Discover() {
             {TABS.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setTab(t.id)}
+                onClick={() => {
+                  setTab(t.id);
+                  setShowAll(false);
+                }}
                 aria-pressed={tab === t.id}
               >
                 {t.label}
@@ -142,7 +149,16 @@ export default function Discover() {
             ))}
           </div>
           </div>
-          <AssetTable assets={list} />
+          <AssetTable assets={showAll ? list : list.slice(0, ROWS)} />
+          {list.length > ROWS && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              aria-expanded={showAll}
+              className="flex h-11 w-full items-center justify-center gap-1.5 border-t border-line text-[12.5px] text-muted hover:bg-panel-2 hover:text-text"
+            >
+              {showAll ? "Show fewer" : `Show all ${list.length} titles`}
+            </button>
+          )}
         </div>
 
         <div className="space-y-4">

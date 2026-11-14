@@ -28,7 +28,7 @@ export function PriceChart({ assetId, height = 380 }: { assetId: string; height?
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: token("--muted"),
-        fontFamily: token("--font-geist-sans") || "system-ui, sans-serif",
+        fontFamily: token("--font-ui") || "system-ui, sans-serif",
         fontSize: 11,
         attributionLogo: false,
       },
