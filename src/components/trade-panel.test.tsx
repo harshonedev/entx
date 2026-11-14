@@ -138,6 +138,19 @@ describe("TradePanel", () => {
     expect(input().value).toBe(String(maxBuy));
   });
 
+  it("blocks a units order at or above the pool reserve instead of pricing it negative (regression)", async () => {
+    render(<TradePanel asset={asset} />);
+    await userEvent.click(screen.getByRole("button", { name: "Units" }));
+    const reserve = initial.markets[asset.id].pool.units;
+    for (const q of [reserve, reserve + 1, reserve * 10]) {
+      await setAmount(String(q));
+      const btn = screen.getByRole("button", { name: /^Exceeds pool liquidity/ });
+      expect(btn).toBeDisabled();
+    }
+    expect(screen.getByText("Total cost").nextSibling?.textContent).toBe("—");
+    expect(useMarket.getState().cash).toBe(STARTING_CASH);
+  });
+
   it("Max fills the largest affordable dollar amount", async () => {
     render(<TradePanel asset={asset} />);
     await userEvent.click(screen.getByRole("button", { name: /^All your cash:/ }));
@@ -258,7 +271,7 @@ describe("TradePanel", () => {
     receipts.active = { solana: true, near: false };
     receipts.record.mockResolvedValue(undefined);
     render(<TradePanel asset={asset} />);
-    expect(screen.getByText(/written to Solana devnet \(Memo\)\. Prices remain simulated\./)).toBeInTheDocument();
+    expect(screen.getByText(/written to Solana devnet \(Memo\)\. It is a self-attested record of a simulated trade, not a settlement\./)).toBeInTheDocument();
     await userEvent.click(submitBtn());
     expect(receipts.record).toHaveBeenCalledTimes(1);
     expect(receipts.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "BUY", refId: asset.id }));

@@ -444,8 +444,18 @@ export const useMarket = create<Store>()(
         const s = get();
         const a = ASSET_BY_ID[assetId];
         const m = s.markets[assetId];
-        if (!a || !m || qty <= 0) return null;
+        if (!a || !m || !Number.isFinite(qty) || qty <= 0) return null;
         const q = quoteBuy(m.pool, qty);
+        // Store-level guard, not just the UI: an order at/above the pool's unit reserve would price
+        // negative and credit cash.
+        if (!q.ok) {
+          get().toast({
+            title: "Order too large",
+            body: `The ${a.ticker} pool holds ${fmtUnits(m.pool.units)} units; an order must be smaller than that.`,
+            tone: "down",
+          });
+          return null;
+        }
         if (q.cost > s.cash + 1e-9) {
           get().toast({
             title: "Not enough cash",
@@ -483,8 +493,9 @@ export const useMarket = create<Store>()(
         const a = ASSET_BY_ID[assetId];
         const m = s.markets[assetId];
         const h = s.holdings[assetId];
-        if (!a || !m || !h || qty <= 0 || qty > h.units + 1e-9) return null;
+        if (!a || !m || !h || !Number.isFinite(qty) || qty <= 0 || qty > h.units + 1e-9) return null;
         const q = quoteSell(m.pool, qty);
+        if (!q.ok) return null;
         const costBasis = (h.cost / h.units) * qty;
         const remaining = h.units - qty;
         const holdings = { ...s.holdings };
@@ -585,7 +596,7 @@ export const useMarket = create<Store>()(
         const s = get();
         const seed = PREDICTIONS.find((p) => p.id === marketId);
         const st = s.predictions[marketId];
-        if (!seed || !st || st.resolved || amount <= 0) return null;
+        if (!seed || !st || st.resolved || !Number.isFinite(amount) || amount <= 0) return null;
         if (amount > s.cash + 1e-9) {
           get().toast({
             title: "Not enough cash",

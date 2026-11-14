@@ -110,6 +110,38 @@ describe("buy", () => {
   });
 });
 
+describe("buy/sell/predict input validation (regression)", () => {
+  it("never credits cash for an order at or above the pool's unit reserve", () => {
+    const units = S().markets[A].pool.units;
+    for (const q of [units, units + 1, units * 10]) {
+      expect(S().buy(A, q)).toBeNull();
+    }
+    expect(S().cash).toBe(STARTING_CASH);
+    expect(S().holdings[A]).toBeUndefined();
+    expect(S().trades).toHaveLength(0);
+    expect(S().toasts.at(-1)!.title).toBe("Order too large");
+  });
+
+  it("rejects Infinity and NaN quantities without touching state", () => {
+    S().buy(A, 5);
+    const cash = S().cash;
+    for (const q of [Infinity, NaN]) {
+      expect(S().buy(A, q)).toBeNull();
+      expect(S().sell(A, q)).toBeNull();
+      expect(S().predict(P, "YES", q)).toBeNull();
+    }
+    expect(S().cash).toBe(cash);
+    expect(Number.isFinite(S().cash)).toBe(true);
+    expect(S().holdings[A].units).toBe(5);
+  });
+
+  it("valid buy then valid sell still fill", () => {
+    expect(S().buy(A, 10)).not.toBeNull();
+    expect(S().sell(A, 10)).not.toBeNull();
+    expect(Number.isFinite(S().cash)).toBe(true);
+  });
+});
+
 describe("sell", () => {
   it("credits proceeds, realizes PnL vs average cost", () => {
     S().buy(A, 10);

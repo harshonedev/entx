@@ -58,6 +58,62 @@ describe("quoteBuy", () => {
   });
 });
 
+describe("quoteBuy / quoteSell validation (regression: oversize buy priced negative)", () => {
+  it("rejects q equal to the pool's whole unit reserve", () => {
+    const r = quoteBuy(pool, pool.units);
+    expect(r.ok).toBe(false);
+    expect(r.cost).toBe(Infinity);
+    expect(r.after).toBe(pool);
+  });
+
+  it("rejects q above the pool's unit reserve (used to return a negative cost)", () => {
+    for (const q of [pool.units + 1, pool.units * 2, 1e12]) {
+      const r = quoteBuy(pool, q);
+      expect(r.ok).toBe(false);
+      expect(r.cost).toBe(Infinity);
+      expect(r.cost).not.toBeLessThan(0);
+    }
+  });
+
+  it("rejects Infinity and NaN", () => {
+    for (const q of [Infinity, NaN]) {
+      expect(quoteBuy(pool, q).ok).toBe(false);
+      expect(quoteBuy(pool, q).cost).toBe(Infinity);
+      expect(quoteSell(pool, q).ok).toBe(false);
+      expect(quoteSell(pool, q).proceeds).toBe(0);
+    }
+  });
+
+  it("rejects broken pools", () => {
+    for (const bad of [
+      { cash: 0, units: 100 },
+      { cash: 100, units: 0 },
+      { cash: -1, units: 100 },
+      { cash: NaN, units: 100 },
+      { cash: 100, units: Infinity },
+    ]) {
+      expect(quoteBuy(bad, 1).ok).toBe(false);
+      expect(quoteSell(bad, 1).ok).toBe(false);
+    }
+  });
+
+  it("prices a normal buy and a normal sell as ok, finite and positive", () => {
+    const b = quoteBuy(pool, 100);
+    expect(b.ok).toBe(true);
+    expect(Number.isFinite(b.cost) && b.cost > 0).toBe(true);
+    const s = quoteSell(pool, 100);
+    expect(s.ok).toBe(true);
+    expect(Number.isFinite(s.proceeds) && s.proceeds > 0).toBe(true);
+  });
+
+  it("still allows a buy just under the reserve (huge but finite cost)", () => {
+    const r = quoteBuy(pool, pool.units - 1);
+    expect(r.ok).toBe(true);
+    expect(r.cost).toBeGreaterThan(0);
+    expect(Number.isFinite(r.cost)).toBe(true);
+  });
+});
+
 describe("quoteSell", () => {
   it("returns zero proceeds for non-positive quantities", () => {
     const r = quoteSell(pool, 0);
