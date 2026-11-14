@@ -33,7 +33,7 @@ All three apps:
 ```
 NEXT_PUBLIC_FLAG_CHAIN_SWITCH=false      # build variable; true after the hackathon (M4)
 NEXT_PUBLIC_NEAR_CONTRACT=entx-market-1794654167.testnet   # build variable
-TRUST_PROXY=true                         # runtime; Coolify's Traefik sets X-Real-Ip
+TRUST_PROXY=true                         # runtime; rate limits use the last X-Forwarded-For hop, which Traefik appends
 ```
 
 Per app, the mode and chain from the table above (build variables).
@@ -47,7 +47,11 @@ Server-only secrets (runtime, **not** build variables):
 | `ORACLE_API_SECRET` | long random value | optional | unset |
 | `ONECLICK_JWT` | optional | optional | optional |
 
-Live never lets the in-app buttons publish to the oracle (`ENTX_PUBLIC_ORACLE=false`); only a caller with `ORACLE_API_SECRET` can. The oracle key is a function-call key limited to `report_epi`, so a leak cannot move funds.
+Live never lets the in-app buttons publish to the oracle (`ENTX_PUBLIC_ORACLE=false`); only a caller with `ORACLE_API_SECRET` can. The oracle key is a function-call key limited to `report_epi`: a leak cannot move funds, but it can set any title's on-chain EPI. If it leaks, delete the access key on the oracle account (`near account delete-keys`), create a new one with `scripts/near-deploy.sh`, and update the env.
+
+**Known risk (M0, accepted until M1):** the demo host's public oracle path is guarded only by a same-origin check, which a scripted client can fake. Demo and live share one contract, so anyone can move a live title's on-chain EPI by up to ±15 within the rate limits. Testnet only. M1 gives live its own contract or oracle account.
+
+Do not publish port 3000 directly on the VPS; only Traefik should reach the container, or `TRUST_PROXY=true` lets clients pick their rate-limit bucket.
 
 ## 4. Verify
 

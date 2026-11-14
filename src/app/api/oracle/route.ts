@@ -1,3 +1,4 @@
+import { clientIp, own, readJson } from "@/lib/http";
 import { NextResponse } from "next/server";
 import { Account, JsonRpcProvider, type KeyPairString } from "near-api-js";
 import { ASSET_BY_ID, EPI_WEIGHTS, ORACLE_EVENTS, computeEpi, type AssetSeed, type EpiParts } from "@/lib/assets";
@@ -57,11 +58,6 @@ function caller(req: Request): Caller {
   return null;
 }
 
-/** Client IP only when a trusted proxy sets it (Vercel, or TRUST_PROXY=true); otherwise one shared bucket. */
-function clientIp(req: Request): string {
-  if (!(process.env.VERCEL || process.env.TRUST_PROXY === "true")) return "shared";
-  return req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "shared";
-}
 
 /** Admits the request into its caller's bucket, or returns false when rate-limited. */
 function admit(kind: "auth" | "demo", req: Request, assetId: string): boolean {
@@ -152,13 +148,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Oracle publishing requires authorization" }, { status: 401 });
   }
 
-  let body: { assetId?: string; eventId?: string };
-  try {
-    body = await req.json();
-  } catch {
+  const body = await readJson<{ assetId?: string; eventId?: string }>(req);
+  if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const asset = body.assetId ? ASSET_BY_ID[body.assetId] : undefined;
+  const asset = own(ASSET_BY_ID, body.assetId);
   const ev = ORACLE_EVENTS.find((e) => e.id === body.eventId);
   const value = asset && ev ? absoluteEpi(asset, ev.id) : null;
   if (!asset || !ev || !value) {
