@@ -56,11 +56,11 @@ export function Shell({ children }: { children: ReactNode }) {
 
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
-          <button className="absolute inset-0 bg-black/70" aria-label="Close menu" onClick={() => setOpen(false)} />
+          <button className="cursor-pointer absolute inset-0 bg-black/70" aria-label="Close menu" onClick={() => setOpen(false)} />
           <aside className="relative h-full w-64 border-r border-line bg-bg">
             <button
               onClick={() => setOpen(false)}
-              className="absolute right-3 top-5 grid h-7 w-7 place-items-center rounded text-muted hover:text-text"
+              className="cursor-pointer absolute right-3 top-5 grid h-7 w-7 place-items-center rounded text-muted hover:text-text"
               aria-label="Close menu"
             >
               <X size={16} />
@@ -82,7 +82,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const path = usePathname();
   return (
     <div className="flex h-full flex-col">
-      <Link href="/" onClick={onNavigate} className="flex h-16 shrink-0 items-center gap-2.5 px-5">
+      <Link href="/" onClick={onNavigate} className="cursor-pointer flex h-16 shrink-0 items-center gap-2.5 px-5">
         <span className="grid h-7 w-7 place-items-center rounded bg-text text-[13px] font-semibold text-bg">E</span>
         <span className="text-[15px] font-medium tracking-[-0.01em]">ENTX</span>
       </Link>
@@ -99,7 +99,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
                   className={clsx(
-                    "flex h-10 items-center gap-3 rounded px-1.5 text-[13.5px] transition-colors",
+                    "cursor-pointer flex h-10 items-center gap-3 rounded px-1.5 text-[13.5px] transition-colors",
                     active ? "bg-panel text-text" : "text-muted hover:text-text",
                   )}
                 >
@@ -131,7 +131,7 @@ function AccountCard({ onNavigate }: { onNavigate?: () => void }) {
   const total = useMarket((s) => portfolioValue(s).total);
   const ret = total / STARTING_CASH - 1;
   return (
-    <Link href="/portfolio" onClick={onNavigate} className="block rounded bg-panel p-3.5 transition-colors hover:bg-panel-2">
+    <Link href="/portfolio" onClick={onNavigate} className="cursor-pointer block rounded bg-panel p-3.5 transition-colors hover:bg-panel-2">
       <div className="label">Demo balance</div>
       <div className="num mt-1 text-[19px] font-medium tracking-[-0.02em]">
         <Dim text={usd(total)} />
@@ -158,7 +158,7 @@ function ReceiptToggles() {
             key={k}
             onClick={() => setChains({ [k]: !chains[k] })}
             aria-pressed={chains[k]}
-            className="flex h-8 w-full items-center gap-2.5 rounded px-2 text-[12.5px] text-muted transition-colors hover:bg-panel hover:text-text"
+            className="cursor-pointer flex h-8 w-full items-center gap-2.5 rounded px-2 text-[12.5px] text-muted transition-colors hover:bg-panel hover:text-text"
           >
             <span className={clsx("h-1.5 w-1.5 rounded-full", dot, !chains[k] && "opacity-30")} />
             <span className={clsx(!chains[k] && "text-faint")}>{label}</span>
@@ -189,7 +189,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-bg px-4 sm:px-6 lg:px-8">
       <button
         onClick={onMenu}
-        className="grid h-9 w-9 place-items-center rounded bg-panel text-muted hover:text-text lg:hidden"
+        className="cursor-pointer grid h-9 w-9 place-items-center rounded bg-panel text-muted hover:text-text lg:hidden"
         aria-label="Open menu"
       >
         <Menu size={16} />
@@ -202,7 +202,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
             onClick={airdrop}
             title="Request 1 devnet SOL to pay for on-chain receipts"
             aria-label="Request devnet SOL airdrop"
-            className="grid h-9 w-9 place-items-center rounded bg-panel text-muted transition-colors hover:text-text"
+            className="cursor-pointer grid h-9 w-9 place-items-center rounded bg-panel text-muted transition-colors hover:text-text"
           >
             <Droplets size={15} />
           </button>
@@ -367,7 +367,7 @@ function NearButton() {
         <span className="max-w-[140px] truncate">{accountId}</span>
         <button
           onClick={disconnect}
-          className="grid h-8 w-8 place-items-center rounded-sm text-muted hover:bg-panel-2 hover:text-text"
+          className="cursor-pointer grid h-8 w-8 place-items-center rounded-sm text-muted hover:bg-panel-2 hover:text-text"
           aria-label="Disconnect NEAR wallet"
           title="Disconnect NEAR"
         >
@@ -380,7 +380,7 @@ function NearButton() {
     <button
       onClick={connect}
       disabled={!ready}
-      className="flex h-9 items-center gap-2 rounded bg-panel px-3 text-[12.5px] font-medium transition-colors hover:bg-panel-2 disabled:opacity-50"
+      className="cursor-pointer flex h-9 items-center gap-2 rounded bg-panel px-3 text-[12.5px] font-medium transition-colors hover:bg-panel-2 disabled:opacity-50"
     >
       <span className="h-1.5 w-1.5 rounded-full bg-near" />
       <span className="hidden sm:inline">Connect NEAR</span>

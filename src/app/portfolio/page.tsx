@@ -57,7 +57,7 @@ export default function PortfolioPage() {
         </div>
         <button
           onClick={() => confirm("Reset the demo? This clears trades and restores markets.") && s.reset()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-text"
+          className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-text"
         >
           <RotateCcw size={13} /> Reset demo
         </button>
@@ -86,7 +86,7 @@ export default function PortfolioPage() {
             <div className="h-panel px-4 pt-4">Holdings</div>
             {Object.keys(s.holdings).length === 0 ? (
               <Empty>
-                No holdings yet. <Link href="/" className="text-accent">Discover titles to trade →</Link>
+                No holdings yet. <Link href="/" className="cursor-pointer text-accent">Discover titles to trade →</Link>
               </Empty>
             ) : (
               <table className="mt-2 w-full min-w-[560px] text-sm">
@@ -109,7 +109,7 @@ export default function PortfolioPage() {
                     return (
                       <tr key={id} className="border-t border-line">
                         <td className="py-2.5 pl-4">
-                          <Link href={`/asset/${id}`} className="flex items-center gap-3 hover:text-accent">
+                          <Link href={`/asset/${id}`} className="cursor-pointer flex items-center gap-3 hover:text-accent">
                             <Poster asset={a} size="sm" />
                             <div>
                               <div className="font-medium">{a.ticker}</div>
@@ -136,7 +136,7 @@ export default function PortfolioPage() {
             <div className="h-panel px-4 pt-4">Open predictions</div>
             {s.positions.length === 0 ? (
               <Empty>
-                No open predictions. <Link href="/predictions" className="text-accent">Browse markets →</Link>
+                No open predictions. <Link href="/predictions" className="cursor-pointer text-accent">Browse markets →</Link>
               </Empty>
             ) : (
               <ul className="mt-2 divide-y divide-line">
@@ -213,7 +213,7 @@ export default function PortfolioPage() {
                             href={explorerTx(t.sig)}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-sol hover:underline"
+                            className="cursor-pointer inline-flex items-center gap-1 text-sol hover:underline"
                           >
                             {t.sig.slice(0, 8)}… <ExternalLink size={11} />
                           </a>
@@ -222,7 +222,7 @@ export default function PortfolioPage() {
                             <Loader2 size={11} className="animate-spin" /> confirming
                           </span>
                         ) : connected && t.kind !== "PAYOUT" ? (
-                          <button onClick={() => notarize(t)} className="text-sol hover:underline">
+                          <button onClick={() => notarize(t)} className="cursor-pointer text-sol hover:underline">
                             {t.sigStatus === "failed" ? "Retry" : "Record"}
                           </button>
                         ) : (
@@ -235,7 +235,7 @@ export default function PortfolioPage() {
                             href={nearTxUrl(t.nearTx)}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-near hover:underline"
+                            className="cursor-pointer inline-flex items-center gap-1 text-near hover:underline"
                           >
                             {t.nearTx.slice(0, 8)}… <ExternalLink size={11} />
                           </a>
@@ -246,7 +246,7 @@ export default function PortfolioPage() {
                         ) : nearAccount && t.kind !== "PAYOUT" ? (
                           <button
                             onClick={() => nearNotarize(t, t.sig ? `solana:devnet:${t.sig}` : undefined)}
-                            className="text-near hover:underline"
+                            className="cursor-pointer text-near hover:underline"
                           >
                             {t.nearStatus === "failed" ? "Retry" : "Record"}
                           </button>

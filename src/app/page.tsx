@@ -73,13 +73,13 @@ export default function Discover() {
                 const id = randomOracle();
                 router.push(`/asset/${id}`);
               }}
-              className="inline-flex h-10 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110"
+              className="cursor-pointer inline-flex h-10 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110"
             >
               <Zap size={16} /> Push a live data update
             </button>
             <Link
               href={`/asset/${spot.id}`}
-              className="press inline-flex h-10 items-center gap-2 rounded border border-line-2 px-4 text-[13px] font-medium hover:bg-white/[0.04]"
+              className="cursor-pointer press inline-flex h-10 items-center gap-2 rounded border border-line-2 px-4 text-[13px] font-medium hover:bg-white/[0.04]"
             >
               Open trading terminal <ArrowRight size={15} />
             </Link>
@@ -100,7 +100,7 @@ export default function Discover() {
           </div>
         </div>
 
-        <Link href={`/asset/${spot.id}`} className="panel group flex flex-col p-5 transition-colors hover:border-line-2">
+        <Link href={`/asset/${spot.id}`} className="cursor-pointer panel group flex flex-col p-5 transition-colors hover:border-line-2">
           <div className="flex items-center justify-between">
             <span className="h-panel">Spotlight</span>
             <span className="text-xs text-muted">{spot.status}</span>
@@ -138,6 +138,7 @@ export default function Discover() {
             {TABS.map((t) => (
               <button
                 key={t.id}
+                className="cursor-pointer"
                 onClick={() => {
                   setTab(t.id);
                   setShowAll(false);
@@ -154,7 +155,7 @@ export default function Discover() {
             <button
               onClick={() => setShowAll((v) => !v)}
               aria-expanded={showAll}
-              className="flex h-11 w-full items-center justify-center gap-1.5 border-t border-line text-[12.5px] text-muted hover:bg-panel-2 hover:text-text"
+              className="cursor-pointer flex h-11 w-full items-center justify-center gap-1.5 border-t border-line text-[12.5px] text-muted hover:bg-panel-2 hover:text-text"
             >
               {showAll ? "Show fewer" : `Show all ${list.length} titles`}
             </button>
@@ -186,7 +187,7 @@ function MoverList({ title, items }: { title: string; items: typeof ASSETS }) {
       <ul className="space-y-1">
         {items.map((a) => (
           <li key={a.id}>
-            <Link href={`/asset/${a.id}`} className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/[0.03]">
+            <Link href={`/asset/${a.id}`} className="cursor-pointer -mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/[0.03]">
               <Poster asset={a} size="sm" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">{a.ticker}</div>

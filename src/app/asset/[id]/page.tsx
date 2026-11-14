@@ -27,7 +27,7 @@ export default function AssetPage() {
     return (
       <div className="py-24 text-center">
         <div className="text-lg font-semibold">Asset not listed</div>
-        <Link href="/" className="mt-2 inline-block text-sm text-accent">
+        <Link href="/" className="cursor-pointer mt-2 inline-block text-sm text-accent">
           Back to Discover
         </Link>
       </div>
@@ -41,7 +41,7 @@ export default function AssetPage() {
 
   return (
     <div className="space-y-4">
-      <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-text">
+      <Link href="/" className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted hover:text-text">
         <ArrowLeft size={13} /> Discover
       </Link>
 

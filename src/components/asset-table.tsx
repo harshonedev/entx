@@ -39,7 +39,7 @@ export function AssetTable({ assets, showMetric = true }: { assets: AssetSeed[];
                 className="cursor-pointer border-t border-line transition-colors hover:bg-white/[0.025]"
               >
                 <td className="py-2.5 pl-4">
-                  <Link href={`/asset/${a.id}`} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <Link href={`/asset/${a.id}`} className="cursor-pointer flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                     <Poster asset={a} size="sm" />
                     <div className="min-w-0">
                       <div className="truncate font-medium">{a.title}</div>

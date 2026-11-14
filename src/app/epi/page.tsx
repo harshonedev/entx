@@ -61,7 +61,7 @@ export default function EpiPage() {
                   <tr key={a.id} className="border-t border-line hover:bg-white/[0.02]">
                     <td className="num py-2.5 pl-4 text-muted">{i + 1}</td>
                     <td className="py-2.5">
-                      <Link href={`/asset/${a.id}`} className="flex items-center gap-3 hover:text-accent">
+                      <Link href={`/asset/${a.id}`} className="cursor-pointer flex items-center gap-3 hover:text-accent">
                         <Poster asset={a} size="sm" />
                         <div>
                           <div className="font-medium">{a.title}</div>
