@@ -106,6 +106,16 @@ describe("quoteBuy / quoteSell validation (regression: oversize buy priced negat
     expect(Number.isFinite(s.proceeds) && s.proceeds > 0).toBe(true);
   });
 
+  it("pushPrice leaves the pool untouched for moves of -100% or worse, NaN, or a broken pool", () => {
+    for (const pct of [-1, -2, NaN, -Infinity]) {
+      const r = pushPrice(pool, pct);
+      expect(r.pool).toBe(pool);
+      expect(r.notional).toBe(0);
+    }
+    expect(pushPrice({ cash: NaN, units: 1 }, 0.1).notional).toBe(0);
+    expect(pushPrice(pool, 0.1).pool.cash).toBeGreaterThan(pool.cash);
+  });
+
   it("still allows a buy just under the reserve (huge but finite cost)", () => {
     const r = quoteBuy(pool, pool.units - 1);
     expect(r.ok).toBe(true);

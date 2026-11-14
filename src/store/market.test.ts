@@ -135,6 +135,17 @@ describe("buy/sell/predict input validation (regression)", () => {
     expect(S().holdings[A].units).toBe(5);
   });
 
+  it("reports a broken pool as unavailable, not as an oversize order, on buy and sell", () => {
+    S().buy(A, 5);
+    const m = S().markets[A];
+    useMarket.setState({ markets: { ...S().markets, [A]: { ...m, pool: { cash: NaN, units: m.pool.units } } } });
+    expect(S().buy(A, 1)).toBeNull();
+    expect(S().toasts.at(-1)!.title).toBe("Market unavailable");
+    expect(S().sell(A, 1)).toBeNull();
+    expect(S().toasts.at(-1)!.title).toBe("Market unavailable");
+    expect(S().holdings[A].units).toBe(5);
+  });
+
   it("valid buy then valid sell still fill", () => {
     expect(S().buy(A, 10)).not.toBeNull();
     expect(S().sell(A, 10)).not.toBeNull();

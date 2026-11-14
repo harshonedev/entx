@@ -4,16 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { FlaskConical, TrendingDown, TrendingUp, X } from "lucide-react";
-import { ASSETS, ASSET_BY_ID, ORACLE_EVENTS, eventsFor, type EpiParts } from "@/lib/assets";
+import { ASSETS, ASSET_BY_ID, EPI_SHORT_LABELS, ORACLE_EVENTS, eventsFor, type EpiParts } from "@/lib/assets";
 import { PREDICTIONS } from "@/lib/predictions";
 import { useMarket } from "@/store/market";
 
-const SHORT: Record<keyof EpiParts, string> = {
-  boxOffice: "Box office",
-  streaming: "Popularity",
-  social: "Votes",
-  critics: "Rating",
-};
 
 /**
  * Everything that bends the simulation lives here, away from Buy and the bet buttons:
@@ -148,7 +142,7 @@ export function DemoControls() {
                           <span className="flex-1">{e.label}</span>
                           <span className="text-xs text-muted">
                             {Object.entries(e.delta)
-                              .map(([k, v]) => `${SHORT[k as keyof EpiParts]} ${v! > 0 ? "+" : ""}${v}`)
+                              .map(([k, v]) => `${EPI_SHORT_LABELS[k as keyof EpiParts]} ${v! > 0 ? "+" : ""}${v}`)
                               .join(" · ")}
                           </span>
                         </button>

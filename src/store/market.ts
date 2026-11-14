@@ -28,12 +28,20 @@ import {
   pushPrice,
   quoteBinary,
   quoteBuy,
+  validPool,
   quoteSell,
   yesPrice,
 } from "@/lib/engine";
 
 export const STARTING_CASH = 1000;
 const POOL_UNITS = 60_000;
+
+/** Shown when a market's pool can't price an order (corrupt reserves), so the cause isn't misreported. */
+const MARKET_UNAVAILABLE = (ticker: string) => ({
+  title: "Market unavailable",
+  body: `The ${ticker} market can't price orders right now. Use Reset demo on the Portfolio page to restore it.`,
+  tone: "down" as const,
+});
 /** How strongly a change in EPI moves price (pct move per pct EPI change). */
 const EPI_SENSITIVITY = 2.6;
 
@@ -449,11 +457,15 @@ export const useMarket = create<Store>()(
         // Store-level guard, not just the UI: an order at/above the pool's unit reserve would price
         // negative and credit cash.
         if (!q.ok) {
-          get().toast({
-            title: "Order too large",
-            body: `The ${a.ticker} pool holds ${fmtUnits(m.pool.units)} units; an order must be smaller than that.`,
-            tone: "down",
-          });
+          get().toast(
+            validPool(m.pool)
+              ? {
+                  title: "Order too large",
+                  body: `The ${a.ticker} pool holds ${fmtUnits(m.pool.units)} units; an order must be smaller than that.`,
+                  tone: "down",
+                }
+              : MARKET_UNAVAILABLE(a.ticker),
+          );
           return null;
         }
         if (q.cost > s.cash + 1e-9) {
@@ -495,7 +507,10 @@ export const useMarket = create<Store>()(
         const h = s.holdings[assetId];
         if (!a || !m || !h || !Number.isFinite(qty) || qty <= 0 || qty > h.units + 1e-9) return null;
         const q = quoteSell(m.pool, qty);
-        if (!q.ok) return null;
+        if (!q.ok) {
+          get().toast(MARKET_UNAVAILABLE(a.ticker));
+          return null;
+        }
         const costBasis = (h.cost / h.units) * qty;
         const remaining = h.units - qty;
         const holdings = { ...s.holdings };

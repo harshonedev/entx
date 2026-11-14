@@ -73,6 +73,8 @@ export function quoteSell(p: Pool, q: number) {
 
 /** Move pool so price changes by `pct` (bots trading). Returns notional traded. */
 export function pushPrice(p: Pool, pct: number): { pool: Pool; notional: number } {
+  // A move of -100% or worse (or a NaN move) has no valid pool; leave it untouched rather than corrupt it.
+  if (!validPool(p) || !Number.isFinite(pct) || pct <= -1) return { pool: p, notional: 0 };
   const k = p.cash * p.units;
   const target = poolPrice(p) * (1 + pct);
   // price = cash/units, cash*units = k  => units = sqrt(k/price)

@@ -22,6 +22,14 @@ export const EPI_LABELS: Record<keyof EpiParts, string> = {
   critics: "Audience rating (TMDB)",
 };
 
+/** Short display names for tight spots (table headers, formula, event deltas). Same honesty rule as EPI_LABELS. */
+export const EPI_SHORT_LABELS: Record<keyof EpiParts, string> = {
+  boxOffice: "Box office",
+  streaming: "Popularity",
+  social: "Votes",
+  critics: "Rating",
+};
+
 export function computeEpi(p: EpiParts): number {
   const v =
     p.boxOffice * EPI_WEIGHTS.boxOffice +

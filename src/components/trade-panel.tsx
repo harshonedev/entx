@@ -86,7 +86,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
     qty <= 0
       ? "Enter a quantity"
       : tooBig
-        ? `Exceeds pool liquidity · max ${num(Math.floor(m.pool.units) - 1, 0)} units`
+        ? "Exceeds pool liquidity"
       : side === "buy" && bq.cost > cash
         ? `Not enough cash · need ${usd(bq.cost - cash)} more`
         : side === "sell" && qty > units

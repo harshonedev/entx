@@ -144,8 +144,10 @@ describe("TradePanel", () => {
     const reserve = initial.markets[asset.id].pool.units;
     for (const q of [reserve, reserve + 1, reserve * 10]) {
       await setAmount(String(q));
-      const btn = screen.getByRole("button", { name: /^Exceeds pool liquidity/ });
+      const btn = screen.getByRole("button", { name: "Exceeds pool liquidity" });
       expect(btn).toBeDisabled();
+      // Points at what cash can actually buy instead of an unaffordable pool max.
+      expect(screen.getByRole("button", { name: /^Your cash covers \d+ units · use that$/ })).toBeInTheDocument();
     }
     expect(screen.getByText("Total cost").nextSibling?.textContent).toBe("—");
     expect(useMarket.getState().cash).toBe(STARTING_CASH);
