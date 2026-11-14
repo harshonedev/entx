@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ASSETS } from "@/lib/assets";
+import { PREDICTIONS } from "@/lib/predictions";
 import { useMarket } from "@/store/market";
 
 const nav = vi.hoisted(() => ({ path: "/", push: vi.fn() }));
@@ -46,8 +47,11 @@ beforeEach(() => {
 });
 
 const mainNav = () => screen.getAllByRole("navigation", { name: "Main" })[0];
-const expandSidebar = async (user: ReturnType<typeof userEvent.setup>) =>
-  user.click(screen.getByRole("button", { name: "Expand sidebar" }));
+/** The rail starts expanded on a first visit; only click when a stored preference collapsed it. */
+const expandSidebar = async (user: ReturnType<typeof userEvent.setup>) => {
+  const toggle = screen.queryByRole("button", { name: "Expand sidebar" });
+  if (toggle) await user.click(toggle);
+};
 
 describe("Shell", () => {
   it("renders children and the main nav links", () => {
@@ -71,7 +75,15 @@ describe("Shell", () => {
   });
 
   describe("desktop sidebar collapse", () => {
-    it("starts collapsed, hides the account panel, and expands with persistence", async () => {
+    it("starts expanded on a first visit so every section is labelled", () => {
+      render(<Shell>x</Shell>);
+      expect(screen.getByRole("button", { name: "Collapse sidebar" })).toHaveAttribute("aria-expanded", "true");
+      expect(within(mainNav()).getByRole("link", { name: "On-chain" })).toBeVisible();
+      expect(screen.getByRole("link", { name: /Portfolio value/ })).toBeInTheDocument();
+    });
+
+    it("restores a saved collapsed preference, hides the account panel, and expands with persistence", async () => {
+      localStorage.setItem("entx:sidebar-collapsed", "1");
       const user = userEvent.setup();
       render(<Shell>x</Shell>);
       const toggle = screen.getByRole("button", { name: "Expand sidebar" });
@@ -94,7 +106,9 @@ describe("Shell", () => {
     });
 
     it("syncs with other tabs via the storage event", () => {
+      localStorage.setItem("entx:sidebar-collapsed", "1");
       render(<Shell>x</Shell>);
+      expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
       act(() => {
         localStorage.setItem("entx:sidebar-collapsed", "0");
         window.dispatchEvent(new StorageEvent("storage", { key: "entx:sidebar-collapsed" }));
@@ -103,6 +117,7 @@ describe("Shell", () => {
     });
 
     it("shows a label tooltip on the collapsed rail", async () => {
+      localStorage.setItem("entx:sidebar-collapsed", "1");
       const user = userEvent.setup();
       render(<Shell>x</Shell>);
       const link = within(mainNav()).getByRole("link", { name: "EPI" });
@@ -120,7 +135,7 @@ describe("Shell", () => {
     await expandSidebar(user);
     const card = screen.getByRole("link", { name: /Portfolio value/ });
     expect(card).toHaveAttribute("href", "/portfolio");
-    expect(card).toHaveTextContent("+0.00% all time");
+    expect(card).toHaveTextContent(/(^|[^+])0\.00% all time/);
     act(() => useMarket.setState({ cash: 1100 }));
     expect(card).toHaveTextContent("+10.00% all time");
   });
@@ -132,10 +147,16 @@ describe("Shell", () => {
       await expandSidebar(user);
       const sol = screen.getByRole("button", { name: /Solana devnet/ });
       const nr = screen.getByRole("button", { name: /NEAR testnet/ });
-      expect(sol).toBeDisabled();
-      expect(nr).toBeDisabled();
+      // aria-disabled, not disabled: the rows stay focusable and describe why they are off.
+      expect(sol).toHaveAttribute("aria-disabled", "true");
+      expect(nr).toHaveAttribute("aria-disabled", "true");
       expect(sol).toHaveAttribute("aria-pressed", "false");
-      expect(screen.getByText("Connect a Solana or NEAR wallet to turn its receipts on.")).toBeInTheDocument();
+      expect(sol).toHaveAccessibleDescription("Connect a Solana or NEAR wallet to sign receipts for your trades.");
+      sol.focus();
+      expect(sol).toHaveFocus();
+      const before = useMarket.getState().chains;
+      await user.click(sol);
+      expect(useMarket.getState().chains).toEqual(before);
     });
 
     it("toggle chain prefs once the wallet is connected", async () => {
@@ -144,9 +165,10 @@ describe("Shell", () => {
       render(<Shell>x</Shell>);
       await expandSidebar(user);
       const nr = screen.getByRole("button", { name: /NEAR testnet/ });
-      expect(nr).toBeEnabled();
+      expect(nr).not.toHaveAttribute("aria-disabled");
+      expect(nr).not.toHaveAccessibleDescription();
       expect(nr).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByText("Connect a Solana wallet to turn its receipts on.")).toBeInTheDocument();
+      expect(screen.getByText("Connect a Solana wallet to sign receipts for your trades.")).toBeInTheDocument();
       await user.click(nr);
       expect(useMarket.getState().chains.near).toBe(false);
       expect(nr).toHaveAttribute("aria-pressed", "false");
@@ -202,15 +224,16 @@ describe("Shell", () => {
   });
 
   describe("asset search", () => {
-    const search = () => screen.getByRole("combobox", { name: "Search titles" });
+    const search = () => screen.getByRole("combobox", { name: "Search titles and markets" });
 
-    it("lists up to 6 titles on focus and filters by title or ticker", async () => {
+    it("opens grouped titles and prediction markets on focus and filters by title or ticker", async () => {
       const user = userEvent.setup();
       render(<Shell>x</Shell>);
       expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
       await user.click(search());
       expect(search()).toHaveAttribute("aria-expanded", "true");
-      expect(screen.getAllByRole("option")).toHaveLength(Math.min(6, ASSETS.length));
+      expect(within(screen.getByRole("group", { name: "Titles" })).getAllByRole("option")).toHaveLength(4);
+      expect(within(screen.getByRole("group", { name: "Prediction markets" })).getAllByRole("option")).toHaveLength(3);
 
       const target = ASSETS[3];
       await user.type(search(), target.ticker);
@@ -220,11 +243,18 @@ describe("Shell", () => {
       expect(search()).toHaveAttribute("aria-activedescendant", options[0].id);
     });
 
-    it("shows no list when nothing matches", async () => {
+    it("says nothing matched and suggests the 3 most-traded titles", async () => {
       const user = userEvent.setup();
       render(<Shell>x</Shell>);
       await user.type(search(), "zzzzqqqq-no-match");
-      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+      expect(screen.getByText(/Nothing matches/)).toHaveTextContent("Nothing matches “zzzzqqqq-no-match”. Most traded titles:");
+      const list = screen.getByRole("listbox", { name: "Suggested titles" });
+      const m = useMarket.getState().markets;
+      const top = [...ASSETS].sort((a, b) => m[b.id].volume24h - m[a.id].volume24h).slice(0, 3);
+      const options = within(list).getAllByRole("option");
+      expect(options.map((o) => o.textContent)).toEqual(top.map((a) => expect.stringContaining(a.title)));
+      await user.keyboard("{Enter}");
+      expect(nav.push).toHaveBeenCalledWith(`/asset/${top[0].id}`);
     });
 
     it("navigates with arrow keys and Enter", async () => {
@@ -237,6 +267,27 @@ describe("Shell", () => {
       expect(nav.push).toHaveBeenCalledWith(`/asset/${ASSETS[1].id}`);
       expect(search()).toHaveValue("");
       expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    });
+
+    it("finds prediction markets by question text and opens the market", async () => {
+      const user = userEvent.setup();
+      render(<Shell>x</Shell>);
+      const market = PREDICTIONS[0];
+      // Two words from the question, out of order, still match.
+      const words = market.question.replace(/[^\w\s]/g, "").split(/\s+/).filter((w) => w.length > 3);
+      await user.type(search(), `${words[2]} ${words[0]}`);
+      const group = screen.getByRole("group", { name: "Prediction markets" });
+      const opt = within(group)
+        .getAllByRole("option")
+        .find((o) => o.textContent?.includes(market.question))!;
+      expect(opt).toBeDefined();
+      // Arrow down through the titles group into the markets group.
+      const all = screen.getAllByRole("option");
+      for (let i = 0; i < all.indexOf(opt); i++) await user.keyboard("{ArrowDown}");
+      expect(opt).toHaveAttribute("aria-selected", "true");
+      expect(search()).toHaveAttribute("aria-activedescendant", opt.id);
+      await user.keyboard("{Enter}");
+      expect(nav.push).toHaveBeenCalledWith(`/predictions/${market.id}`);
     });
 
     it("navigates on mouse selection", async () => {
@@ -278,7 +329,7 @@ describe("Shell", () => {
       expect(screen.getByText("All titles 24h")).toBeInTheDocument();
       expect(screen.getByText("24h Vol")).toBeInTheDocument();
       expect(screen.getByText("Avg EPI")).toBeInTheDocument();
-      expect(screen.getByText("NEAR testnet · Solana devnet")).toBeInTheDocument();
+      expect(screen.getByText("NEAR · Solana")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "demo" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "wallet-menu" })).toBeInTheDocument();
     });

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ASSETS, ASSET_BY_ID } from "@/lib/assets";
 import { useMarket } from "@/store/market";
 import { ReleaseClock } from "./release-clock";
@@ -70,5 +70,28 @@ describe("ReleaseClock", () => {
     render(<ReleaseClock />);
     const li = screen.getByRole("link", { name: /Opens in 32 days/ }).closest("li")!;
     expect(li).toHaveTextContent("Dec 16");
+  });
+
+  it("has prev/next controls that page the scroller and disable at the ends", () => {
+    render(<ReleaseClock />);
+    const list = screen.getByRole("list");
+    // jsdom has no layout; give the scroller a size so it can scroll.
+    Object.defineProperty(list, "clientWidth", { configurable: true, value: 400 });
+    Object.defineProperty(list, "scrollWidth", { configurable: true, value: 1600 });
+    const scrollBy = vi.fn();
+    list.scrollBy = scrollBy;
+    fireEvent.scroll(list);
+
+    const prev = screen.getByRole("button", { name: "Earlier releases" });
+    const next = screen.getByRole("button", { name: "Later releases" });
+    expect(prev).toBeDisabled();
+    expect(next).toBeEnabled();
+    fireEvent.click(next);
+    expect(scrollBy).toHaveBeenCalledWith(expect.objectContaining({ left: 320 }));
+
+    list.scrollLeft = 1200;
+    fireEvent.scroll(list);
+    expect(prev).toBeEnabled();
+    expect(next).toBeDisabled();
   });
 });

@@ -6,27 +6,29 @@ import { useState } from "react";
 import { ArrowRight, Radio, Zap } from "lucide-react";
 import { ASSETS } from "@/lib/assets";
 import { change24h, priceOf, useMarket } from "@/store/market";
-import { compactUsd, usd } from "@/lib/format";
+import { usd } from "@/lib/format";
 import { AssetTable } from "@/components/asset-table";
+import { ReleaseClock } from "@/components/release-clock";
 import { LiveFeed } from "@/components/chrome";
 import { Poster } from "@/components/poster";
-import { Change, Dim, Flash, SimBadge, Sparkline } from "@/components/ui";
+import { ContractProofStrip } from "@/components/onchain-epi";
+import { Change, SimBadge } from "@/components/ui";
 
 const TABS = [
-  { id: "all", label: "Trending" },
+  { id: "all", label: "Most traded" },
   { id: "movie", label: "Movies" },
   { id: "show", label: "Shows" },
   { id: "new", label: "Recently listed" },
 ] as const;
 
 /** Rows shown before "Show all", sized so the table ends near the right column. */
-const ROWS = 6;
+const ROWS = 10;
 
 export default function Discover() {
   const markets = useMarket((s) => s.markets);
-  const candles = useMarket((s) => s.candles);
   const randomOracle = useMarket((s) => s.randomOracle);
   const router = useRouter();
+  const hasActivity = useMarket((s) => s.feed.length > 0);
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("all");
   const [showAll, setShowAll] = useState(false);
 
@@ -39,102 +41,73 @@ export default function Discover() {
         : byVolume.filter((a) => a.kind === tab);
 
   const byChange = [...ASSETS].sort((a, b) => change24h(markets[b.id]) - change24h(markets[a.id]));
-  const gainers = byChange.slice(0, 4);
-  const losers = byChange.slice(-4).reverse();
+  // Only titles that actually moved that way; a quiet day shows an empty state, not mislabeled rows.
+  const gainers = byChange.filter((a) => change24h(markets[a.id]) > 0).slice(0, 4);
+  const losers = byChange.filter((a) => change24h(markets[a.id]) < 0).reverse().slice(0, 4);
 
-  const volume = ASSETS.reduce((t, a) => t + markets[a.id].volume24h, 0);
-  const avgEpi = ASSETS.reduce((t, a) => t + markets[a.id].epi, 0) / ASSETS.length;
 
-  // Spotlight: highest-EPI title currently in theaters (falls back to the overall leader).
-  const spot =
-    [...ASSETS].filter((a) => a.status === "In theaters").sort((a, b) => markets[b.id].epi - markets[a.id].epi)[0] ??
-    [...ASSETS].sort((a, b) => markets[b.id].epi - markets[a.id].epi)[0];
-  const sm = markets[spot.id];
+  // Hero pick: highest-EPI title currently in theaters (falls back to the overall leader).
+  const inTheaters = [...ASSETS].filter((a) => a.status === "In theaters").sort((a, b) => markets[b.id].epi - markets[a.id].epi)[0];
+  const spot = inTheaters ?? [...ASSETS].sort((a, b) => markets[b.id].epi - markets[a.id].epi)[0];
+  // Say why this title is the one on the buttons, so the pick never looks arbitrary.
+  const spotReason = inTheaters ? "Highest EPI now in theaters" : "Highest EPI on ENTX";
 
   return (
     <div className="space-y-6">
-      {/* Hero */}
-      <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="panel relative flex flex-col p-6 sm:p-8">
-          <div className="flex items-center gap-2">
-            <SimBadge>Hackathon demo</SimBadge>
-            <span className="text-xs text-muted">Built on NEAR testnet + Solana devnet</span>
+      {/* Lead: what ENTX is, the trade action, then proof that the chain side is real. */}
+      <div className="space-y-4">
+        <section className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+          <div className="min-w-0">
+            <h1 className="text-[28px] font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[34px]">
+              Entertainment, <span className="text-accent">now tradable.</span>
+            </h1>
+            <p className="mt-2 max-w-[62ch] text-pretty text-sm leading-relaxed text-muted">
+              Movies and shows trade like assets. Prices react to box office, streaming demand, social buzz and
+              audience ratings, rolled into one live score: the Entertainment Popularity Index (EPI).
+            </p>
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+              <SimBadge>Hackathon demo</SimBadge>
+              Prices and trades are simulated. The NEAR and Solana records are real testnet state.
+            </p>
           </div>
-          <h1 className="mt-5 max-w-xl text-[34px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[44px]">
-            Entertainment, <span className="text-muted">now tradable.</span>
-          </h1>
-          <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-muted">
-            Movies and shows trade like assets. Prices react to box office, streaming demand, social buzz and
-            critics — rolled into one live Entertainment Popularity Index.
+          <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted">
+            {spotReason}: <span className="text-text">{spot.title}</span>, EPI{" "}
+            <span className="num text-text">{markets[spot.id].epi.toFixed(1)}</span>
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => {
-                const id = randomOracle();
-                router.push(`/asset/${id}`);
-              }}
-              className="cursor-pointer inline-flex h-10 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110"
-            >
-              <Zap size={16} /> Push a live data update
-            </button>
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               href={`/asset/${spot.id}`}
-              className="cursor-pointer press inline-flex h-10 items-center gap-2 rounded border border-line-2 px-4 text-[13px] font-medium hover:bg-white/[0.04]"
+              className="cursor-pointer press inline-flex h-11 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110"
             >
-              Open trading terminal <ArrowRight size={15} />
+              Trade {spot.title} <ArrowRight size={15} />
             </Link>
+            <button
+              onClick={() => {
+                randomOracle(spot.id);
+                router.push(`/asset/${spot.id}`);
+              }}
+              title={`Fires a simulated news event on ${spot.title} and opens its chart, so you can watch EPI and price react`}
+              className="cursor-pointer press inline-flex h-11 items-center gap-2 rounded border border-line-2 px-4 text-[13px] font-medium hover:bg-white/[0.04]"
+            >
+              <Zap size={15} className="text-accent" /> Watch news move {spot.title}
+            </button>
           </div>
-          <div className="mt-8 grid grid-cols-3 gap-4 border-t border-line pt-5">
-            <div>
-              <div className="label">24h volume</div>
-              <div className="num mt-1 text-xl font-semibold">{compactUsd(volume)}</div>
-            </div>
-            <div>
-              <div className="label">Listed assets</div>
-              <div className="num mt-1 text-xl font-semibold">{ASSETS.length}</div>
-            </div>
-            <div>
-              <div className="label">Avg EPI</div>
-              <div className="num mt-1 text-xl font-semibold">{avgEpi.toFixed(1)}</div>
-            </div>
           </div>
-        </div>
+        </section>
 
-        <Link href={`/asset/${spot.id}`} className="cursor-pointer panel group flex flex-col p-5 transition-colors hover:border-line-2">
-          <div className="flex items-center justify-between">
-            <span className="h-panel">Spotlight</span>
-            <span className="text-xs text-muted">{spot.status}</span>
-          </div>
-          <div className="mt-4 flex gap-4">
-            <Poster asset={spot} size="lg" />
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-medium text-muted">{spot.ticker}</div>
-              <div className="mt-0.5 text-lg font-semibold leading-tight">{spot.title}</div>
-              <div className="mt-1 text-xs text-muted">{spot.genre} · {spot.studio}</div>
-              <div className="num mt-4 text-[32px] font-medium tracking-[-0.02em]">
-                <Flash value={priceOf(sm)}><Dim text={usd(priceOf(sm))} /></Flash>
-              </div>
-              <Change value={change24h(sm)} className="text-sm" />
-              <div className="mt-4 flex items-end justify-between">
-                <div>
-                  <div className="label">EPI</div>
-                  <div className="num text-xl font-semibold">{sm.epi.toFixed(1)}</div>
-                </div>
-                <Sparkline points={(candles[spot.id] ?? []).slice(-60).map((c) => c.close)} width={120} height={36} />
-              </div>
-            </div>
-          </div>
-          <div className="mt-auto pt-4 text-xs text-muted group-hover:text-text">
-            Trade {spot.ticker} <ArrowRight size={12} className="inline" />
-          </div>
-        </Link>
-      </section>
+        <ContractProofStrip />
+      </div>
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="panel overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-          <span className="h-panel">Markets</span>
-          <div className="seg">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-4 self-start">
+        <div className="panel min-w-0 overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
+          <div className="flex items-center gap-2">
+            <h2 className="h-panel">Markets</h2>
+            <SimBadge quiet>Simulated prices</SimBadge>
+          </div>
+          <div className="seg max-w-full overflow-x-auto [scrollbar-width:none] [&>button]:whitespace-nowrap">
             {TABS.map((t) => (
               <button
                 key={t.id}
@@ -150,7 +123,7 @@ export default function Discover() {
             ))}
           </div>
           </div>
-          <AssetTable assets={showAll ? list : list.slice(0, ROWS)} />
+          <AssetTable assets={list} limit={showAll ? undefined : ROWS} />
           {list.length > ROWS && (
             <button
               onClick={() => setShowAll((v) => !v)}
@@ -161,37 +134,51 @@ export default function Discover() {
             </button>
           )}
         </div>
+        </div>
 
         <div className="space-y-4">
-          <MoverList title="Top gainers" items={gainers} />
-          <MoverList title="Top losers" items={losers} />
+          <MoverList title="Top gainers" items={gainers} empty="Nothing is up today." />
+          <MoverList title="Top losers" items={losers} empty="Nothing is down today." />
           <div className="panel p-4">
             <div className="mb-1 flex items-center gap-2">
-              <Radio size={14} className="text-accent" />
-              <span className="h-panel">Live market feed</span>
-              <span className="live-dot ml-auto h-1.5 w-1.5 rounded-full bg-up" />
+              <Radio size={14} className="text-muted" />
+              <h2 className="h-panel">Market activity</h2>
+              {/* The pulse means "events are arriving"; an empty feed gets no live signal. */}
+              {hasActivity && (
+                <span className="ml-auto flex items-center gap-1.5 text-xs text-muted">
+                  <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
+                  Live
+                </span>
+              )}
             </div>
-            <LiveFeed limit={8} />
+            <LiveFeed
+              limit={5}
+              empty="No activity yet. Trades, oracle news and on-chain receipts land here as they happen. Trade a title, or open Demo to push a news event."
+            />
           </div>
         </div>
       </section>
+
+      {/* Secondary: the calendar explains why prices move, after the markets themselves. */}
+      <ReleaseClock />
     </div>
   );
 }
 
-function MoverList({ title, items }: { title: string; items: typeof ASSETS }) {
+function MoverList({ title, items, empty }: { title: string; items: typeof ASSETS; empty: string }) {
   const markets = useMarket((s) => s.markets);
   return (
     <div className="panel p-4">
-      <div className="h-panel mb-2">{title}</div>
+      <h2 className="h-panel mb-2">{title}</h2>
+      {items.length === 0 && <p className="py-2 text-xs text-muted">{empty}</p>}
       <ul className="space-y-1">
         {items.map((a) => (
           <li key={a.id}>
             <Link href={`/asset/${a.id}`} className="cursor-pointer -mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/[0.03]">
               <Poster asset={a} size="sm" />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium">{a.ticker}</div>
-                <div className="truncate text-xs text-muted">{a.title}</div>
+                <div className="truncate text-sm font-medium">{a.title}</div>
+                <div className="text-xs text-muted">{a.ticker}</div>
               </div>
               <div className="text-right">
                 <div className="num text-sm">{usd(priceOf(markets[a.id]))}</div>

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PREDICTIONS } from "@/lib/predictions";
 import { yesPrice } from "@/lib/engine";
@@ -7,7 +7,7 @@ import { useMarket } from "@/store/market";
 const receipts = vi.hoisted(() => ({ any: false, record: vi.fn(), active: { solana: false, near: false } }));
 vi.mock("@/lib/receipts", () => ({ useReceipts: () => receipts }));
 
-import { PredictionTicket } from "./prediction-ticket";
+import { PICK_SIDE_EVENT, PredictionTicket } from "./prediction-ticket";
 
 const initial = useMarket.getState();
 const p = PREDICTIONS[0];
@@ -25,17 +25,30 @@ describe("PredictionTicket", () => {
   it("defaults to YES with a $25 bet and a populated quote", () => {
     render(<PredictionTicket p={p} />);
     const yp = yesPrice(useMarket.getState().predictions[p.id].pool);
-    expect(screen.getByRole("button", { name: `Yes at ${(yp * 100).toFixed(0)} cents` })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: `Yes at ${(yp * 100).toFixed(1)} cents` })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     expect(amountInput().value).toBe("25");
     expect(screen.getByRole("button", { name: "$25" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Bet $25 on Yes" })).toBeEnabled();
-    expect(row("YES price now")).toHaveTextContent(`${(yp * 100).toFixed(0)}¢`);
+    expect(row("YES price now = chance of YES")).toHaveTextContent(`${(yp * 100).toFixed(1)}¢`);
     expect(row("Shares")).not.toHaveTextContent("—");
     expect(row("Profit if right").textContent).toMatch(/^\+\$/);
     expect(screen.getByText(/Odds and payouts here are simulated/)).toBeInTheDocument();
+  });
+
+  it("picks the side sent by the mobile bet bar", () => {
+    render(<PredictionTicket p={p} />);
+    act(() => {
+      window.dispatchEvent(new CustomEvent(PICK_SIDE_EVENT, { detail: "NO" }));
+    });
+    expect(screen.getByRole("button", { name: /^No at/ })).toHaveAttribute("aria-pressed", "true");
+    expect(amountInput()).toHaveFocus();
+    act(() => {
+      window.dispatchEvent(new CustomEvent(PICK_SIDE_EVENT, { detail: "bogus" }));
+    });
+    expect(screen.getByRole("button", { name: /^No at/ })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("switches to NO", async () => {
@@ -43,7 +56,7 @@ describe("PredictionTicket", () => {
     render(<PredictionTicket p={p} />);
     await user.click(screen.getByRole("button", { name: /^No at/ }));
     expect(screen.getByRole("button", { name: /^No at/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("NO price now")).toBeInTheDocument();
+    expect(screen.getByText("NO price now = chance of NO")).toBeInTheDocument();
     expect(screen.getByText("Payout if NO")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bet $25 on No" })).toBeInTheDocument();
   });
@@ -66,7 +79,7 @@ describe("PredictionTicket", () => {
     await user.click(screen.getByRole("button", { name: "$100" }));
     expect(amountInput().value).toBe("100");
     expect(screen.getByRole("button", { name: "$100" })).toHaveAttribute("aria-pressed", "true");
-    await user.click(screen.getByRole("button", { name: /Max:/ }));
+    await user.click(screen.getByRole("button", { name: /^All your cash:/ }));
     expect(amountInput().value).toBe("432");
   });
 
@@ -97,6 +110,27 @@ describe("PredictionTicket", () => {
     await user.click(screen.getByRole("button", { name: "Bet $25 on Yes" }));
     expect(useMarket.getState().cash).toBeCloseTo(5);
     expect(amountInput().value).toBe("5");
+  });
+
+  it("confirms the bet on the button itself", async () => {
+    const user = userEvent.setup();
+    render(<PredictionTicket p={p} />);
+    await user.click(screen.getByRole("button", { name: "Bet $25 on Yes" }));
+    expect(screen.getByRole("button", { name: /^Filled · [\d.]+ YES shares · \$25\.00$/ })).toBeDisabled();
+  });
+
+  it("notes a hedge when betting against shares already held", async () => {
+    const user = userEvent.setup();
+    act(() => {
+      useMarket.getState().predict(p.id, "YES", 25);
+    });
+    render(<PredictionTicket p={p} />);
+    expect(screen.queryByText(/hedges that position/)).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^No at/ }));
+    const yes = useMarket.getState().positions.find((x) => x.side === "YES")!.shares;
+    expect(screen.getByText(/hedges that position/)).toHaveTextContent(
+      `You hold ${yes.toFixed(1)} YES shares; betting NO hedges that position.`,
+    );
   });
 
   it("signs a receipt when a wallet is connected", async () => {

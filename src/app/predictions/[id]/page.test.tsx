@@ -77,8 +77,10 @@ describe("Prediction market page", () => {
     expect(within(aside).getByRole("group", { name: "Outcome" })).toBeInTheDocument();
     expect(within(aside).getByTestId("near-stake")).toHaveTextContent(p.id);
     expect(aside).toHaveTextContent(p.rules);
-    expect(screen.getByRole("link", { name: "Place bet" })).toHaveAttribute("href", "#bet");
-    expect(screen.getByText(`Yes ${(yp * 100).toFixed(0)}¢`)).toBeInTheDocument();
+    const yes = screen.getByRole("link", { name: `Bet Yes at ${(yp * 100).toFixed(1)}¢` });
+    expect(yes).toHaveAttribute("href", "#bet");
+    expect(yes).toHaveClass("bg-up");
+    expect(screen.getByRole("link", { name: `Bet No at ${((1 - yp) * 100).toFixed(1)}¢` })).toHaveClass("bg-down");
     expect(screen.queryByRole("heading", { name: "Your position" })).not.toBeInTheDocument();
   });
 
@@ -162,7 +164,7 @@ describe("Prediction market page", () => {
     expect(h).not.toHaveTextContent("Chance of YES");
     expect(screen.getByText("Settled YES")).toBeInTheDocument();
     expect(screen.queryByTestId("near-stake")).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Place bet" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Bet (Yes|No) at/ })).not.toBeInTheDocument();
   });
 
   it("resolved market with a position held at resolution time", () => {
@@ -184,7 +186,7 @@ describe("Prediction market page", () => {
     expect(panel).toHaveTextContent(usd(pos.shares));
     expect(panel).toHaveTextContent("Result");
     expect(panel).toHaveTextContent(`+${usd(pos.shares - pos.cost)}`);
-    expect(panel).not.toHaveTextContent("Unrealized P&L");
+    expect(panel).not.toHaveTextContent("Gain or loss at today's odds");
   });
 
   it("shows activity for the market and its title", () => {
@@ -197,11 +199,18 @@ describe("Prediction market page", () => {
     expect(activity).toHaveTextContent(/You bought [\d.]+ NO @/);
   });
 
-  it("shows the past-hour odds change once probability history is available", async () => {
+  it("shows the odds change over recorded time only, once a minute is recorded", async () => {
     await act(async () => {
       await useMarket.persist.rehydrate();
     });
     render(<PredictionMarketPage />);
-    expect(header()).toHaveTextContent(/(Flat|[▲▼] \d+\.\d pts) · past hour/);
+    expect(header()).not.toHaveTextContent(/past/);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 120_000);
+    act(() => {
+      useMarket.getState().predict(p.id, "YES", 50);
+    });
+    vi.useRealTimers();
+    expect(header()).toHaveTextContent(/(Flat|[▲▼] \d+\.\d pts) · past \d+ min/);
   });
 });

@@ -27,8 +27,17 @@ describe("compact / compactUsd", () => {
 describe("pct", () => {
   it("adds + for non-negative and formats fraction as percent", () => {
     expect(pct(0.1234)).toBe("+12.34%");
-    expect(pct(0)).toBe("+0.00%");
     expect(pct(-0.05, 1)).toBe("-5.0%");
+  });
+  it("prints values that round to zero as an unsigned zero", () => {
+    expect(pct(0)).toBe("0.00%");
+    expect(pct(-0, 1)).toBe("0.0%");
+    expect(pct(-0.0004, 1)).toBe("0.0%");
+    expect(pct(0.0004, 1)).toBe("0.0%");
+    expect(pct(-0.00004)).toBe("0.00%");
+    // Just past the rounding threshold keeps its sign.
+    expect(pct(-0.0006, 1)).toBe("-0.1%");
+    expect(pct(0.0006, 1)).toBe("+0.1%");
   });
 });
 

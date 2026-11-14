@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ASSETS, EPI_WEIGHTS, ORACLE_EVENTS } from "@/lib/assets";
+import { ASSETS, EPI_WEIGHTS, ORACLE_EVENTS, computeEpi, type EpiParts } from "@/lib/assets";
 
 const callFunctionRaw = vi.fn();
 vi.mock("near-api-js", () => ({
@@ -11,6 +11,19 @@ vi.mock("near-api-js", () => ({
 }));
 
 const A = ASSETS[0].id;
+const B = ASSETS[1].id;
+
+/** Expected absolute EPI: the title's seeded parts + one event's deltas, each part clamped to [1, 100]. */
+function expectedEpi(assetIndex: number, eventId: string) {
+  const parts = { ...ASSETS[assetIndex].epiParts };
+  const ev = ORACLE_EVENTS.find((e) => e.id === eventId)!;
+  for (const [k, d] of Object.entries(ev.delta) as [keyof EpiParts, number][]) {
+    parts[k] = Math.max(1, Math.min(100, parts[k] + d));
+  }
+  return Math.round(computeEpi(parts) * 10) / 10;
+}
+const chainEpi = (epi_x10: number) =>
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ result: { result: encode({ epi_x10 }) } }) }));
 const encode = (v: unknown) => Array.from(new TextEncoder().encode(JSON.stringify(v)));
 
 async function load() {
@@ -87,14 +100,19 @@ describe("POST /api/oracle", () => {
     expect((await POST(req({ assetId: A, eventId: "nope" }, auth))).status).toBe(400);
   });
 
-  it("signs report_epi with server-computed value (clients cannot choose it)", async () => {
+  it("signs report_epi with a server-computed absolute value (clients cannot choose it)", async () => {
     const { POST } = await load();
     const res = await POST(req({ assetId: A, eventId: "box-office-beat", epi: 100 }, auth));
     expect(res.status).toBe(200);
     const json = await res.json();
-    const impact = 14 * EPI_WEIGHTS.boxOffice + 6 * EPI_WEIGHTS.social;
-    const expected = Math.round((65 + impact) * 10) / 10;
-    expect(json).toEqual({ hash: "TXHASH", oracle: "oracle.testnet", from: 65, epi: expected });
+    const expected = expectedEpi(0, "box-office-beat");
+    expect(json).toEqual({
+      hash: "TXHASH",
+      oracle: "oracle.testnet",
+      from: 65,
+      epi: expected,
+      baseline: computeEpi(ASSETS[0].epiParts),
+    });
     expect(callFunctionRaw).toHaveBeenCalledWith(
       expect.objectContaining({
         methodName: "report_epi",
@@ -103,11 +121,35 @@ describe("POST /api/oracle", () => {
     );
   });
 
-  it("clamps published EPI to [1, 100]", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ result: { result: encode({ epi_x10: 995 }) } }) }));
+  it("anchors to the seeded baseline, never to the current chain value", async () => {
+    vi.useFakeTimers();
     const { POST } = await load();
-    const json = await (await POST(req({ assetId: A, eventId: "viral-trailer" }, auth))).json();
-    expect(json.epi).toBe(100);
+    const expected = expectedEpi(0, "viral-trailer");
+    // A chain already pinned at the cap (the old cumulative drift) does not push the value further.
+    for (const onChain of [995, 1000, 120, Math.round(expected * 10)]) {
+      chainEpi(onChain);
+      vi.advanceTimersByTime(300);
+      const json = await (await POST(req({ assetId: A, eventId: "viral-trailer" }, auth))).json();
+      expect(json.from).toBe(onChain / 10);
+      expect(json.epi).toBe(expected);
+    }
+  });
+
+  it("negative events land below the baseline, positive above, within the deviation bound", async () => {
+    vi.useFakeTimers();
+    const { POST } = await load();
+    const baseline = computeEpi(ASSETS[1].epiParts);
+    for (const e of ORACLE_EVENTS) {
+      vi.advanceTimersByTime(300);
+      const json = await (await POST(req({ assetId: B, eventId: e.id }, auth))).json();
+      expect(json.baseline).toBe(baseline);
+      expect(json.epi).toBe(expectedEpi(1, e.id));
+      expect(Math.abs(json.epi - baseline)).toBeLessThanOrEqual(15);
+      expect(json.epi).toBeGreaterThanOrEqual(1);
+      expect(json.epi).toBeLessThanOrEqual(100);
+      const impact = (Object.entries(e.delta) as [keyof EpiParts, number][]).reduce((t, [k, d]) => t + EPI_WEIGHTS[k] * d, 0);
+      expect(Math.sign(json.epi - baseline)).toBe(Math.sign(impact));
+    }
   });
 
   it("404 when market not registered on-chain", async () => {
@@ -153,9 +195,22 @@ describe("POST /api/oracle", () => {
       expect((await POST(req(body, o))).status).toBe(200);
       vi.advanceTimersByTime(2000);
       // global window passed but shared per-IP bucket (6s) still blocks
-      expect((await POST(req(body, o))).status).toBe(429);
+      expect((await POST(req({ ...body, assetId: B }, o))).status).toBe(429);
       vi.advanceTimersByTime(4100);
-      expect((await POST(req(body, o))).status).toBe(200);
+      expect((await POST(req({ ...body, assetId: B }, o))).status).toBe(200);
+    });
+
+    it("allows one publish per title per 60s, other titles unaffected", async () => {
+      vi.useFakeTimers();
+      vi.stubEnv("TRUST_PROXY", "true");
+      const { POST } = await load();
+      const o = { origin: "http://localhost:3000" };
+      expect((await POST(req(body, { ...o, "x-real-ip": "1.1.1.1" }))).status).toBe(200);
+      vi.advanceTimersByTime(10_000);
+      expect((await POST(req(body, { ...o, "x-real-ip": "2.2.2.2" }))).status).toBe(429);
+      expect((await POST(req({ ...body, assetId: B }, { ...o, "x-real-ip": "2.2.2.2" }))).status).toBe(200);
+      vi.advanceTimersByTime(50_100);
+      expect((await POST(req(body, { ...o, "x-real-ip": "3.3.3.3" }))).status).toBe(200);
     });
 
     it("behind trusted proxy, different IPs only hit the global limit", async () => {
@@ -166,8 +221,10 @@ describe("POST /api/oracle", () => {
       expect((await POST(req(body, { ...o, "x-real-ip": "1.1.1.1" }))).status).toBe(200);
       expect((await POST(req(body, { ...o, "x-real-ip": "2.2.2.2" }))).status).toBe(429); // global 1.5s
       vi.advanceTimersByTime(1600);
-      expect((await POST(req(body, { ...o, "x-forwarded-for": "3.3.3.3, 9.9.9.9" }))).status).toBe(200);
-      expect((await POST(req(body, { ...o, "x-real-ip": "1.1.1.1" }))).status).toBe(429);
+      expect((await POST(req({ ...body, assetId: B }, { ...o, "x-forwarded-for": "3.3.3.3, 9.9.9.9" }))).status).toBe(200);
+      vi.advanceTimersByTime(1600);
+      // 1.1.1.1 is still inside its own 6s per-IP window
+      expect((await POST(req({ ...body, assetId: ASSETS[2].id }, { ...o, "x-real-ip": "1.1.1.1" }))).status).toBe(429);
     });
 
     it("demo spam does not starve the authenticated bucket", async () => {
@@ -182,9 +239,12 @@ describe("POST /api/oracle", () => {
       vi.stubEnv("TRUST_PROXY", "true");
       const { POST } = await load();
       let ok = 0;
+      // Rotate titles so each is revisited only after its 60s per-title window, all inside one hour.
+      const step = Math.max(1600, Math.ceil(60_100 / ASSETS.length));
       for (let i = 0; i < 245; i++) {
-        vi.advanceTimersByTime(1600);
-        const r = await POST(req(body, { origin: "http://localhost:3000", "x-real-ip": `10.0.0.${i}` }));
+        vi.advanceTimersByTime(step);
+        const assetId = ASSETS[i % ASSETS.length].id;
+        const r = await POST(req({ ...body, assetId }, { origin: "http://localhost:3000", "x-real-ip": `10.0.0.${i}` }));
         if (r.status === 200) ok++;
       }
       expect(ok).toBe(240);

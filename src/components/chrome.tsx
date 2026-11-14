@@ -1,28 +1,67 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { ASSETS, ASSET_BY_ID } from "@/lib/assets";
 import { change24h, priceOf, useMarket } from "@/store/market";
 import { timeAgo, usd } from "@/lib/format";
-import { Change, Flash } from "./ui";
+import { Change, Flash, SimBadge } from "./ui";
 
-/** Static price strip: scrolls only when the user scrolls it; prices flash on change. */
+/**
+ * Static price strip: scrolls only when the user scrolls it; prices flash on change.
+ * Keyboard: one Tab stop for the whole strip (roving tabindex), arrow keys / Home / End move between titles.
+ */
 export function TickerTape() {
   const markets = useMarket((s) => s.markets);
+  const [active, setActive] = useState(0);
+  const links = useRef<(HTMLAnchorElement | null)[]>([]);
+
+  const onKeyDown = (e: KeyboardEvent<HTMLUListElement>) => {
+    const last = ASSETS.length - 1;
+    const next =
+      e.key === "ArrowRight" ? Math.min(active + 1, last)
+      : e.key === "ArrowLeft" ? Math.max(active - 1, 0)
+      : e.key === "Home" ? 0
+      : e.key === "End" ? last
+      : null;
+    if (next === null) return;
+    e.preventDefault();
+    setActive(next);
+    links.current[next]?.focus();
+  };
+
   return (
-    <nav aria-label="Market prices" className="border-b border-line bg-bg">
-      <ul className="flex overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {ASSETS.map((a) => {
+    <nav aria-label="Market prices" aria-describedby="ticker-hint" className="border-b border-line bg-bg">
+      <span id="ticker-hint" className="sr-only">
+        Use the left and right arrow keys to move between titles.
+      </span>
+      <ul
+        onKeyDown={onKeyDown}
+        className="flex overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {/* The header's Simulated badge is desktop-only; on phones the ticker carries it. */}
+        <li className="flex shrink-0 items-center border-r border-line px-4 md:hidden">
+          <SimBadge />
+        </li>
+        {ASSETS.map((a, i) => {
           const price = priceOf(markets[a.id]);
           return (
             <li key={a.id} className="shrink-0">
               <Link
+                ref={(el) => {
+                  links.current[i] = el;
+                }}
                 href={`/asset/${a.id}`}
-                className="cursor-pointer flex h-10 items-center gap-2 border-r border-line px-5 text-[12px] transition-colors hover:bg-panel"
+                tabIndex={i === active ? 0 : -1}
+                onFocus={() => setActive(i)}
+                title={a.title}
+                // Inset ring: the strip's overflow clip would cut an outside outline.
+                className="cursor-pointer relative flex h-10 items-center gap-2 border-r border-line px-5 text-[12px] transition-colors hover:bg-panel focus-visible:outline-offset-[-2px]"
               >
                 <span className="font-medium">{a.ticker}</span>
+                <span className="sr-only max-w-[16ch] truncate text-faint sm:not-sr-only sm:inline-block">{a.title}</span>
                 <Flash value={price} className="num text-muted">
                   {usd(price)}
                 </Flash>
@@ -40,7 +79,14 @@ export function Toasts() {
   const toasts = useMarket((s) => s.toasts);
   const dismiss = useMarket((s) => s.dismissToast);
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(380px,calc(100vw-32px))] flex-col gap-2">
+    <div
+      role="status"
+      aria-live="polite"
+      data-toasts
+      // Below xl, pages with a ticket carry a fixed jump bar (~85px) at the bottom: toasts sit above it, clear of the
+      // home indicator, and phones show only the two newest so a burst doesn't bury the page.
+      className="pointer-events-none fixed inset-x-4 bottom-[calc(100px+env(safe-area-inset-bottom))] z-50 flex flex-col gap-2 max-sm:[&>*:nth-last-child(n+3)]:hidden sm:inset-x-auto sm:left-1/2 sm:w-[380px] sm:-translate-x-1/2 xl:bottom-6"
+    >
       {toasts.map((t) => {
         const body = (
           <>
@@ -89,7 +135,7 @@ export function LiveFeed({
   refIds,
   limit = 12,
   className,
-  empty = "No activity yet — push an oracle update or place a trade.",
+  empty = "No activity yet. Place a trade, or open Demo to push a news event.",
 }: {
   refId?: string;
   /** Show items for any of these ids (e.g. a prediction market plus its linked title). */
@@ -104,9 +150,7 @@ export function LiveFeed({
   return (
     <div className={className}>
       {items.length === 0 ? (
-        <div className="py-6 text-center text-xs text-faint">
-          {empty}
-        </div>
+        <p className="py-4 text-xs leading-relaxed text-muted">{empty}</p>
       ) : (
         <ul className="divide-y divide-line">
           {items.map((f) => (
@@ -127,7 +171,7 @@ export function LiveFeed({
                     f.text
                   )}
                 </div>
-                <div className="mt-0.5 text-[11px] text-faint">{timeAgo(f.ts)}</div>
+                <div className="mt-0.5 text-xs text-faint">{timeAgo(f.ts)}</div>
               </div>
             </li>
           ))}

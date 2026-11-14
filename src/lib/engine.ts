@@ -157,3 +157,12 @@ export function gaussian(rnd: () => number = Math.random) {
   while (v === 0) v = rnd();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
+
+/** Units a dollar amount buys (side "buy") or must sell to receive it (side "sell"), fee included. */
+export function unitsForDollars(p: Pool, dollars: number, side: "buy" | "sell") {
+  if (dollars <= 0) return 0;
+  const k = p.cash * p.units;
+  if (side === "buy") return p.units - k / (p.cash + dollars / (1 + FEE));
+  const rest = p.cash - dollars / (1 - FEE);
+  return rest > 0 ? k / rest - p.units : Infinity;
+}

@@ -7,10 +7,12 @@
 //! - Trade receipts: simulated ENTX spot trades are notarised on-chain (caller pays storage), optionally
 //!   cross-referencing the Solana devnet signature of the same trade (`chain_ref`).
 //! - Prediction markets: real parimutuel YES/NO staking with attached NEAR, resolution by an oracle,
-//!   and pro-rata claims.
+//!   and pro-rata claims. Staking closes at `closes_at_ms` (or earlier via `close_market`) so nobody can
+//!   back the winning side once the real-world outcome is known.
 //!
-//! Storage safety: every user-writable record is paid for by the caller (deposit, excess refunded), and
-//! history is indexed per market / per account so views never scan unbounded global lists.
+//! Storage safety: every user-writable record is paid for by the caller (deposit, excess refunded; for
+//! stakes the storage fee is taken from the attached deposit), and history is indexed per market / per
+//! account so views never scan unbounded global lists.
 
 use near_sdk::store::{IterableMap, LookupMap, Vector};
 use near_sdk::{env, near, require, AccountId, NearToken, PanicOnDefault, Promise};
@@ -62,6 +64,8 @@ pub struct Market {
     /// Parimutuel pools (prediction markets only).
     pub yes_pool: NearToken,
     pub no_pool: NearToken,
+    /// Staking deadline (prediction markets only). No stakes are accepted at or after this time.
+    pub closes_at_ms: Option<u64>,
 }
 
 #[near(serializers = [borsh, json])]
@@ -72,6 +76,8 @@ pub struct MarketInput {
     pub title: String,
     pub ticker: String,
     pub epi_x10: u32,
+    /// Required for prediction markets: staking deadline in ms since the Unix epoch.
+    pub closes_at_ms: Option<u64>,
 }
 
 #[near(serializers = [borsh, json])]
@@ -239,6 +245,14 @@ impl Entx {
             if self.markets.contains_key(&m.id) {
                 continue;
             }
+            let closes_at_ms = match m.kind {
+                MarketKind::Prediction => {
+                    let c = m.closes_at_ms.unwrap_or_else(|| env::panic_str("Prediction markets need closes_at_ms"));
+                    require!(c > env::block_timestamp_ms(), "closes_at_ms must be in the future");
+                    Some(c)
+                }
+                MarketKind::Asset => None,
+            };
             let market = Market {
                 id: m.id,
                 kind: m.kind,
@@ -252,6 +266,7 @@ impl Entx {
                 oracle_updates: 0,
                 yes_pool: NearToken::from_yoctonear(0),
                 no_pool: NearToken::from_yoctonear(0),
+                closes_at_ms,
             };
             emit(
                 "market_registered",
@@ -364,24 +379,36 @@ impl Entx {
 
     // ---------- prediction markets (parimutuel, real NEAR) ----------
 
+    /// Stake attached NEAR on YES (`true`) or NO. A caller's first stake on a market pays for its stake
+    /// record's storage out of the deposit; the rest (at least MIN_STAKE) goes into the pool.
     #[payable]
     pub fn stake(&mut self, market_id: String, outcome: bool) -> Stake {
-        let amount = env::attached_deposit();
-        require!(amount >= MIN_STAKE, "Minimum stake is 0.01 NEAR");
+        let attached = env::attached_deposit();
         let account = env::predecessor_account_id();
-        let market = self.markets.get_mut(&market_id).unwrap_or_else(|| env::panic_str("Unknown market"));
-        require!(market.kind == MarketKind::Prediction, "Not a prediction market");
-        require!(market.status == MarketStatus::Open, "Market resolved");
-        if outcome {
-            market.yes_pool = market.yes_pool.saturating_add(amount);
-        } else {
-            market.no_pool = market.no_pool.saturating_add(amount);
+        {
+            let market = self.markets.get(&market_id).unwrap_or_else(|| env::panic_str("Unknown market"));
+            require!(market.kind == MarketKind::Prediction, "Not a prediction market");
+            require!(market.status == MarketStatus::Open, "Market resolved");
+            require!(Self::accepting_stakes(market), "Staking closed");
         }
+
         let key = stake_key(&market_id, &account);
         let mut s = self.stakes.get(&key).cloned().unwrap_or_default();
+        // Charge for the storage a new stake record adds, so stakers (not the contract) pay for it.
+        let before = env::storage_usage();
+        self.stakes.insert(key.clone(), s.clone());
+        self.stakes.flush();
+        let used = env::storage_usage().saturating_sub(before) as u128;
+        let fee = env::storage_byte_cost().saturating_mul(used);
+        let amount = attached.saturating_sub(fee);
+        require!(amount >= MIN_STAKE, "Minimum stake is 0.01 NEAR plus storage");
+
+        let market = self.markets.get_mut(&market_id).unwrap_or_else(|| env::panic_str("Unknown market"));
         if outcome {
+            market.yes_pool = market.yes_pool.saturating_add(amount);
             s.yes = s.yes.saturating_add(amount);
         } else {
+            market.no_pool = market.no_pool.saturating_add(amount);
             s.no = s.no.saturating_add(amount);
         }
         self.stakes.insert(key, s.clone());
@@ -396,6 +423,23 @@ impl Entx {
         s
     }
 
+    fn accepting_stakes(market: &Market) -> bool {
+        market.closes_at_ms.map_or(true, |c| env::block_timestamp_ms() < c)
+    }
+
+    /// Stop staking on a prediction market now (owner/oracle), e.g. when the outcome becomes known before
+    /// the scheduled deadline. Only ever moves the deadline earlier.
+    pub fn close_market(&mut self, market_id: String) {
+        let caller = env::predecessor_account_id();
+        require!(self.is_oracle(&caller), "Only owner or oracle");
+        let now = env::block_timestamp_ms();
+        let market = self.markets.get_mut(&market_id).unwrap_or_else(|| env::panic_str("Unknown market"));
+        require!(market.kind == MarketKind::Prediction, "Not a prediction market");
+        require!(market.status == MarketStatus::Open, "Already resolved");
+        market.closes_at_ms = Some(market.closes_at_ms.map_or(now, |c| c.min(now)));
+        emit("close", format!(r#"{{"market_id":"{market_id}","by":"{caller}"}}"#));
+    }
+
     pub fn resolve(&mut self, market_id: String, outcome: bool) {
         let caller = env::predecessor_account_id();
         require!(self.is_oracle(&caller), "Only owner or oracle");
@@ -403,6 +447,8 @@ impl Entx {
         require!(market.kind == MarketKind::Prediction, "Not a prediction market");
         require!(market.status == MarketStatus::Open, "Already resolved");
         market.status = MarketStatus::Resolved { outcome };
+        let now = env::block_timestamp_ms();
+        market.closes_at_ms = Some(market.closes_at_ms.map_or(now, |c| c.min(now)));
         emit(
             "resolve",
             format!(r#"{{"market_id":"{market_id}","outcome":{outcome},"by":"{caller}"}}"#),
@@ -527,9 +573,19 @@ mod tests {
     use near_sdk::test_utils::{accounts, get_created_receipts, VMContextBuilder};
     use near_sdk::testing_env;
 
+    /// Default block time used by `ctx` (ms) and the test prediction market's deadline.
+    const NOW_MS: u64 = 1_000_000;
+    const CLOSE_MS: u64 = 2_000_000;
+
     fn ctx(who: usize, deposit: NearToken) {
+        ctx_at(who, deposit, NOW_MS);
+    }
+
+    fn ctx_at(who: usize, deposit: NearToken, now_ms: u64) {
         let mut b = VMContextBuilder::new();
-        b.predecessor_account_id(accounts(who)).attached_deposit(deposit);
+        b.predecessor_account_id(accounts(who))
+            .attached_deposit(deposit)
+            .block_timestamp(now_ms * 1_000_000);
         testing_env!(b.build());
     }
 
@@ -545,6 +601,7 @@ mod tests {
                 title: "Dune Drift: Part Three".into(),
                 ticker: "DRIFT".into(),
                 epi_x10: 843,
+                closes_at_ms: None,
             },
             MarketInput {
                 id: "drift-opening-250".into(),
@@ -552,6 +609,7 @@ mod tests {
                 title: "Will Dune Drift open above $250M?".into(),
                 ticker: "DRIFT".into(),
                 epi_x10: 0,
+                closes_at_ms: Some(CLOSE_MS),
             },
         ]);
         c
@@ -698,6 +756,120 @@ mod tests {
             title: "x".into(),
             ticker: "X".into(),
             epi_x10: 0,
+            closes_at_ms: None,
         }]);
+    }
+    #[test]
+    #[should_panic(expected = "Staking closed")]
+    fn stake_rejected_at_deadline() {
+        let mut c = setup();
+        ctx_at(1, NearToken::from_near(1), CLOSE_MS);
+        c.stake("drift-opening-250".into(), true);
+    }
+
+    #[test]
+    fn stake_accepted_before_deadline() {
+        let mut c = setup();
+        ctx_at(1, NearToken::from_near(1), CLOSE_MS - 1);
+        c.stake("drift-opening-250".into(), true);
+        assert!(c.get_market("drift-opening-250".into()).unwrap().yes_pool > NearToken::from_yoctonear(0));
+    }
+
+    #[test]
+    #[should_panic(expected = "Staking closed")]
+    fn close_market_stops_staking_early() {
+        let mut c = setup();
+        ctx(0, NearToken::from_yoctonear(0));
+        c.close_market("drift-opening-250".into());
+        assert_eq!(c.get_market("drift-opening-250".into()).unwrap().closes_at_ms, Some(NOW_MS));
+        ctx(1, NearToken::from_near(1));
+        c.stake("drift-opening-250".into(), true);
+    }
+
+    #[test]
+    fn close_market_never_extends_deadline() {
+        let mut c = setup();
+        ctx_at(0, NearToken::from_yoctonear(0), CLOSE_MS + 5);
+        c.close_market("drift-opening-250".into());
+        assert_eq!(c.get_market("drift-opening-250".into()).unwrap().closes_at_ms, Some(CLOSE_MS));
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner or oracle")]
+    fn close_market_is_permissioned() {
+        let mut c = setup();
+        ctx(3, NearToken::from_yoctonear(0));
+        c.close_market("drift-opening-250".into());
+    }
+
+    #[test]
+    #[should_panic(expected = "need closes_at_ms")]
+    fn prediction_markets_require_deadline() {
+        let mut c = setup();
+        ctx(0, NearToken::from_yoctonear(0));
+        c.register_markets(vec![MarketInput {
+            id: "no-deadline".into(),
+            kind: MarketKind::Prediction,
+            title: "x".into(),
+            ticker: "X".into(),
+            epi_x10: 0,
+            closes_at_ms: None,
+        }]);
+    }
+
+    #[test]
+    #[should_panic(expected = "must be in the future")]
+    fn prediction_deadline_must_be_future() {
+        let mut c = setup();
+        ctx(0, NearToken::from_yoctonear(0));
+        c.register_markets(vec![MarketInput {
+            id: "past-deadline".into(),
+            kind: MarketKind::Prediction,
+            title: "x".into(),
+            ticker: "X".into(),
+            epi_x10: 0,
+            closes_at_ms: Some(NOW_MS),
+        }]);
+    }
+
+    #[test]
+    fn first_stake_pays_its_own_storage() {
+        let mut c = setup();
+        c.flush_all();
+        ctx(1, NearToken::from_near(1));
+        let before = env::storage_usage();
+        c.stake("drift-opening-250".into(), true);
+        c.flush_all();
+        let used = (env::storage_usage() - before) as u128;
+        assert!(used > 0);
+        let fee = env::storage_byte_cost().saturating_mul(used);
+        let m = c.get_market("drift-opening-250".into()).unwrap();
+        // pool and accounting hold the deposit minus the storage fee; the fee stays behind to back storage
+        assert_eq!(m.yes_pool, NearToken::from_near(1).saturating_sub(fee));
+        assert_eq!(c.get_stats().total_staked, m.yes_pool);
+        assert_eq!(c.get_stake("drift-opening-250".into(), accounts(1)).unwrap().yes, m.yes_pool);
+
+        // a repeat stake by the same account adds no storage, so it pays no fee
+        ctx(1, NearToken::from_near(1));
+        c.stake("drift-opening-250".into(), false);
+        assert_eq!(c.get_stake("drift-opening-250".into(), accounts(1)).unwrap().no, NearToken::from_near(1));
+    }
+
+    #[test]
+    #[should_panic(expected = "plus storage")]
+    fn minimum_stake_excludes_storage_fee() {
+        let mut c = setup();
+        ctx(1, MIN_STAKE);
+        c.stake("drift-opening-250".into(), true);
+    }
+
+    #[test]
+    #[should_panic(expected = "Market resolved")]
+    fn no_stake_after_resolve() {
+        let mut c = setup();
+        ctx(0, NearToken::from_yoctonear(0));
+        c.resolve("drift-opening-250".into(), true);
+        ctx(1, NearToken::from_near(1));
+        c.stake("drift-opening-250".into(), true);
     }
 }

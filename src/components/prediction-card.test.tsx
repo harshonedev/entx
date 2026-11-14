@@ -12,7 +12,7 @@ vi.mock("./near-stake", () => ({
   NearStakePanel: ({ marketId }: { marketId: string }) => <div data-testid="near-stake">stake:{marketId}</div>,
 }));
 vi.mock("next/image", () => ({
-  // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+  // eslint-disable-next-line @next/next/no-img-element
   default: (props: Record<string, unknown>) => <img alt="" src={String(props.src)} />,
 }));
 
@@ -28,8 +28,8 @@ beforeEach(() => {
   receipts.record.mockReset();
 });
 
-const yesBtn = () => screen.getByRole("button", { name: /^Bet YES at/ });
-const noBtn = () => screen.getByRole("button", { name: /^Bet NO at/ });
+const yesBtn = () => screen.getByRole("button", { name: /^Pick YES at/ });
+const noBtn = () => screen.getByRole("button", { name: /^Pick NO at/ });
 
 describe("PredictionCard", () => {
   it("renders question, category, ticker, odds and links", () => {
@@ -44,8 +44,8 @@ describe("PredictionCard", () => {
       "href",
       `/asset/${asset.id}`,
     );
-    expect(yesBtn()).toHaveAccessibleName(`Bet YES at ${(yp * 100).toFixed(0)} cents`);
-    expect(noBtn()).toHaveAccessibleName(`Bet NO at ${((1 - yp) * 100).toFixed(0)} cents`);
+    expect(yesBtn()).toHaveAccessibleName(`Pick YES at ${(yp * 100).toFixed(1)} cents`);
+    expect(noBtn()).toHaveAccessibleName(`Pick NO at ${((1 - yp) * 100).toFixed(1)} cents`);
   });
 
   it("compact mode hides the poster link and rules toggle", () => {
@@ -66,6 +66,55 @@ describe("PredictionCard", () => {
     await user.click(yesBtn());
     expect(yesBtn()).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByText("Payout if YES")).not.toBeInTheDocument();
+  });
+
+  it("opens the ticket as a labelled dialog, moves focus into it, and the close button returns focus", async () => {
+    const user = userEvent.setup();
+    render(<PredictionCard p={p} />);
+    await user.click(yesBtn());
+    const dialog = screen.getByRole("dialog", { name: /Yes at/ });
+    // Desktop (no phone media match): a non-modal popover.
+    expect(dialog).not.toHaveAttribute("aria-modal");
+    expect(within(dialog).getByRole("button", { name: "$25" })).toHaveFocus();
+    await user.click(within(dialog).getByRole("button", { name: "Close ticket" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(yesBtn()).toHaveFocus();
+  });
+
+  it("closes the popover on a pointer press outside the card", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <PredictionCard p={p} />
+        <button>elsewhere</button>
+      </>,
+    );
+    await user.click(noBtn());
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "elsewhere" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("is a modal bottom sheet on phones with a scroll lock and Tab trap", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    try {
+      const user = userEvent.setup();
+      render(<PredictionCard p={p} />);
+      await user.click(yesBtn());
+      const dialog = screen.getByRole("dialog");
+      expect(dialog).toHaveAttribute("aria-modal", "true");
+      expect(document.body.style.overflow).toBe("hidden");
+      const close = within(dialog).getByRole("button", { name: "Close ticket" });
+      close.focus();
+      await user.keyboard("{Shift>}{Tab}{/Shift}");
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      await user.keyboard("{Escape}");
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(document.body.style.overflow).toBe("");
+      expect(yesBtn()).toHaveFocus();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("places a YES bet: debits cash, adds a position and closes the ticket", async () => {
@@ -141,6 +190,20 @@ describe("PredictionCard", () => {
       expect(useMarket.getState().positions).toHaveLength(1);
     });
 
+    it("Escape backs out of the review, then closes the ticket and refocuses the side", () => {
+      render(<PredictionCard p={p} />);
+      fireEvent.click(yesBtn());
+      const bet = screen.getByRole("button", { name: "Bet $25 on YES" });
+      fireEvent.click(bet);
+      expect(screen.getByRole("status")).toBeInTheDocument();
+      fireEvent.keyDown(screen.getByRole("button", { name: /^Confirm/ }), { key: "Escape" });
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      fireEvent.keyDown(screen.getByRole("button", { name: "Bet $25 on YES" }), { key: "Escape" });
+      expect(screen.queryByRole("button", { name: /^Bet \$/ })).not.toBeInTheDocument();
+      expect(yesBtn()).toHaveFocus();
+      expect(yesBtn()).toHaveAttribute("aria-pressed", "false");
+    });
+
     it("cancel drops the pending confirmation", () => {
       render(<PredictionCard p={p} />);
       fireEvent.click(yesBtn());
@@ -166,7 +229,7 @@ describe("PredictionCard", () => {
     expect(screen.getByText("Settled NO")).toBeInTheDocument();
     expect(screen.getByText("Closed")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Bet YES/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Stake real testnet NEAR/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Stake testnet NEAR on-chain/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Rules/ })).not.toBeInTheDocument();
   });
 
@@ -185,9 +248,9 @@ describe("PredictionCard", () => {
     const user = userEvent.setup();
     render(<PredictionCard p={p} />);
     expect(screen.queryByTestId("near-stake")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Stake real testnet NEAR" }));
+    await user.click(screen.getByRole("button", { name: "Stake testnet NEAR on-chain" }));
     expect(screen.getByTestId("near-stake")).toHaveTextContent(`stake:${p.id}`);
-    expect(screen.queryByRole("button", { name: "Stake real testnet NEAR" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Stake testnet NEAR on-chain" })).not.toBeInTheDocument();
   });
 
   it("lists existing positions valued at the current price", () => {

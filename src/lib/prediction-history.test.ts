@@ -14,6 +14,7 @@ async function load() {
 const P = PREDICTIONS[0].id;
 
 beforeEach(() => {
+  window.localStorage.clear();
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-11-14T12:00:00Z"));
 });
@@ -23,19 +24,74 @@ afterEach(() => {
 });
 
 describe("useProbHistory", () => {
-  it("backfills an hour ending at the current probability after hydration", async () => {
+  it("back-fills a modelled 24h lead-in from the linked title's EPI, not from noise", async () => {
     const { useMarket, useProbHistory } = await load();
     await useMarket.persist.rehydrate();
     const { result } = renderHook(() => useProbHistory(P));
     const s = result.current;
-    expect(s).toHaveLength(240);
-    expect(s.at(-1)!.value).toBeCloseTo(yesPrice(useMarket.getState().predictions[P].pool), 12);
-    expect(s.at(-1)!.time).toBe(Math.floor(Date.now() / 1000));
-    for (let i = 1; i < s.length; i++) expect(s[i].time - s[i - 1].time).toBe(15);
-    for (const p of s) {
-      expect(p.value).toBeGreaterThanOrEqual(0.03);
-      expect(p.value).toBeLessThanOrEqual(0.97);
+    const seed = PREDICTIONS[0];
+    const now = yesPrice(useMarket.getState().predictions[P].pool);
+    const t = Math.floor(Date.now() / 1000);
+    expect(s).toHaveLength(97);
+    const lead = s.slice(0, -1);
+    for (const p of lead) expect(p.modelled).toBe(true);
+    for (let i = 1; i < lead.length; i++) expect(s[i].time - s[i - 1].time).toBe(900);
+    expect(s.at(-1)!.time - lead[0].time).toBe(24 * 3600);
+    expect(s.at(-1)).toEqual({ time: t, value: now });
+    // Hourly lead points sit exactly on the EPI samples: YES moves by sensitivity × 2.2 × relative EPI change.
+    const epi = useMarket.getState().markets[seed.assetId!].epiHistory;
+    const epi0 = epi.at(-1)!.value;
+    for (const e of epi.slice(0, -1)) {
+      const pt = lead.find((p) => p.time === e.time)!;
+      const want = Math.min(0.98, Math.max(0.02, now + seed.sensitivity * 2.2 * ((e.value - epi0) / epi0)));
+      expect(pt.value).toBeCloseTo(want, 12);
     }
+    expect(new Set(lead.map((p) => p.value)).size).toBeGreaterThan(1);
+  });
+
+  it("keeps the lead-in flat for a market that has already settled", async () => {
+    const { useMarket, useProbHistory } = await load();
+    await useMarket.persist.rehydrate();
+    act(() => useMarket.getState().resolve(P, "YES"));
+    const s = renderHook(() => useProbHistory(P)).result.current;
+    for (const p of s.slice(0, -1)) expect(p).toMatchObject({ modelled: true, value: 1 });
+  });
+
+  it("keeps recorded points across a reload, without the modelled lead-in", async () => {
+    const a = await load();
+    await a.useMarket.persist.rehydrate();
+    renderHook(() => a.useProbHistory(P));
+    vi.setSystemTime(new Date("2026-11-14T12:02:00Z"));
+    act(() => {
+      a.useMarket.getState().predict(P, "YES", 100);
+    });
+    window.dispatchEvent(new Event("pagehide"));
+    const recorded = a.useMarket.getState().predictions[P];
+
+    vi.setSystemTime(new Date("2026-11-14T12:03:00Z"));
+    const b = await load();
+    await b.useMarket.persist.rehydrate();
+    const s = renderHook(() => b.useProbHistory(P)).result.current;
+    const real = s.filter((p) => !p.modelled);
+    expect(real.map((p) => p.time)).toEqual([
+      Math.floor(new Date("2026-11-14T12:00:00Z").getTime() / 1000),
+      Math.floor(new Date("2026-11-14T12:02:00Z").getTime() / 1000),
+      Math.floor(Date.now() / 1000),
+    ]);
+    expect(real[1].value).toBeCloseTo(yesPrice(recorded.pool), 12);
+    // The lead-in ends one step before the first recorded point.
+    expect(s[0].modelled).toBe(true);
+    expect(s.filter((p) => p.modelled).at(-1)!.time).toBe(real[0].time - 900);
+  });
+
+  it("recordedChange ignores the lead-in and needs a minute of real data", async () => {
+    const { recordedChange } = await import("./prediction-history");
+    const lead = { time: 0, value: 0.9, modelled: true as const };
+    expect(recordedChange([lead, { time: 100, value: 0.4 }, { time: 130, value: 0.5 }])).toBeNull();
+    expect(recordedChange([lead, { time: 100, value: 0.4 }, { time: 220, value: 0.45 }])).toEqual({
+      pts: expect.closeTo(5, 9),
+      seconds: 120,
+    });
   });
 
   it("backfill is deterministic per market id", async () => {
@@ -58,7 +114,7 @@ describe("useProbHistory", () => {
       useMarket.getState().predict(P, "YES", 100);
     });
     expect(result.current).not.toBe(before);
-    expect(result.current).toHaveLength(241);
+    expect(result.current).toHaveLength(98);
     expect(result.current.at(-1)!.value).toBeCloseTo(yesPrice(useMarket.getState().predictions[P].pool), 12);
   });
 
@@ -69,7 +125,7 @@ describe("useProbHistory", () => {
     act(() => {
       useMarket.getState().predict(P, "YES", 50);
     });
-    expect(result.current).toHaveLength(240);
+    expect(result.current).toHaveLength(97);
     expect(result.current.at(-1)!.value).toBeCloseTo(yesPrice(useMarket.getState().predictions[P].pool), 12);
   });
 

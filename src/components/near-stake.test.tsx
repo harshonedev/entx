@@ -70,6 +70,22 @@ describe("NearStakePanel", () => {
     expect(near.connect).toHaveBeenCalled();
   });
 
+  it("hides staking once the deadline has passed", async () => {
+    near.accountId = "alice.testnet";
+    view.market = market({ closes_at_ms: Date.now() - 1 });
+    render(<NearStakePanel marketId="m1" />);
+    expect(await screen.findByText("Staking closed. Awaiting on-chain resolution.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "YES" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "NO" })).not.toBeInTheDocument();
+  });
+
+  it("still offers staking before the deadline", async () => {
+    near.accountId = "alice.testnet";
+    view.market = market({ closes_at_ms: Date.now() + 60_000 });
+    render(<NearStakePanel marketId="m1" />);
+    expect(await screen.findByRole("button", { name: "YES" })).toBeInTheDocument();
+  });
+
   it("disables connect until the NEAR connector is ready", async () => {
     near.ready = false;
     render(<NearStakePanel marketId="m1" />);
@@ -86,11 +102,39 @@ describe("NearStakePanel", () => {
 
     await user.click(screen.getByRole("button", { name: "0.5Ⓝ" }));
     await user.click(screen.getByRole("button", { name: "YES" }));
+    // Picking a side only previews the call; nothing reaches the wallet yet.
+    expect(near.call).not.toHaveBeenCalled();
+    const preview = screen.getByRole("region", { name: "Review before signing" });
+    expect(preview).toHaveTextContent("NEAR testnet");
+    expect(preview).toHaveTextContent("stake");
+    expect(preview).toHaveTextContent("m1");
+    expect(preview).toHaveTextContent("YES (outcome: true)");
+    expect(preview).toHaveTextContent("0.5 NEAR");
+    expect(preview).toHaveTextContent("30 Tgas");
+    // 0.5 into YES 2 of total 3 → 0.5 × 3.5 / 2.5 = 0.7
+    expect(preview).toHaveTextContent("≈ 0.700 NEAR");
+    await user.click(screen.getByRole("button", { name: "Sign & stake 0.5 NEAR on YES" }));
 
     expect(near.call).toHaveBeenCalledWith("stake", { market_id: "m1", outcome: true }, nearToYocto(0.5), 30);
     const link = await screen.findByRole("link", { name: /Last tx HASH1234/ });
     expect(link).toHaveAttribute("href", "https://testnet.nearblocks.io/txns/HASH1234567890abc");
     expect(useMarket.getState().toasts.at(-1)).toMatchObject({ title: "Staked 0.5 NEAR on YES", tone: "up" });
+    expect(screen.queryByRole("region", { name: "Review before signing" })).not.toBeInTheDocument();
+  });
+
+  it("cancels the preview with the close button or Escape", async () => {
+    near.accountId = "alice.testnet";
+    const user = userEvent.setup();
+    render(<NearStakePanel marketId="m1" />);
+    await screen.findByText("3.00 NEAR staked");
+    await user.click(screen.getByRole("button", { name: "NO" }));
+    await user.click(screen.getByRole("button", { name: "Cancel and close preview" }));
+    expect(screen.queryByRole("region", { name: "Review before signing" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "NO" }));
+    screen.getByRole("button", { name: /^Sign & stake/ }).focus();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("region", { name: "Review before signing" })).not.toBeInTheDocument();
+    expect(near.call).not.toHaveBeenCalled();
   });
 
   it("disables both sides while a stake is in flight", async () => {
@@ -101,7 +145,9 @@ describe("NearStakePanel", () => {
     render(<NearStakePanel marketId="m1" />);
     await screen.findByText("3.00 NEAR staked");
     await user.click(screen.getByRole("button", { name: "NO" }));
+    await user.click(screen.getByRole("button", { name: "Sign & stake 0.1 NEAR on NO" }));
     expect(near.call).toHaveBeenCalledWith("stake", { market_id: "m1", outcome: false }, nearToYocto(0.1), 30);
+    expect(screen.getByRole("button", { name: "Waiting for wallet…" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "YES" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "NO" })).toBeDisabled();
     resolve("H");
@@ -115,6 +161,7 @@ describe("NearStakePanel", () => {
     render(<NearStakePanel marketId="m1" />);
     await screen.findByText("3.00 NEAR staked");
     await user.click(screen.getByRole("button", { name: "YES" }));
+    await user.click(screen.getByRole("button", { name: /^Sign & stake/ }));
     await waitFor(() =>
       expect(useMarket.getState().toasts.at(-1)).toMatchObject({
         title: "NEAR transaction failed",

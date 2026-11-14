@@ -6,6 +6,7 @@ import {
   nearTxUrl,
   nearView,
   resolvedOutcome,
+  stakingClosed,
   YOCTO,
   yoctoToNear,
 } from "./near-config";
@@ -47,6 +48,19 @@ describe("resolvedOutcome", () => {
     expect(resolvedOutcome("Open")).toBeNull();
     expect(resolvedOutcome({ Resolved: { outcome: true } })).toBe(true);
     expect(resolvedOutcome({ Resolved: { outcome: false } })).toBe(false);
+  });
+});
+
+describe("stakingClosed", () => {
+  it("is open without a deadline (pre-deadline contracts) and before it", () => {
+    expect(stakingClosed({}, 5)).toBe(false);
+    expect(stakingClosed({ closes_at_ms: null }, 5)).toBe(false);
+    expect(stakingClosed({ closes_at_ms: 10 }, 9)).toBe(false);
+  });
+
+  it("closes at and after the deadline, matching the contract", () => {
+    expect(stakingClosed({ closes_at_ms: 10 }, 10)).toBe(true);
+    expect(stakingClosed({ closes_at_ms: 10 }, 11)).toBe(true);
   });
 });
 

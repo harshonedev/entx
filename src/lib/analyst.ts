@@ -1,10 +1,10 @@
 // ENTX Analyst: transparent, rule-based trading signals.
 // It explains *why* — every factor and weight is shown — and it only recommends; it never trades.
 
-import { ASSET_BY_ID, computeEpi } from "./assets";
+import { ASSET_BY_ID } from "./assets";
 import { PREDICTIONS } from "./predictions";
 import { poolPrice, yesPrice, type Candle } from "./engine";
-import type { MarketState, PredictionState } from "@/store/market";
+import { fairValue as fairValueOf, type MarketState, type PredictionState } from "@/store/market";
 
 export type Rating = "Strong buy" | "Buy" | "Hold" | "Sell" | "Strong sell";
 
@@ -24,6 +24,8 @@ export interface Signal {
   confidence: number; // 0..100
   factors: Factor[];
   summary: string;
+  /** True when a Buy/Sell comes from several weak signals rather than one strong one. */
+  lean: boolean;
 }
 
 const clamp = (x: number, a = -1, b = 1) => Math.max(a, Math.min(b, x));
@@ -37,10 +39,9 @@ export function analyze(
 ): Signal {
   const a = ASSET_BY_ID[assetId];
   const price = poolPrice(m.pool);
-  const epi0 = computeEpi(a.epiParts);
 
   // 1. Fundamental gap: where price "should" be given the EPI move (same 2.6x elasticity the market uses).
-  const fairValue = a.basePrice * Math.max(0.2, 1 + (m.epi / epi0 - 1) * 2.6);
+  const fairValue = fairValueOf(assetId, m);
   const gap = fairValue / price - 1;
 
   // 2. Short-term momentum: last close vs 20-candle average.
@@ -101,7 +102,22 @@ export function analyze(
   const rating: Rating =
     score > 0.45 ? "Strong buy" : score > 0.15 ? "Buy" : score < -0.45 ? "Strong sell" : score < -0.15 ? "Sell" : "Hold";
   const confidence = Math.round(a.confidence * (0.55 + 0.45 * Math.min(1, Math.abs(score) * 1.6)));
-  const top = [...factors].sort((x, y) => Math.abs(y.score * y.weight) - Math.abs(x.score * x.weight))[0];
+  // Explain the rating with the strongest factor pushing the same way, so the headline never
+  // cites a bullish reason for a bearish call (or the reverse).
+  const pull = (f: Factor) => f.score * f.weight;
+  const ranked = [...factors].sort((x, y) => Math.abs(pull(y)) - Math.abs(pull(x)));
+  const top = (rating !== "Hold" && ranked.find((f) => Math.sign(pull(f)) === Math.sign(score))) || ranked[0];
+  // A plain Buy/Sell can come from several small signals adding up with no single strong one. Say so,
+  // instead of quoting one factor's reason as if it alone justified the call.
+  const dir = Math.sign(score);
+  const agreeing = factors.filter((f) => Math.sign(pull(f)) === dir).length;
+  const lean = (rating === "Buy" || rating === "Sell") && Math.abs(pull(top)) < 0.08;
+  const summary =
+    rating === "Hold"
+      ? `Hold ${a.ticker}. Signals roughly cancel out; the biggest one: ${top.why.charAt(0).toLowerCase()}${top.why.slice(1)}`
+      : lean
+        ? `Lean ${rating.toLowerCase()} ${a.ticker}: ${agreeing} of ${factors.length} signals point ${dir > 0 ? "up" : "down"}, none strongly. Strongest: ${top.name.toLowerCase()} (${top.value}).`
+        : `${rating} ${a.ticker}. ${top.why}`;
 
   return {
     rating,
@@ -110,6 +126,7 @@ export function analyze(
     upside: gap,
     confidence,
     factors,
-    summary: `${rating} ${a.ticker}. ${top.why}`,
+    summary,
+    lean,
   };
 }

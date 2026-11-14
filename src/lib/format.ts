@@ -9,8 +9,18 @@ export const compact = (n: number) =>
 
 export const compactUsd = (n: number) => `$${compact(n)}`;
 
-export const pct = (n: number, digits = 2) =>
-  `${n >= 0 ? "+" : ""}${(n * 100).toFixed(digits)}%`;
+/**
+ * Signed percent from a fraction. Anything that rounds to zero at the shown precision prints as an
+ * unsigned zero ("0.0%"), never "-0.0%" or "+0.0%": a sign on a zero claims a direction that isn't there.
+ */
+export function pct(n: number, digits = 2) {
+  const fixed = (n * 100).toFixed(digits);
+  if (Number(fixed) === 0) return `${(0).toFixed(digits)}%`;
+  return `${n > 0 ? "+" : ""}${fixed}%`;
+}
+
+/** Prediction share price in cents. One decimal everywhere so the same price never reads 63¢ in one place and 63.2¢ in another. */
+export const cents = (p: number) => `${(p * 100).toFixed(1)}¢`;
 
 export const num = (n: number, digits = 2) =>
   n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });

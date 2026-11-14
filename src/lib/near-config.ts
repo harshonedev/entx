@@ -62,6 +62,8 @@ export interface NearMarket {
   oracle_updates: number;
   yes_pool: string;
   no_pool: string;
+  /** Staking deadline (prediction markets). Absent on contracts deployed before deadlines existed. */
+  closes_at_ms?: number | null;
 }
 
 export interface NearReceipt {
@@ -97,6 +99,10 @@ export interface NearStats {
   epi_reports: number;
   total_staked: string;
 }
+
+/** True once the market's staking deadline has passed. */
+export const stakingClosed = (m: Pick<NearMarket, "closes_at_ms">, nowMs = Date.now()): boolean =>
+  m.closes_at_ms != null && nowMs >= m.closes_at_ms;
 
 export const resolvedOutcome = (s: MarketStatus): boolean | null =>
   typeof s === "object" && "Resolved" in s ? s.Resolved.outcome : null;

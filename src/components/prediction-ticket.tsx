@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { ShieldCheck } from "lucide-react";
+import { Check, ShieldCheck } from "lucide-react";
 import type { PredictionSeed } from "@/lib/predictions";
 import { FEE, quoteBinary, yesPrice } from "@/lib/engine";
 import { useMarket } from "@/store/market";
-import { num, usd } from "@/lib/format";
+import { cents, num, usd } from "@/lib/format";
 import { useReceipts } from "@/lib/receipts";
 import { Flash } from "./ui";
+import { FillReceipt } from "./fill-receipt";
 
 const PRESETS = [10, 25, 50, 100];
+/** How long the button shows "Filled" before it is a button again. The receipt below stays. */
+const FILLED_MS = 2500;
 
-const cents = (p: number) => `${(p * 100).toFixed(p < 0.1 || p > 0.9 ? 1 : 0)}¢`;
+/** Fired by the mobile bet bar so its Yes/No buttons land on the ticket with that side picked. */
+export const PICK_SIDE_EVENT = "entx:pick-side";
 
 export function PredictionTicket({ p }: { p: PredictionSeed }) {
   const st = useMarket((s) => s.predictions[p.id]);
@@ -22,6 +26,33 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
   const connected = receipts.any;
   const [side, setSide] = useState<"YES" | "NO">("YES");
   const [amountText, setAmountText] = useState("25");
+  const [fillId, setFillId] = useState<string | null>(null);
+  const [quoted, setQuoted] = useState(0);
+  const clearFill = useCallback(() => setFillId(null), []);
+  const input = useRef<HTMLInputElement>(null);
+  // For a moment after a bet, the button itself confirms it; changing side or amount ends that early.
+  const [filled, setFilled] = useState<{ label: string; key: string } | null>(null);
+  useEffect(() => {
+    if (!filled) return;
+    const t = setTimeout(() => setFilled(null), FILLED_MS);
+    return () => clearTimeout(t);
+  }, [filled]);
+  // Shares already held on the other side of this market: a bet here offsets them.
+  const opposite = useMarket((s) => {
+    const other = side === "YES" ? "NO" : "YES";
+    return s.positions.find((x) => x.marketId === p.id && x.side === other)?.shares ?? 0;
+  });
+
+  useEffect(() => {
+    const pick = (e: Event) => {
+      const s = (e as CustomEvent<unknown>).detail;
+      if (s !== "YES" && s !== "NO") return;
+      setSide(s);
+      input.current?.focus({ preventScroll: true });
+    };
+    window.addEventListener(PICK_SIDE_EVENT, pick);
+    return () => window.removeEventListener(PICK_SIDE_EVENT, pick);
+  }, []);
 
   const yp = yesPrice(st.pool);
   const price = side === "YES" ? yp : 1 - yp;
@@ -35,12 +66,18 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
     amount <= 0 ? "Enter an amount" : amount > cash + 1e-9 ? `Not enough cash · need ${usd(amount - cash)} more` : null;
 
   const place = () => {
-    const t = predict(p.id, side, amount);
+    // Fill at the live odds, but refuse if they slipped more than 1% from the payout on screen.
+    const t = predict(p.id, side, amount, q.shares * 0.99);
     if (!t) return;
+    setFillId(t.id);
+    setQuoted(q.shares);
     if (connected) void receipts.record(t);
     const left = Math.floor(useMarket.getState().cash);
-    if (amount > left) setAmountText(String(left));
+    const next = amount > left ? String(left) : amountText;
+    if (next !== amountText) setAmountText(next);
+    setFilled({ label: `Filled · ${num(t.qty, 1)} ${side} shares · ${usd(t.total)}`, key: `${side}:${next}` });
   };
+  const justFilled = filled && filled.key === `${side}:${amountText}` ? filled.label : null;
 
   if (st.resolved) {
     return (
@@ -68,7 +105,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
               key={s}
               onClick={() => setSide(s)}
               aria-pressed={on}
-              aria-label={`${s === "YES" ? "Yes" : "No"} at ${(px * 100).toFixed(0)} cents`}
+              aria-label={`${s === "YES" ? "Yes" : "No"} at ${(px * 100).toFixed(1)} cents`}
               className={clsx(
                 "cursor-pointer flex h-12 items-center justify-center gap-2 rounded text-[13.5px] font-semibold transition-colors",
                 on
@@ -91,14 +128,16 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
 
       <div className="mt-4 flex items-center justify-between gap-2 text-xs text-muted">
         <label htmlFor="bet-amount">Amount</label>
-        <button className="cursor-pointer hover:text-text" onClick={() => setAmountText(String(maxBet))}>
-          Max: <span className="num">{usd(maxBet, 0)}</span>
+        <button className="cursor-pointer inline-flex min-h-11 items-center gap-1 hover:text-text sm:min-h-0" onClick={() => setAmountText(String(maxBet))}>
+          All your cash: <span className="num">{usd(maxBet, 0)}</span>
         </button>
       </div>
       <div className="mt-1.5 flex items-center rounded bg-panel-2 px-4 ring-1 ring-transparent focus-within:ring-2 focus-within:ring-accent">
         <span className="num mr-1 text-[26px] font-medium text-muted">$</span>
         <input
+          ref={input}
           id="bet-amount"
+          name="bet-amount"
           inputMode="decimal"
           value={amountText}
           onChange={(e) => setAmountText(e.target.value.replace(/[^0-9.]/g, ""))}
@@ -122,12 +161,18 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
       </div>
 
       <dl className="mt-4 space-y-1.5 text-xs">
-        <Row k={`${side} price now`} v={cents(price)} />
+        <Row k={`${side} price now = chance of ${side}`} v={cents(price)} />
         <Row k="Avg price per share" v={amount > 0 ? cents(q.avg) : "—"} />
         <Row k="Shares" v={amount > 0 ? num(q.shares, 1) : "—"} />
         <Row
           k="Chance of YES after"
-          v={amount > 0 ? `${(yp * 100).toFixed(1)}% → ${(after * 100).toFixed(1)}%` : "—"}
+          v={
+            amount <= 0
+              ? "—"
+              : Math.abs(after - yp) < 0.001
+                ? `${(yp * 100).toFixed(1)}% (barely moves)`
+                : `${(yp * 100).toFixed(1)}% → ${(after * 100).toFixed(1)}%`
+          }
           tone={Math.abs(after - yp) > 0.02 ? "warn" : undefined}
         />
         <Row k={`Fee (${(FEE * 100).toFixed(1)}%)`} v={amount > 0 ? usd(amount * FEE) : "—"} />
@@ -139,17 +184,43 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
           tone={amount > 0 ? "up" : undefined}
         />
       </dl>
+      {amount > 0 && price < 0.1 && (
+        <p className="mt-2 text-xs leading-relaxed text-warn">
+          Long shot: the market gives {side} about a {Math.max(1, Math.round(price * 100))}% chance, so most bets at
+          this price lose the full stake.
+        </p>
+      )}
 
-      <button
-        disabled={reason !== null}
-        onClick={place}
-        className={clsx(
-          "cursor-pointer mt-4 h-12 w-full rounded text-[13.5px] font-semibold text-black hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40",
-          side === "YES" ? "bg-up" : "bg-down",
-        )}
-      >
-        {reason ?? `Bet ${usd(amount, amount % 1 ? 2 : 0)} on ${side === "YES" ? "Yes" : "No"}`}
-      </button>
+      {opposite > 0.05 && (
+        <p className="mt-3 text-xs leading-relaxed text-muted">
+          You hold <span className="num text-text">{num(opposite, 1)}</span> {side === "YES" ? "NO" : "YES"} shares;
+          betting {side} hedges that position.
+        </p>
+      )}
+
+      {justFilled ? (
+        <button
+          disabled
+          data-static
+          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-1.5 rounded bg-up/[0.12] text-[13.5px] font-semibold text-up"
+        >
+          <Check size={15} aria-hidden />
+          <span className="num">{justFilled}</span>
+        </button>
+      ) : (
+        <button
+          disabled={reason !== null}
+          onClick={place}
+          className={clsx(
+            "cursor-pointer mt-4 h-12 w-full rounded text-[13.5px] font-semibold text-black hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40",
+            side === "YES" ? "bg-up" : "bg-down",
+          )}
+        >
+          {reason ?? `Bet ${usd(amount, amount % 1 ? 2 : 0)} on ${side === "YES" ? "Yes" : "No"}`}
+        </button>
+      )}
+
+      {fillId && <FillReceipt tradeId={fillId} quoted={quoted} onDone={clearFill} />}
 
       <div className="mt-4 flex items-center justify-between rounded bg-panel-2 p-3 text-xs">
         <span className="text-faint">Available</span>
@@ -162,7 +233,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
         <ShieldCheck size={14} className={clsx("mt-0.5 shrink-0", connected ? "text-sol" : "text-faint")} />
         {connected
           ? "Each bet's receipt will be signed on-chain. Odds and payouts in this ticket remain simulated."
-          : "Odds and payouts here are simulated. To put real testnet NEAR on this outcome, use the NEAR pool below."}
+          : "Odds and payouts here are simulated. To stake testnet NEAR on this outcome on-chain, use the NEAR pool below."}
       </div>
     </div>
   );

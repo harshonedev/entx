@@ -4,11 +4,14 @@ import { readFileSync } from "node:fs";
 import { computeEpi, type EpiParts } from "../src/lib/epi.ts";
 
 interface A { id: string; title: string; ticker: string; epiParts: EpiParts }
-interface P { id: string; question: string; assetId?: string }
+interface P { id: string; question: string; assetId?: string; closesInDays: number }
 const catalog = JSON.parse(readFileSync(new URL("../src/data/catalog.json", import.meta.url), "utf8")) as {
   assets: A[];
   predictions: P[];
 };
+
+const DAY_MS = 86_400_000;
+const now = Date.now();
 
 const markets = [
   ...catalog.assets.map((a) => ({
@@ -24,6 +27,8 @@ const markets = [
     title: p.question,
     ticker: catalog.assets.find((a) => a.id === p.assetId)?.ticker ?? "ENTX",
     epi_x10: 0,
+    // Staking deadline: the contract rejects stakes at or after this time.
+    closes_at_ms: now + Math.max(1, p.closesInDays) * DAY_MS,
   })),
 ];
 console.log(JSON.stringify({ markets }));

@@ -51,12 +51,49 @@ beforeEach(() => {
 });
 
 describe("Asset page", () => {
-  it("shows a not-listed state with a link home for an unknown id", () => {
+  it("shows a not-listed state with the three most-traded titles and a link to all markets", () => {
     nav.id = "does-not-exist";
     render(<AssetPage />);
-    expect(screen.getByText("Asset not listed")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Back to Discover" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("heading", { level: 1, name: "Asset not listed" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Browse all markets" })).toHaveAttribute("href", "/");
+    const markets = useMarket.getState().markets;
+    const top = [...ASSETS].sort((a, b) => markets[b.id].volume24h - markets[a.id].volume24h).slice(0, 3);
+    const list = screen.getByRole("heading", { name: "Most traded right now" }).nextElementSibling as HTMLElement;
+    const links = within(list).getAllByRole("link");
+    expect(links.map((l) => l.getAttribute("href"))).toEqual(top.map((a) => `/asset/${a.id}`));
     expect(screen.queryByTestId("price-chart")).not.toBeInTheDocument();
+  });
+
+  it("labels the session EPI as simulated and the headline metric's source", () => {
+    render(<AssetPage />);
+    const header = screen.getByRole("heading", { level: 1 }).closest("section") as HTMLElement;
+    expect(header).toHaveTextContent(/EPI [\d.]+ \(this session, simulated\)/);
+    expect(header).toHaveTextContent(`${withPreds.metric.label}`);
+    expect(header).toHaveTextContent(/TMDB/);
+  });
+
+  it("shows the oracle EPI from NEAR with its gap to the session EPI", async () => {
+    const m = useMarket.getState().markets[withPreds.id];
+    const oracle = Math.round(m.epi * 10) / 10 + 6;
+    const result = Array.from(new TextEncoder().encode(JSON.stringify({ epi_x10: Math.round(oracle * 10) })));
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ result: { result } })));
+    render(<AssetPage />);
+    const link = await screen.findByRole("link", { name: /Oracle EPI · NEAR/ });
+    expect(link).toHaveTextContent(oracle.toFixed(1));
+    expect(screen.getByText(/Session is \d+\.\d lower/)).toBeInTheDocument();
+    expect(screen.getByText(/the oracle value is the last report on NEAR/)).toBeInTheDocument();
+    fetchMock.mockRestore();
+  });
+
+  it("shows 'Not released yet' instead of a zero metric for an upcoming title", () => {
+    const upcoming = ASSETS.find((a) => a.metric.value === 0 && new Date(a.releaseDate).getTime() > Date.now());
+    if (!upcoming) return;
+    nav.id = upcoming.id;
+    render(<AssetPage />);
+    const header = screen.getByRole("heading", { level: 1 }).closest("section") as HTMLElement;
+    expect(header).toHaveTextContent("Not released yet");
   });
 
   it("renders the header with title, ticker, price, EPI and volume from the store", () => {
