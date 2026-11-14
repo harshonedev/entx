@@ -31,11 +31,15 @@ export async function readJson<T>(req: Request, max = MAX_BODY_BYTES): Promise<T
 /**
  * Client IP for rate limiting, or "shared" when no trusted proxy is configured.
  * - Vercel overwrites `x-real-ip`, so it is trusted there.
+ * - Behind Cloudflare (TRUST_PROXY=cloudflare) `cf-connecting-ip` is the visitor.
  * - Behind Traefik (Coolify, TRUST_PROXY=true) the proxy appends the real peer to `x-forwarded-for`, so only the
  *   last hop is trustworthy; anything earlier, and `x-real-ip`, can be set by the client.
  */
 export function clientIp(req: Request): string {
   if (process.env.VERCEL) return req.headers.get("x-real-ip") ?? "shared";
+  // Behind Cloudflare's proxy every request arrives from an edge IP; Cloudflare sets the visitor's IP here.
+  // Only safe while the origin accepts traffic from Cloudflare alone.
+  if (process.env.TRUST_PROXY === "cloudflare") return req.headers.get("cf-connecting-ip") ?? "shared";
   if (process.env.TRUST_PROXY !== "true") return "shared";
   const hops = req.headers.get("x-forwarded-for")?.split(",").map((h) => h.trim()).filter(Boolean);
   return hops?.at(-1) ?? "shared";

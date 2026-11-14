@@ -33,7 +33,7 @@ All three apps:
 ```
 NEXT_PUBLIC_FLAG_CHAIN_SWITCH=false      # build variable; true after the hackathon (M4)
 NEXT_PUBLIC_NEAR_CONTRACT=entx-market-1794654167.testnet   # build variable
-TRUST_PROXY=true                         # runtime; rate limits use the last X-Forwarded-For hop, which Traefik appends
+TRUST_PROXY=true                         # runtime; last X-Forwarded-For hop (Traefik). Use "cloudflare" when proxied by Cloudflare
 ```
 
 Per app, the mode and chain from the table above (build variables).
