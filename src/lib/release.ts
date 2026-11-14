@@ -49,7 +49,8 @@ export function nextCatalyst(
   const r = releaseInfo(a, now);
   const candidates: { label: string; days: number }[] = [];
   if (r.phase === "upcoming") candidates.push({ label: a.kind === "movie" ? "Opening day" : "Premiere", days: -r.days });
-  if (a.kind === "movie" && (a.status === "In theaters" || r.phase !== "run")) {
+  // Box office reports only exist once a film is in cinemas: never offer one for a film that hasn't opened.
+  if (a.kind === "movie" && r.phase !== "upcoming" && (a.status === "In theaters" || r.phase !== "run")) {
     const n = daysToSunday(now);
     candidates.push({ label: r.phase === "opening" ? "Opening-weekend box office" : "Weekend box office report", days: n });
   }

@@ -255,6 +255,32 @@ describe("oracle", () => {
     expect(S().toasts.at(-1)!.body).toContain("HASH123456");
   });
 
+  it("keeps the latest news per title, and credits a NEAR report only to the news that triggered it", async () => {
+    // First publish is slow and lands after the second news; the second publish fails.
+    let releaseFirst!: () => void;
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            releaseFirst = () => r({ ok: true, json: async () => ({ hash: "SLOW_A", epi: 70, from: 69 }) });
+          }),
+      )
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: "rate-limited" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    S().oracle(A, ev.id);
+    const first = S().markets[A].lastNews!;
+    expect(first.text).not.toMatch(/^NEWS/);
+    S().oracle(A, "critics-pan");
+    const second = S().markets[A].lastNews!;
+    expect(second.id).not.toBe(first.id);
+    releaseFirst();
+    await vi.waitFor(() => expect(S().markets[A].oracleTx).toBe("SLOW_A"));
+    // The slow report for news A must not be shown as the receipt for news B.
+    expect(S().markets[A].lastNews).toMatchObject({ id: second.id });
+    expect(S().markets[A].lastNews!.tx).toBeUndefined();
+  });
+
   it("adds no NEAR feed line or toast when the oracle API refuses (e.g. rate-limited)", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: "rate-limited" }) });
     vi.stubGlobal("fetch", fetchMock);

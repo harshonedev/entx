@@ -221,6 +221,34 @@ body {
   border-bottom: 1px solid var(--ink);
 }
 
+/* Side toggle: the two joined condensed-caps halves that pick a side of an order (Buy/Sell, Yes/No).
+   Shared borders collapse to one hairline; the picked side sits on top so its colour edge stays whole.
+   Components set only the colours. */
+.side-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.side-toggle > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border-width: 1px;
+  font-family: var(--font-cond), "Arial Narrow", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.side-toggle > button + button {
+  margin-left: -1px;
+}
+.side-toggle > button[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+}
+
 /* Segmented control: ink-bordered tabs, the active one filled with ink. */
 .seg {
   display: inline-flex;
@@ -273,9 +301,13 @@ body {
   .btn-primary:not(:disabled):hover { background: var(--ink-hover); }
 }
 
-/* Ticket: white paper on the newsprint (the lightest stock at night), dotted hairlines between its key/value rows. */
+/* Ticket: white paper (the lightest stock at night) edged in Rule Grey so it reads as its own sheet on panel stock;
+   dotted hairlines between its key/value rows. */
 .ticket {
   background: var(--paper);
+  border-left-color: var(--line-2);
+  border-right-color: var(--line-2);
+  border-bottom-color: var(--line-2);
 }
 .kv-dotted > div {
   display: flex;

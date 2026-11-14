@@ -17,10 +17,11 @@ import {
 import { CANDLE_SECONDS, type Candle } from "@/lib/engine";
 import { fairValue, useMarket } from "@/store/market";
 
-function chartLabel(news: number, trades: number) {
+function chartLabel(news: number, trades: number, leadIn: boolean) {
   const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`;
-  if (!news && !trades) return "Price chart. No news events or trades in this window yet.";
-  return `Price chart. Marked: ${n(news, "news event", "news events")}, ${n(trades, "of your trades", "of your trades")}.`;
+  const lead = leadIn ? " Earlier candles are a modelled lead-in; a marker shows where live data starts." : "";
+  if (!news && !trades) return `Price chart with the EPI-implied price as a dashed line. No news events or trades in this window yet.${lead}`;
+  return `Price chart with the EPI-implied price as a dashed line. Marked: ${n(news, "news event", "news events")}, ${n(trades, "of your trades", "of your trades")}.${lead}`;
 }
 
 /** Merge consecutive candles into `step`-second buckets. */
@@ -132,7 +133,7 @@ export function PriceChart({
   useEffect(() => {
     const s = series.current;
     if (!s?.createPriceLine) return;
-    const opts = { price: fair, color: colors.current.text, lineWidth: 1 as const, lineStyle: 2, axisLabelVisible: true, title: "EPI fair value" };
+    const opts = { price: fair, color: colors.current.text, lineWidth: 1 as const, lineStyle: 2, axisLabelVisible: true, title: "EPI-implied price" };
     if (fairLine.current) fairLine.current.applyOptions(opts);
     else fairLine.current = s.createPriceLine(opts);
   }, [fair, assetId, height, step, theme]);
@@ -190,7 +191,7 @@ export function PriceChart({
     // Mark where recorded history starts, when a generated lead-in precedes it.
     const firstReal = candles?.find((k) => !k.modelled);
     if (firstReal && candles?.[0]?.modelled) {
-      markers.push({ time: firstReal.time as UTCTimestamp, position: "belowBar", shape: "square", color: text, text: "Recorded", size: 0.5 });
+      markers.push({ time: firstReal.time as UTCTimestamp, position: "belowBar", shape: "square", color: text, text: "Live from here", size: 0.5 });
       markers.sort((a, b) => (a.time as number) - (b.time as number));
     }
     markersApi.current?.setMarkers(markers);
@@ -200,7 +201,11 @@ export function PriceChart({
     <div
       ref={el}
       role="img"
-      aria-label={chartLabel(events.filter((e) => e.news).length, events.filter((e) => !e.news).length)}
+      aria-label={chartLabel(
+        events.filter((e) => e.news).length,
+        events.filter((e) => !e.news).length,
+        !!candles?.[0]?.modelled && !!candles.some((k) => !k.modelled),
+      )}
       className="w-full"
       style={{ height }}
     />

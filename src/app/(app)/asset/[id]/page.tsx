@@ -7,7 +7,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { ASSETS, ASSET_BY_ID, type AssetSeed } from "@/lib/assets";
 import { PREDICTIONS } from "@/lib/predictions";
 import { change24h, priceOf, useMarket } from "@/store/market";
-import { compactUsd, metricText, num, usd } from "@/lib/format";
+import { compactUsd, metricText, num, timeAgo, usd } from "@/lib/format";
 import { nextCatalyst, releaseInfo } from "@/lib/release";
 import { Poster } from "@/components/poster";
 import { PriceChart } from "@/components/price-chart";
@@ -27,7 +27,8 @@ export default function AssetPage() {
   const m = useMarket((s) => (asset ? s.markets[asset.id] : undefined));
   const held = useMarket((s) => (asset ? s.holdings[asset.id] : undefined));
   const [step, setStep] = useState(15);
-  const oracleEpi = useOracleEpi(asset?.id);
+  const oracle = useOracleEpi(asset?.id);
+  const oracleEpi = oracle.status === "ok" ? oracle.value : null;
 
   if (!asset || !m) return <NotListed />;
 
@@ -47,53 +48,24 @@ export default function AssetPage() {
         <ArrowLeft size={13} /> Discover
       </Link>
 
-      {/* Header: the unit price is the hero. EPI sits on one line under it; volume, the headline metric and
-          the next catalyst are quieter context under the title. */}
-      <section className="panel flex flex-wrap items-start gap-5 p-4 sm:p-5">
-        <Poster asset={asset} size="md" />
-        <div className="min-w-0 flex-1 basis-64">
-          <h1 className="h-display">{asset.title}</h1>
-          <p className="mt-1 text-sm text-muted">{asset.tagline}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="cond border border-ink px-1.5 text-[14px] font-bold tracking-[0.04em] text-text">{asset.ticker}</span>
-            <span className="text-xs text-muted">
-              {asset.kind === "movie" ? "Movie" : "Show"} · {asset.genre} · {asset.studio} · {asset.status} ·{" "}
-              {releaseInfo(asset).label}
-            </span>
-          </div>
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs">
-            <Stat k="24h volume" source="Simulated">
-              <span className="num">{compactUsd(m.volume24h)}</span>
-            </Stat>
-            <Stat
-              k={asset.metric.label}
-              // Headline is the real TMDB figure (what markets resolve on); simulated news shows as a change.
-              source={
-                unreleased && m.metricValue === 0
-                  ? "Not released yet"
-                  : metricMoved
-                    ? `TMDB · simulated news ${m.metricValue >= asset.metric.value ? "+" : "−"}${metricText({
-                        value: Math.abs(m.metricValue - asset.metric.value),
-                        unit: asset.metric.unit,
-                      })}`
-                    : "TMDB"
-              }
-            >
-              {unreleased && m.metricValue === 0 ? (
-                <span className="text-muted">—</span>
-              ) : (
-                <span className="num">{metricText({ value: asset.metric.value, unit: asset.metric.unit })}</span>
-              )}
-            </Stat>
-            <Stat k="Next catalyst">
-              {catalyst.label}{" "}
-              <span className="num font-normal text-muted">
-                {catalyst.days === 0 ? "today" : catalyst.days === 1 ? "tomorrow" : `in ${catalyst.days} days`}
+      {/* Masthead: title left, the unit price and its two EPIs right, double rule under. On phones a small
+          poster sits beside the title so price, chart and ticket arrive sooner. */}
+      <section aria-label={`${asset.title} overview`} className="space-y-3">
+      <div className="masthead items-start gap-y-4">
+        <div className="flex min-w-0 flex-1 basis-80 items-start gap-3 sm:gap-4">
+          <Poster asset={asset} size="responsive" />
+          <div className="min-w-0">
+            <h1 className="h-display">{asset.title}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="cond border border-ink px-1.5 text-[13px] font-bold tracking-[0.07em] text-text">{asset.ticker}</span>
+              <span className="text-xs text-muted">
+                {asset.kind === "movie" ? "Movie" : "Show"} · {asset.genre} · {asset.studio} · {releaseInfo(asset).label}
               </span>
-            </Stat>
-          </dl>
+            </div>
+            <p className="mt-1.5 hidden text-sm text-muted text-pretty sm:block">{asset.tagline}</p>
+          </div>
         </div>
-        <div className="w-full sm:w-auto sm:max-w-[22rem]">
+        <div className="w-full sm:w-auto sm:max-w-[24rem]">
           <div className="flex items-center gap-2">
             <span className="label">Unit price</span>
             <SimBadge />
@@ -104,40 +76,90 @@ export default function AssetPage() {
             </span>
             <Change value={change24h(m)} className="text-sm" />
           </div>
-          <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted">
-            <span>
-              EPI <span className="num font-semibold text-text"><Flash value={m.epi}>{m.epi.toFixed(1)}</Flash></span>{" "}
-              (this session, simulated)
-            </span>
-            {oracleEpi !== null && (
-              <>
-                <span aria-hidden className="hidden sm:inline">·</span>
-                <a
-                  href={m.oracleTx ? nearTxUrl(m.oracleTx) : nearAccountUrl(NEAR_CONTRACT)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="cursor-pointer inline-flex min-h-6 items-center gap-1 text-near hover:underline pointer-coarse:min-h-11"
-                >
-                  Oracle EPI · NEAR <span className="num font-semibold">{oracleEpi.toFixed(1)}</span>
-                  <ExternalLink size={11} aria-hidden />
-                </a>
-              </>
-            )}
-          </p>
+          {/* One EPI, two readings: this browser's session, and the last report signed on NEAR. */}
+          <dl className="mt-2 grid grid-cols-2 border-t border-line text-xs">
+            <div className="py-1.5 pr-3">
+              <dt className="text-muted">EPI · this session</dt>
+              <dd className="mt-0.5 flex items-baseline gap-1.5">
+                <span className="num text-sm font-semibold text-text"><Flash value={m.epi}>{m.epi.toFixed(1)}</Flash></span>
+                <span className="text-faint">simulated</span>
+              </dd>
+            </div>
+            <div className="border-l border-line py-1.5 pl-3">
+              <dt className="text-muted">EPI · on NEAR</dt>
+              <dd className="mt-0.5">
+                {oracleEpi !== null ? (
+                  <a
+                    href={m.oracleTx ? nearTxUrl(m.oracleTx) : nearAccountUrl(NEAR_CONTRACT)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="cursor-pointer inline-flex min-h-6 items-center gap-1 text-near hover:underline pointer-coarse:min-h-11"
+                  >
+                    <span className="num text-sm font-semibold">{oracleEpi.toFixed(1)}</span>
+                    <span>oracle report</span>
+                    <ExternalLink size={11} aria-hidden />
+                  </a>
+                ) : (
+                  <span className="text-faint">
+                    {oracle.status === "loading" ? "Reading…" : oracle.status === "missing" ? "Not published yet" : "Unavailable right now"}
+                  </span>
+                )}
+              </dd>
+            </div>
+          </dl>
           {epiGap !== null && (
-            <details className="group mt-1 text-xs">
-              <summary className="cursor-pointer inline-flex min-h-6 list-none items-center text-muted underline decoration-line-2 underline-offset-2 hover:text-text pointer-coarse:min-h-11">
-                <span className="num">
-                  {epiGap === 0 ? "Session matches the oracle" : `Session is ${Math.abs(epiGap).toFixed(1)} ${epiGap > 0 ? "higher" : "lower"}`}
+            <details className="mt-1 text-xs">
+              <summary className="cursor-pointer inline-flex min-h-6 list-none items-center text-muted hover:text-text pointer-coarse:min-h-11">
+                <span className="underline decoration-line-2 underline-offset-2">
+                  <span className="num">
+                    {epiGap === 0 ? "Session matches NEAR" : `Session is ${Math.abs(epiGap).toFixed(1)} ${epiGap > 0 ? "higher" : "lower"}`}
+                  </span>{" "}
+                  · why two?
                 </span>
-                <span className="ml-1">· why?</span>
               </summary>
               <p className="mt-1 leading-snug text-faint text-pretty">
-                Session EPI drifts with simulated news in this browser; the oracle value is the last report on NEAR.
+                Session EPI drifts with simulated news in this browser; the NEAR value is the last report the trusted
+                oracle signed.
               </p>
             </details>
           )}
         </div>
+      </div>
+
+      <AssetWire asset={asset} />
+
+      {/* Quieter context: volume, the headline metric and the next catalyst, each with its source. */}
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs sm:flex sm:flex-wrap">
+        <Stat k="24h volume" source="Simulated">
+          <span className="num">{compactUsd(m.volume24h)}</span>
+        </Stat>
+        <Stat
+          k={asset.metric.label}
+          // Headline is the real TMDB figure (what markets resolve on); simulated news shows as a change.
+          source={
+            unreleased && m.metricValue === 0
+              ? "Not released yet"
+              : metricMoved
+                ? `TMDB · simulated news ${m.metricValue >= asset.metric.value ? "+" : "−"}${metricText({
+                    value: Math.abs(m.metricValue - asset.metric.value),
+                    unit: asset.metric.unit,
+                  })}`
+                : "TMDB"
+          }
+        >
+          {unreleased && m.metricValue === 0 ? (
+            <span className="text-muted">—</span>
+          ) : (
+            <span className="num">{metricText({ value: asset.metric.value, unit: asset.metric.unit })}</span>
+          )}
+        </Stat>
+        <Stat k="Next catalyst" className="col-span-2">
+          {catalyst.label}{" "}
+          <span className="num font-normal text-muted">
+            {catalyst.days === 0 ? "today" : catalyst.days === 1 ? "tomorrow" : `in ${catalyst.days} days`}
+          </span>
+        </Stat>
+      </dl>
       </section>
 
       {/* Source order = mobile order: chart, then the trade ticket, then the research.
@@ -198,6 +220,11 @@ export default function AssetPage() {
             </div>
           )}
           <OrderBook assetId={asset.id} />
+          <div className="panel p-4">
+            <h2 className="h-panel">Activity on {asset.ticker}</h2>
+            <p className="mt-0.5 mb-1 text-xs text-faint">Simulated trades and news; NEAR reports link to the explorer.</p>
+            <LiveFeed refId={asset.id} limit={8} />
+          </div>
         </aside>
 
         <section aria-labelledby="signals-h" className="space-y-4 xl:col-start-1 xl:row-start-2">
@@ -217,11 +244,6 @@ export default function AssetPage() {
               </div>
             </div>
           )}
-
-          <div className="panel p-4">
-            <h2 className="h-panel mb-1">Activity on {asset.ticker}</h2>
-            <LiveFeed refId={asset.id} limit={8} />
-          </div>
         </section>
       </section>
 
@@ -243,34 +265,97 @@ export default function AssetPage() {
 }
 
 /** A quiet secondary stat under the title: label, value, and where the number comes from. */
-function Stat({ k, source, children }: { k: string; source?: string; children: ReactNode }) {
+function Stat({ k, source, children, className }: { k: string; source?: string; children: ReactNode; className?: string }) {
   return (
-    <div>
-      <dt className="text-faint">{k}</dt>
-      <dd className="mt-0.5 font-medium text-text">{children}</dd>
-      {source && <dd className="text-faint">{source}</dd>}
+    <div className={className}>
+      <dt className="text-muted">{k}</dt>
+      <dd className="mt-0.5 text-sm font-medium text-text">{children}</dd>
+      {source && <dd className="mt-0.5 text-faint italic">{source}</dd>}
     </div>
   );
 }
 
-/** The EPI a trusted oracle last published to NEAR for this title (null until read, or if unavailable). */
-function useOracleEpi(assetId: string | undefined) {
+/**
+ * The oracle wire for this title: the latest news that moved its EPI, so the cause reads before the chart.
+ * A NEAR report for that news links to the explorer. With no news yet, it falls back to the on-chain report.
+ */
+function AssetWire({ asset }: { asset: AssetSeed }) {
+  // Only this title's own state: the shared feed is capped across all titles and churns every tick.
+  const news = useMarket((s) => s.markets[asset.id]?.lastNews);
+  const oracleTx = useMarket((s) => s.markets[asset.id]?.oracleTx);
+  const ago = useTimeAgo(news?.ts);
+  return (
+    <div className="wire flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 text-[13px]">
+      <span className="cond text-[14px] font-bold uppercase tracking-[0.08em] text-accent">Oracle wire</span>
+      {/* Only the headline is a live region, so new news is announced once and ticking timestamps are not. */}
+      <span role="status" className="min-w-0 flex-1">
+        {news ? (
+          news.text
+        ) : (
+          <span className="text-muted">
+            No news on {asset.ticker} this session. The price follows its EPI from TMDB inputs
+            {oracleTx ? (
+              <>
+                {"; "}
+                <a href={nearTxUrl(oracleTx)} target="_blank" rel="noreferrer" className="cursor-pointer text-near hover:underline">
+                  last oracle report on NEAR
+                </a>
+                .
+              </>
+            ) : (
+              "."
+            )}
+          </span>
+        )}
+      </span>
+      {news && (
+        <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted">
+          {ago} · simulated news
+          {news.tx && (
+            <a href={nearTxUrl(news.tx)} target="_blank" rel="noreferrer" className="cursor-pointer inline-flex items-center gap-1 text-near hover:underline pointer-coarse:min-h-11">
+              Signed on NEAR <ExternalLink size={11} aria-hidden />
+            </a>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** "12s ago" that keeps moving on its own clock, not only when unrelated state happens to re-render. */
+function useTimeAgo(ts: number | undefined) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (ts === undefined) return;
+    const t = setInterval(() => tick((n) => n + 1), 15_000);
+    return () => clearInterval(t);
+  }, [ts]);
+  return ts === undefined ? "" : timeAgo(ts);
+}
+
+type OracleRead = { status: "loading" } | { status: "ok"; value: number } | { status: "missing" } | { status: "error" };
+
+/**
+ * The EPI a trusted oracle last published to NEAR for this title. "missing" when the contract has no market for
+ * it, "error" when the RPC read fails, so the page never shows "Reading…" forever.
+ */
+function useOracleEpi(assetId: string | undefined): OracleRead {
   const oracleTx = useMarket((s) => (assetId ? s.markets[assetId]?.oracleTx : undefined));
-  const [epi, setEpi] = useState<{ id: string; value: number } | null>(null);
+  const [read, setRead] = useState<{ id: string; r: OracleRead } | null>(null);
 
   useEffect(() => {
     if (!assetId) return;
     let live = true;
     nearView<NearMarket | null>("get_market", { market_id: assetId })
-      .then((r) => live && r && setEpi({ id: assetId, value: r.epi_x10 / 10 }))
-      .catch(() => {});
+      .then((m) => live && setRead({ id: assetId, r: m ? { status: "ok", value: m.epi_x10 / 10 } : { status: "missing" } }))
+      .catch(() => live && setRead({ id: assetId, r: { status: "error" } }));
     return () => {
       live = false;
     };
     // Re-read after this browser publishes a new report.
   }, [assetId, oracleTx]);
 
-  return epi && epi.id === assetId ? epi.value : null;
+  return read && read.id === assetId ? read.r : { status: "loading" };
 }
 
 /** Unknown id: say so, then offer the busiest markets instead of a dead end. */

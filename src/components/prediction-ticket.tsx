@@ -96,7 +96,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
 
   return (
     <div className="panel ticket p-4">
-      <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="Outcome">
+      <div className="side-toggle" role="group" aria-label="Outcome">
         {(["YES", "NO"] as const).map((s) => {
           const px = s === "YES" ? yp : 1 - yp;
           const on = side === s;
@@ -107,7 +107,7 @@ export function PredictionTicket({ p }: { p: PredictionSeed }) {
               aria-pressed={on}
               aria-label={`${s === "YES" ? "Yes" : "No"} at ${(px * 100).toFixed(1)} cents`}
               className={clsx(
-                "cond cursor-pointer flex h-12 items-center justify-center gap-2 border text-[18px] font-bold uppercase tracking-[0.06em] transition-colors",
+                "cursor-pointer transition-colors",
                 on
                   ? s === "YES"
                     ? "border-up bg-up text-on-status"
