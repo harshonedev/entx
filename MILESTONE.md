@@ -61,7 +61,7 @@ One Docker image, deployed per host on Coolify with different env:
 ### Exit gate
 - [x] Testing (536 tests, lint, tsc, live image smoke test + desktop/mobile screenshots)
 - [x] Security audit (1 high, 9 medium found; 9 fixed in d39620f, 2 logged as accepted risks)
-- [x] Deploy check (all 3 hosts on *.harshone.space fallback: all routes 200, healthy, security headers present, live oracle rejects unauthenticated POST with 401)
+- [x] Deploy check (a400910 on entx.space, www., demo., solana.: all routes incl. dynamic asset/prediction pages 200, Coolify running:healthy, security headers present, HTTP→HTTPS redirect, OG image + icons served, oracle rejects unauthenticated cross-origin POST with 401; solana. returns 503 because it holds no oracle keys)
 
 ---
 
@@ -128,6 +128,7 @@ One Docker image, deployed per host on Coolify with different env:
 
 ## Changelog
 
+- 2026-11-14: Deploys had failed since PR #4 (empty public/ broke Docker COPY; *.png ignore dropped icons/OG image). Fixed in #6; brand metadata (#5) and Solana metadataBase (#7) live. Deploy check re-run on entx.space hosts. Remaining: testnet wallet flow, X post, submit.
 - 2026-11-14: Each host is now single-chain (`CHAIN_ON`): NEAR sites show no Solana wallet, toggle or copy; Solana site shows no NEAR wallet.
 - 2026-11-14: entx.space, demo., solana., www. live with Let's Encrypt certs; badges link across. Launch video in brag-output/. Remaining: post video + X post.
 - 2026-11-14: M0 deployed to Coolify (fallback hosts). Remaining: README, video, X post.
