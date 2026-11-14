@@ -348,7 +348,7 @@ export default function PortfolioPage() {
                             href={explorerTx(t.sig)}
                             target="_blank"
                             rel="noreferrer"
-                            className="cursor-pointer inline-flex items-center gap-1 text-sol hover:underline"
+                            className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-sol hover:underline sm:min-h-0"
                           >
                             {t.sig.slice(0, 8)}… <ExternalLink size={11} />
                           </a>
@@ -357,7 +357,7 @@ export default function PortfolioPage() {
                             <Loader2 size={11} className="animate-spin" /> confirming
                           </span>
                         ) : connected && t.kind !== "PAYOUT" ? (
-                          <button onClick={() => notarize(t)} className="cursor-pointer text-sol hover:underline">
+                          <button onClick={() => notarize(t)} className="cursor-pointer inline-flex min-h-11 items-center text-sol hover:underline sm:min-h-0">
                             {t.sigStatus === "failed" ? "Retry" : "Record"}
                           </button>
                         ) : (
@@ -370,7 +370,7 @@ export default function PortfolioPage() {
                             href={nearTxUrl(t.nearTx)}
                             target="_blank"
                             rel="noreferrer"
-                            className="cursor-pointer inline-flex items-center gap-1 text-near hover:underline"
+                            className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-near hover:underline sm:min-h-0"
                           >
                             {t.nearTx.slice(0, 8)}… <ExternalLink size={11} />
                           </a>
@@ -381,7 +381,7 @@ export default function PortfolioPage() {
                         ) : nearAccount && t.kind !== "PAYOUT" ? (
                           <button
                             onClick={() => nearNotarize(t, t.sig ? `solana:devnet:${t.sig}` : undefined)}
-                            className="cursor-pointer text-near hover:underline"
+                            className="cursor-pointer inline-flex min-h-11 items-center text-near hover:underline sm:min-h-0"
                           >
                             {t.nearStatus === "failed" ? "Retry" : "Record"}
                           </button>

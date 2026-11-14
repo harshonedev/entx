@@ -78,7 +78,10 @@ export function Sparkline({
 
 /**
  * Below `sm`, table rows stack into cards: put this on each cell (with a `data-label`) and it becomes a
- * "label · value" line. Pair with `max-sm:hidden` on <thead> and `max-sm:block` on <tr>.
+ * "label · value" line. Pair with `max-sm:block max-sm:[&>tbody]:block` on <table>, `max-sm:hidden` on <thead>
+ * and `max-sm:block` on every <tr> (including empty-state rows, whose colSpan <td> needs `max-sm:block` too).
+ * Cells that must clip a long value should truncate the child element on phones (`max-sm:block max-sm:truncate`),
+ * since the cell itself becomes a flex row and its own `truncate` shows no ellipsis.
  */
 export const STACK_CELL =
   "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:px-4 max-sm:py-1 max-sm:text-right max-sm:before:shrink-0 max-sm:before:text-xs max-sm:before:text-muted max-sm:before:content-[attr(data-label)] max-sm:[&>*]:min-w-0 max-sm:[&>*]:break-words";
