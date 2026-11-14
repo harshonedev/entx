@@ -502,7 +502,9 @@ impl Entx {
         )
     }
 
-    /// Restores a claim whose transfer failed (e.g. the account was deleted), so the payout isn't stranded.
+    /// Restores a claim whose transfer failed, so the staker can retry. Returns `false` on failure (the
+    /// transaction still succeeds, so clients read this value). A persistent failure (e.g. a deleted account)
+    /// leaves the payout in the contract until the account exists again.
     #[private]
     pub fn on_claim(
         &mut self,
@@ -944,5 +946,20 @@ mod tests {
         assert!(!c.on_claim("drift-opening-250".into(), accounts(1), payout, Err(PromiseError::Failed)));
         assert!(!c.get_stake("drift-opening-250".into(), accounts(1)).unwrap().claimed);
         assert_eq!(c.get_stats().total_staked, payout);
+    }
+
+    #[test]
+    fn successful_claim_stays_claimed() {
+        let mut c = setup();
+        ctx(1, NearToken::from_near(2));
+        c.stake("drift-opening-250".into(), true);
+        ctx(0, NearToken::from_yoctonear(0));
+        c.resolve("drift-opening-250".into(), true);
+        ctx(1, NearToken::from_yoctonear(0));
+        let _ = c.claim("drift-opening-250".into());
+        let payout = c.get_stake("drift-opening-250".into(), accounts(1)).unwrap().yes;
+        assert!(c.on_claim("drift-opening-250".into(), accounts(1), payout, Ok(())));
+        assert!(c.get_stake("drift-opening-250".into(), accounts(1)).unwrap().claimed);
+        assert_eq!(c.get_stats().total_staked, NearToken::from_near(0));
     }
 }
