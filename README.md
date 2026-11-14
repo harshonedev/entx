@@ -153,6 +153,8 @@ All state changes emit NEP-297 `EVENT_JSON` logs (`standard: "entx"`).
   same origin. Origin and IP headers are spoofable by scripts, so in demo mode the **global** limits (1 per 1.5 s,
   240 per hour) are the real bound. Worst case is noisy demo EPI values: no funds at risk, storage bounded by the
   ring, gas capped by the key's 1 NEAR allowance. Set it to `false` for anything beyond a demo.
+  Authenticated publishers use a separate rate-limit bucket, so demo spam can't starve them. Client IPs are only
+  trusted behind a known proxy (`VERCEL`, or `TRUST_PROXY=true`).
 - **Honest limitation.** Oracle *events* are still simulated (demo buttons), and there's a single trusted
   reporter. See the roadmap for a multi-source quorum.
 
