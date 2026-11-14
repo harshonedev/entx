@@ -283,7 +283,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
         <button
           disabled
           data-static
-          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-1.5 rounded bg-up/[0.12] text-[13.5px] font-semibold text-up"
+          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-1.5 rounded bg-up/[0.08] text-[13.5px] font-semibold text-up"
         >
           <Check size={15} aria-hidden />
           <span className="num">{justFilled}</span>

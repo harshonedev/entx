@@ -2,7 +2,8 @@
 name: ENTX
 description: Entertainment made tradable, set as a live trade-press box office chart.
 colors:
-  accent: "#d6261f"
+  accent: "#b81f19"
+  accent-fill: "#d6261f"
   accent-deep: "#b81f19"
   accent-ink: "#ffffff"
   ink: "#141414"
@@ -109,7 +110,7 @@ components:
   button-primary-hover:
     backgroundColor: "{colors.ink-hover}"
   button-wallet:
-    backgroundColor: "{colors.accent}"
+    backgroundColor: "{colors.accent-fill}"
     textColor: "{colors.accent-ink}"
     rounded: "{rounded.none}"
     padding: "0 14px"
@@ -170,8 +171,9 @@ The landing page at `/` (`src/app/(site)/`) is a separate surface built under it
 Ink on newsprint, with one signal red and a disciplined set of status and chain hues, each darkened to hold 4.5:1 on paper.
 
 ### Primary
-- **Signal Red** (accent): the brand mark in use. The active nav underline, the wallet call to action, the oracle wire's left rule and slug, the focus ring, text selection tint and input caret.
-- **Pressed Signal Red** (accent-deep): hover state of the wallet call to action only.
+- **Signal Red** (accent, #b81f19): red as a mark. Red type, the active nav underline, the oracle wire's left rule and slug, the focus ring, text selection tint and input caret. Deepened from the press red so red type holds 4.5:1 on every paper tier (5.2:1 on Wire Stock, 5.7:1 on newsprint).
+- **Press Red** (accent-fill, #d6261f): red as a fill. The wallet call to action and landing actions, with white type at 5:1.
+- **Pressed Red** (accent-deep): hover state of the red fills only.
 
 ### Neutral
 - **Press Ink** (ink): top bar, every structural rule, primary action fill, active segmented option, body text.

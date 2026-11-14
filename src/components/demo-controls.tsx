@@ -175,7 +175,7 @@ export function DemoControls() {
                             setArming(null);
                           }}
                           className={clsx(
-                            "cursor-pointer h-8 rounded px-3 font-semibold text-black pointer-coarse:h-11",
+                            "cursor-pointer h-8 rounded px-3 font-semibold text-on-status pointer-coarse:h-11",
                             arming.outcome === "YES" ? "bg-up" : "bg-down",
                           )}
                         >

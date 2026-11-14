@@ -13,8 +13,9 @@
   --text: #141414;
   --muted: #5f5a4f;
   --faint: #6a6558;
-  /* Brand red: active nav rule, primary action, the oracle wire. */
-  --accent: #d6261f;
+  /* Red as a mark (type, rules, focus): deepened to hold 4.5:1 on every paper tier (5.2:1 on wire stock).
+     Red fills keep the press red in --accent-fill. */
+  --accent: #b81f19;
   --accent-ink: #ffffff;
   /* Status: gain/loss and caution, darkened to hold 4.5:1 on paper. */
   --up: #1d7446;

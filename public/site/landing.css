@@ -15,7 +15,7 @@
   --display-stretch: 100%;
   --ly-scale: 1.1;
   /* the brand's own extra tones */
-  --brand-red: #d6261f; --stock: #fbfaf6; --hair: #d9d3c5; --gain: #1d7446; --loss: #c4221b;
+  --brand-red: #b81f19; --stock: #fbfaf6; --hair: #d9d3c5; --gain: #1d7446; --loss: #c4221b;
   --r-sm: 0px; --r-md: 0px; --r-lg: 0px; --r-btn: 0px;
 }
 html[data-radius="sharp"] { --r-sm: 0px; --r-md: 0px; --r-lg: 0px; --r-btn: 0px; }
