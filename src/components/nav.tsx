@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   Blocks,
@@ -14,6 +14,8 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Search,
   Target,
   X,
@@ -25,7 +27,7 @@ import { compactUsd, pct, usd } from "@/lib/format";
 import { useAirdrop } from "@/lib/solana";
 import { useNear } from "@/lib/near";
 import { Poster } from "./poster";
-import { Change, Dim } from "./ui";
+import { Change, Dim, signTone } from "./ui";
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -46,12 +48,51 @@ const isActive = (href: string, path: string) =>
   href === "/" ? path === "/" || path.startsWith("/asset") : path.startsWith(href);
 
 /** App frame: fixed left sidebar on desktop, off-canvas drawer on mobile, sticky top bar. */
+/** Desktop sidebar collapsed state (collapsed by default), persisted in localStorage and shared across tabs. */
+const COLLAPSE_KEY = "entx:sidebar-collapsed";
+const collapseListeners = new Set<() => void>();
+let collapsedMemory = true;
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSE_KEY) !== "0";
+  } catch {
+    return collapsedMemory;
+  }
+}
+
+function writeCollapsed(value: boolean) {
+  collapsedMemory = value;
+  try {
+    localStorage.setItem(COLLAPSE_KEY, value ? "1" : "0");
+  } catch {}
+  collapseListeners.forEach((l) => l());
+}
+
+function subscribeCollapsed(listener: () => void) {
+  collapseListeners.add(listener);
+  const onStorage = (e: StorageEvent) => e.key === COLLAPSE_KEY && listener();
+  window.addEventListener("storage", onStorage);
+  return () => {
+    collapseListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const collapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => true);
+  const toggleCollapsed = () => writeCollapsed(!collapsed);
+
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-line bg-bg lg:block">
-        <Sidebar />
+      <aside
+        className={clsx(
+          "sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r border-line bg-bg motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out lg:block",
+          collapsed ? "w-16" : "w-60",
+        )}
+      >
+        <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </aside>
 
       {open && (
@@ -78,17 +119,41 @@ export function Shell({ children }: { children: ReactNode }) {
   );
 }
 
-function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+function Sidebar({
+  onNavigate,
+  collapsed = false,
+  onToggleCollapsed,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
+}) {
   const path = usePathname();
   return (
     <div className="flex h-full flex-col">
-      <Link href="/" onClick={onNavigate} className="cursor-pointer flex h-16 shrink-0 items-center gap-2.5 px-5">
-        <span className="grid h-7 w-7 place-items-center rounded bg-text text-[13px] font-semibold text-bg">E</span>
-        <span className="text-[15px] font-medium tracking-[-0.01em]">ENTX</span>
-      </Link>
+      <div className={clsx("flex h-16 shrink-0 items-center", collapsed ? "justify-center" : "justify-between pl-5 pr-3")}>
+        <Link
+          href="/"
+          onClick={onNavigate}
+          aria-label={collapsed ? "ENTX home" : undefined}
+          className="cursor-pointer flex items-center gap-2.5"
+        >
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-text text-[13px] font-semibold text-bg">E</span>
+          {!collapsed && <span className="text-[15px] font-medium tracking-[-0.01em]">ENTX</span>}
+        </Link>
+        {onToggleCollapsed && !collapsed && (
+          <CollapseButton collapsed={false} onClick={onToggleCollapsed} />
+        )}
+      </div>
 
       <nav className="flex-1 overflow-y-auto overscroll-contain px-3 pt-4">
-        <div className="mb-3 px-2 text-[13px] text-muted">Menu</div>
+        {collapsed && onToggleCollapsed ? (
+          <div className="mb-3 flex justify-center">
+            <CollapseButton collapsed onClick={onToggleCollapsed} />
+          </div>
+        ) : (
+          <div className="mb-3 px-2 text-[13px] text-muted">Menu</div>
+        )}
         <ul className="space-y-1">
           {LINKS.map(({ href, label, icon: Icon }) => {
             const active = isActive(href, path);
@@ -98,8 +163,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   href={href}
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
+                  title={collapsed ? label : undefined}
                   className={clsx(
-                    "cursor-pointer flex h-10 items-center gap-3 rounded px-1.5 text-[13.5px] transition-colors",
+                    "cursor-pointer flex h-10 items-center gap-3 rounded text-[13.5px] transition-colors",
+                    collapsed ? "justify-center" : "px-1.5",
                     active ? "bg-panel text-text" : "text-muted hover:text-text",
                   )}
                 >
@@ -111,7 +178,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   >
                     <Icon size={15} />
                   </span>
-                  {label}
+                  <span className={clsx(collapsed && "sr-only")}>{label}</span>
                 </Link>
               </li>
             );
@@ -119,11 +186,28 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </ul>
       </nav>
 
-      <div className="space-y-4 p-4">
-        <AccountCard onNavigate={onNavigate} />
-        <ReceiptToggles />
-      </div>
+      {!collapsed && (
+        <div className="space-y-4 p-4">
+          <AccountCard onNavigate={onNavigate} />
+          <ReceiptToggles />
+        </div>
+      )}
     </div>
+  );
+}
+
+function CollapseButton({ collapsed, onClick }: { collapsed: boolean; onClick: () => void }) {
+  const label = collapsed ? "Expand sidebar" : "Collapse sidebar";
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      aria-expanded={!collapsed}
+      title={label}
+      className="cursor-pointer grid h-8 w-8 place-items-center rounded text-muted transition-colors hover:bg-panel hover:text-text"
+    >
+      {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+    </button>
   );
 }
 
@@ -136,7 +220,7 @@ function AccountCard({ onNavigate }: { onNavigate?: () => void }) {
       <div className="num mt-1 text-[19px] font-medium tracking-[-0.02em]">
         <Dim text={usd(total)} />
       </div>
-      <div className={clsx("num mt-0.5 text-[11.5px]", ret >= 0 ? "text-up" : "text-down")}>{pct(ret)} all time</div>
+      <div className={clsx("num mt-0.5 text-[11.5px]", signTone(ret))}>{pct(ret)} all time</div>
     </Link>
   );
 }
