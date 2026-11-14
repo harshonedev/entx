@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Shell } from "@/components/nav";
 import { TickerTape, Toasts } from "@/components/chrome";
+import { IS_LIVE } from "@/lib/env";
 import "./globals.css";
 
 const uiFont = IBM_Plex_Sans({ variable: "--font-ui", subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -29,8 +30,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <TickerTape />
             <main id="main" tabIndex={-1} className="w-full outline-none max-w-[1480px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
             <footer className="border-t border-line px-4 py-4 text-xs leading-relaxed text-muted sm:px-6 lg:px-8">
-              ENTX hackathon demo · Titles, posters and popularity inputs are real (TMDB); spot prices, balances and
-              oracle events are simulated · Trade receipts can be written to Solana devnet (Memo) and NEAR testnet
+              {IS_LIVE
+                ? "ENTX live on testnet · Titles, posters and EPI inputs are real (TMDB); asset prices and balances are a simulated preview ·"
+                : "ENTX demo · Titles, posters and popularity inputs are real (TMDB); spot prices, balances and oracle events are simulated ·"} Trade receipts can be written to Solana devnet (Memo) and NEAR testnet
               (ENTX contract) · Prediction pools hold testnet NEAR on-chain (no monetary value) · Intents quotes are dry-run only · Not
               a real-money exchange.
               <span className="mt-2 flex items-center gap-2">

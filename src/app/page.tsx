@@ -13,6 +13,7 @@ import { LiveFeed } from "@/components/chrome";
 import { Poster } from "@/components/poster";
 import { ContractProofStrip } from "@/components/onchain-epi";
 import { Change, SimBadge } from "@/components/ui";
+import { IS_LIVE } from "@/lib/env";
 
 const TABS = [
   { id: "all", label: "Most traded" },
@@ -66,8 +67,18 @@ export default function Discover() {
               audience ratings, rolled into one live score: the Entertainment Popularity Index (EPI).
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
-              <SimBadge>Hackathon demo</SimBadge>
-              Prices and trades are simulated. The NEAR and Solana records are real testnet state.
+              {IS_LIVE ? (
+                <>
+                  <SimBadge>Live · testnet</SimBadge>
+                  Titles and EPI inputs are real TMDB data. Prediction pools are real on-chain state. Asset trading is a
+                  preview with simulated prices until the shared market launches.
+                </>
+              ) : (
+                <>
+                  <SimBadge>Hackathon demo</SimBadge>
+                  Prices and trades are simulated. The NEAR and Solana records are real testnet state.
+                </>
+              )}
             </p>
           </div>
           <div className="flex flex-col gap-2">
@@ -82,6 +93,7 @@ export default function Discover() {
             >
               Trade {spot.title} <ArrowRight size={15} />
             </Link>
+            {!IS_LIVE && (
             <button
               onClick={() => {
                 randomOracle(spot.id);
@@ -92,6 +104,7 @@ export default function Discover() {
             >
               <Zap size={15} className="text-accent" /> Watch news move {spot.title}
             </button>
+            )}
           </div>
           </div>
         </section>

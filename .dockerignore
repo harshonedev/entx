@@ -1,0 +1,9 @@
+node_modules
+.next
+coverage
+contracts/near/target
+.git
+.env*
+!.env.example
+*.png
+tsconfig.tsbuildinfo

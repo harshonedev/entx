@@ -39,12 +39,12 @@ One Docker image, deployed per host on Coolify with different env:
 **Scope decision (assumed, confirm):** live mode tonight has real EPI (TMDB) and real on-chain NEAR prediction markets (`stake` / `resolve` / `claim`). Asset-unit trading has no shared backend yet, so in live mode it is labelled "preview" (still per-browser) until M2.
 
 ### Build
-- [ ] Mode config: `ENTX_MODE` + `NEXT_PUBLIC_CHAIN` read in one place (`src/lib/env.ts`), exposed to client safely
-- [ ] Live mode: hide demo controls and simulated bots/news; EPI from real TMDB numbers
+- [x] Mode config: `ENTX_MODE` + `NEXT_PUBLIC_CHAIN` read in one place (`src/lib/env.ts`), exposed to client safely
+- [x] Live mode: hide demo controls and simulated bots/news; EPI from real TMDB numbers
 - [ ] Live mode: prediction markets read/write on-chain NEAR pools as source of truth
-- [ ] Live mode: asset trading labelled "preview"
-- [ ] Demo / Live badge on every page, links to the other host
-- [ ] Settings menu in nav with chain switch, behind `NEXT_PUBLIC_FLAG_CHAIN_SWITCH` (switch = go to the other chain's host)
+- [x] Live mode: asset trading labelled "preview"
+- [x] Demo / Live badge on every page, links to the other host
+- [x] Settings menu in nav with chain switch, behind `NEXT_PUBLIC_FLAG_CHAIN_SWITCH` (switch = go to the other chain's host)
 - [ ] `solana.entx.space` build: Solana chain, demo mode, memo receipts
 - [ ] Dockerfile (Next.js `output: "standalone"`, bun) + `.dockerignore`
 - [ ] Coolify: 3 apps from the same repo/image, env per host, DNS A records, TLS
@@ -109,7 +109,8 @@ One Docker image, deployed per host on Coolify with different env:
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| _empty_ | | |
+| Demo host publishes simulated news to the same NEAR contract live reads, so live's oracle history mixes in demo events. Give live its own contract or oracle account | P1 | Fold into M1 |
+| Live asset trading still per-browser simulation ("preview") | P1 | M2 |
 
 ## Accepted risks
 

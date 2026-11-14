@@ -29,7 +29,9 @@ import { useNear } from "@/lib/near";
 import { Poster } from "./poster";
 import { WalletMenu } from "./wallet-menu";
 import { DemoControls } from "./demo-controls";
-import { Change, Dim, SimBadge, signTone } from "./ui";
+import { ModeBadge, SettingsMenu } from "./settings-menu";
+import { IS_DEMO } from "@/lib/env";
+import { Change, Dim, signTone } from "./ui";
 
 type NavLink = { href: string; label: string; icon: LucideIcon };
 
@@ -418,7 +420,8 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
       <StatChips />
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <AssetSearch />
-        <DemoControls />
+        {IS_DEMO && <DemoControls />}
+        <SettingsMenu />
         {connected && (
           <button
             onClick={airdrop}
@@ -457,9 +460,7 @@ function StatChips() {
   ];
   return (
     <div className="hidden min-w-0 items-center gap-1.5 overflow-hidden md:flex">
-      <span title="Prices, volume and EPI moves are simulated; chains are real testnets">
-        <SimBadge />
-      </span>
+      <ModeBadge />
       {chips.map(([k, v, show]) => (
         <div key={k} className={clsx("hidden h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded bg-panel px-3 text-[12px]", show)}>
           <span className="text-muted">{k}</span>
