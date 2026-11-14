@@ -25,7 +25,8 @@ the **Entertainment Popularity Index (EPI)**, with a NEAR contract for the regis
 [![Bun](https://img.shields.io/badge/Bun-1.3-f9f1e1?logo=bun&logoColor=black)](https://bun.sh)
 [![NEAR Hackathon 2026](https://img.shields.io/badge/NEAR%20Hackathon-2026-d6261f)](#hackathon)
 
-**[Try the demo](https://demo.entx.space)** · **[Live site](https://entx.space)** · **[Solana build](https://solana.entx.space)** · **[Contract on NearBlocks](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet)**
+**[Try the demo](https://demo.entx.space)** · **[Live site](https://entx.space)** · **[Solana build](https://solana.entx.space)** · **[Contract on NearBlocks](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet)**<br>
+▶ **[Launch video (20 s)](docs/assets/video/entx-launch.mp4)** · **[Testnet walkthrough (3:25)](docs/assets/video/testnet-walkthrough.mp4)**
 
 <br>
 
@@ -39,6 +40,7 @@ the **Entertainment Popularity Index (EPI)**, with a NEAR contract for the regis
 
 - [What it is](#what-it-is)
 - [Try it](#try-it)
+- [Videos](#videos)
 - [Screenshots](#screenshots)
 - [Design](#design)
 - [Quick start](#quick-start)
@@ -106,6 +108,21 @@ the [faucet](https://near-faucet.io).
 8. **Portfolio** shows P&L, holdings, open predictions, trade history with receipt links, and the leaderboard.
 
 </details>
+
+## Videos
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/assets/video/entx-launch.mp4"><img src="docs/assets/video/entx-launch.jpg" alt="Launch video still: Resident Evil price $16.76 up 24.59% and EPI 88.0 matching the NEAR oracle after a box-office news event"></a><br><sub><b>Launch video</b> (20 s): a box-office beat moves the EPI, the price and the prediction odds; a real wallet signs; the contract shows it all</sub></td>
+    <td width="50%"><a href="docs/assets/video/testnet-walkthrough.mp4"><img src="docs/assets/video/testnet-walkthrough.jpg" alt="Walkthrough still: trade filled on Avengers: Doomsday with a Receipt recorded on NEAR testnet toast showing the record_trade transaction"></a><br><sub><b>Testnet walkthrough</b> (3:25, no audio): connect Meteor → buy → sign <code>record_trade</code> → stake 0.1 Ⓝ → on-chain page → resolve and claim</sub></td>
+  </tr>
+</table>
+
+The walkthrough is a real run on NEAR testnet with a throwaway account (`entx-trader-1794677108.testnet`); every
+step is a transaction you can look up. Resolve and claim run on a dedicated test market
+(`walkthrough-settle-1794688742`) so the real markets stay open until their real outcomes:
+[resolve](https://testnet.nearblocks.io/txns/CD3XJq397zotEZnEJ1YPcukSTg15ExY6zFcyBNx4RxZb) ·
+[claim](https://testnet.nearblocks.io/txns/xqvUto58uvtifzHpzjYvY9sg8oM3srSqfD5iMZ6w8B4).
 
 ## Screenshots
 
