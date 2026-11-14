@@ -24,6 +24,8 @@ Living roadmap. One milestone active at a time. Update this file as work lands.
 | `demo.entx.space` | NEAR testnet | demo | Fully simulated, for judges and the video |
 | `solana.entx.space` | Solana devnet | demo until M3, then live | Solana users |
 
+Until the `entx.space` registration clears review, the same apps serve fallback hosts behind Cloudflare: `entx.harshone.space` (live), `entx-demo.harshone.space` (demo), `entx-solana.harshone.space` (solana). After it clears, switch the `NEXT_PUBLIC_URL_*` build vars back to `entx.space` hosts and redeploy.
+
 One Docker image, deployed per host on Coolify with different env:
 
 - `ENTX_MODE=demo|live`
@@ -111,6 +113,9 @@ One Docker image, deployed per host on Coolify with different env:
 |------|----------|-------|
 | Demo host publishes simulated news to the same NEAR contract live reads, so live's oracle history mixes in demo events. Give live its own contract or oracle account | P1 | Fold into M1 |
 | Live asset trading still per-browser simulation ("preview") | P1 | M2 |
+| Firewall the VPS so ports 80/443 accept only Cloudflare IP ranges (`TRUST_PROXY=cloudflare` trusts `cf-connecting-ip`) | P1 | M5, earlier if origin IP leaks |
+| Coolify API token was pasted in chat: rotate it | P0 | After M0 deploy |
+| Switch hosts to `entx.space` once registration clears | P1 | M0 follow-up |
 
 ## Accepted risks
 
