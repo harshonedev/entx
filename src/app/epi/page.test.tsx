@@ -24,7 +24,7 @@ describe("EPI page", () => {
     render(<EpiPage />);
     expect(screen.getByRole("heading", { level: 1, name: "Entertainment Popularity Index" })).toBeInTheDocument();
     expect(screen.getByText("TMDB inputs · simulated updates")).toBeInTheDocument();
-    for (const h of ["#", "Title", "EPI", "24h", "Box office", "Streaming", "Social", "Rating", "Confidence", "Trend"]) {
+    for (const h of ["#", "Title", "EPI", "24h", "Box office", "Popularity", "Votes", "Rating", "Confidence", "Trend"]) {
       expect(screen.getByRole("columnheader", { name: h })).toBeInTheDocument();
     }
   });
@@ -90,6 +90,9 @@ describe("EPI page", () => {
     for (const w of Object.values(EPI_WEIGHTS)) expect(method).toHaveTextContent(w.toFixed(2));
     expect(method).toHaveTextContent(/× box office/);
     expect(method).toHaveTextContent(/× rating/);
+    expect(method).toHaveTextContent(/× popularity/);
+    expect(method).toHaveTextContent(/× votes/);
+    expect(method).not.toHaveTextContent(/× streaming|× social/);
 
     const sources = screen.getByRole("heading", { name: "Data sources" }).closest(".panel") as HTMLElement;
     expect(within(sources).getAllByRole("listitem")).toHaveLength(5);

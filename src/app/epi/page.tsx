@@ -2,19 +2,13 @@
 
 import Link from "next/link";
 import { Database } from "lucide-react";
-import { ASSETS, EPI_LABELS, EPI_WEIGHTS, type EpiParts } from "@/lib/assets";
+import { ASSETS, EPI_LABELS, EPI_SHORT_LABELS, EPI_WEIGHTS, type EpiParts } from "@/lib/assets";
 import { useMarket } from "@/store/market";
 import { Poster } from "@/components/poster";
 import { Change, SimBadge, Sparkline } from "@/components/ui";
 
 const KEYS = Object.keys(EPI_WEIGHTS) as (keyof EpiParts)[];
 
-const SHORT: Record<keyof EpiParts, string> = {
-  boxOffice: "box office",
-  streaming: "streaming",
-  social: "social",
-  critics: "rating",
-};
 
 /**
  * Where each signal comes from in this demo (`now`, `detail`) and the feed it is modelled on for
@@ -29,13 +23,13 @@ const SOURCES = [
     model: "Studio reports, theatrical trackers",
   },
   {
-    name: "Streaming demand",
+    name: "Popularity (proxy)",
     now: "TMDB seed",
     detail: "TMDB popularity, ranked within the catalogue",
     model: "Platform top-10 charts, hours viewed",
   },
   {
-    name: "Social buzz",
+    name: "Audience activity (proxy)",
     now: "TMDB seed",
     detail: "TMDB vote count",
     model: "Trailer views, mentions, search interest",
@@ -71,8 +65,8 @@ export default function EpiPage() {
                 <th className="py-2.5 pl-4 text-right font-medium">EPI</th>
                 <th className="py-2.5 pl-4 text-right font-medium">24h</th>
                 {KEYS.map((k) => (
-                  <th key={k} className="hidden whitespace-nowrap py-2.5 pl-4 font-medium lg:table-cell">
-                    {k === "boxOffice" ? "Box office" : k === "critics" ? "Rating" : EPI_LABELS[k].split(" ")[0]}
+                  <th key={k} title={EPI_LABELS[k]} className="hidden whitespace-nowrap py-2.5 pl-4 font-medium lg:table-cell">
+                    {EPI_SHORT_LABELS[k]}
                   </th>
                 ))}
                 <th className="hidden py-2.5 pl-4 pr-2 text-right font-medium 2xl:table-cell">Confidence</th>
@@ -127,7 +121,7 @@ export default function EpiPage() {
             <div className="num mt-3 rounded bg-bg p-3 text-xs leading-relaxed text-muted">
               EPI = {KEYS.map((k, i) => (
                 <span key={k}>
-                  <span className="text-text">{EPI_WEIGHTS[k].toFixed(2)}</span> × {SHORT[k]}
+                  <span className="text-text">{EPI_WEIGHTS[k].toFixed(2)}</span> × {EPI_SHORT_LABELS[k].toLowerCase()}
                   {i < KEYS.length - 1 ? " + " : ""}
                 </span>
               ))}

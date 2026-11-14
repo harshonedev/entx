@@ -10,6 +10,9 @@ for each trade.
 > office, popularity, vote counts, ratings). **Spot prices, AMM trades, balances and oracle events are simulated**
 > off-chain, and the UI labels them that way. These parts are **real on-chain**: the NEAR contract and its state, oracle EPI reports,
 > trade receipts, YES/NO staking with testnet NEAR plus settlement and claims, and the Solana memo receipts.
+> Trade receipts are **self-attested notarisations** of simulated trades: the contract stores what the wallet
+> signs and does not verify the trade or the linked Solana signature. Linked NEAR + Solana receipts are
+> **not** an atomic cross-chain settlement.
 > NEAR Intents quotes are **live mainnet prices requested with `dry: true`**. No deposit address is created
 > and no funds move, because Intents has no testnet.
 
@@ -74,7 +77,7 @@ rustup target add wasm32-unknown-unknown
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
 
-bun run contract:test   # 11 unit tests: registry, receipts, storage deposits/refunds, oracle trust, report ring,
+bun run contract:test   # 21 unit tests: registry, receipts, storage deposits/refunds, oracle trust, report ring,
                      # parimutuel payout, permissions, input sanitising
 bun run near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers all catalogue markets,
                      # allow-lists the oracle, gives it a report_epi-only key, writes .env.local
@@ -96,9 +99,9 @@ bun run near:register   # registers the new markets on the contract (idempotent)
 
 | EPI input (0–100) | Derived from (TMDB) |
 | --- | --- |
-| Box office / audience | movies: log-scaled worldwide revenue (budget for unreleased); shows: log-scaled vote count |
-| Streaming demand | popularity, rank-normalised within the catalogue |
-| Social buzz | log-scaled vote count |
+| Box office proxy | movies: log-scaled worldwide revenue (budget for unreleased); shows: log-scaled vote count |
+| TMDB popularity proxy | TMDB popularity, rank-normalised within the catalogue. **Not** streaming viewership. |
+| Audience activity | log-scaled TMDB vote count. **Not** audience size or viewership. |
 | Audience rating | vote average × 10 |
 
 Prediction markets are generated from the catalogue: box-office milestones, opening weekends, awards, renewals,
@@ -140,7 +143,7 @@ trending rank, an EPI target and a weekend-drop market.
             │                                                                  │
             │  Market engine (client, simulated)                               │
             │   ├─ constant-product AMM per title (0.3% fee, live candles)     │
-            │   ├─ EPI = .35 box office + .25 streaming + .25 social + .15 critics
+            │   ├─ EPI = .35 box-office proxy + .25 TMDB popularity + .25 TMDB votes + .15 audience rating
             │   ├─ oracle event → ΔEPI × 2.6 = target move → bot traders       │
             │   └─ CPMM YES/NO markets linked to titles                        │
             │  ENTX Analyst (rule-based, explainable, advisory only)           │
@@ -202,6 +205,24 @@ All state changes emit NEP-297 `EVENT_JSON` logs (`standard: "entx"`).
   EPI history.
 - **Honest limitation.** Oracle *events* are still simulated (demo buttons), and there's a single trusted
   reporter. See the roadmap for a multi-source quorum.
+
+### Known limitations (testnet prototype)
+
+- **Two EPIs, by design.** *App EPI* is this browser's local simulation and accumulates every event you fire.
+  *Oracle EPI* is what the trusted oracle published to NEAR (seeded baseline + latest event). They can differ;
+  `/onchain` shows both side by side.
+- **EPI inputs are TMDB proxies.** "Popularity" is TMDB's popularity score, not streaming viewership; "audience
+  activity" is TMDB vote count, not audience size; unreleased films use production budget, not box office.
+- **Self-attested receipts.** `record_trade` accepts caller-supplied quantity, price and `chain_ref`. It proves a
+  wallet signed that record, not that the trade happened or that the Solana transaction exists. Anyone paying
+  storage can add receipts, so per-market `trades`/`volume` counters are not trustworthy metrics.
+- **Public oracle mode is testnet-only by convention.** `ENTX_PUBLIC_ORACLE=true` is meant for the demo site on
+  testnet only; nothing in code checks the network. Its rate limits are in-memory per process (reset on restart,
+  not shared across instances). It will be turned off after the hackathon.
+- **Claims.** `claim` marks the stake claimed and then sends a plain transfer with no callback; if that transfer
+  failed, the payout would stay in the contract. Any allow-listed oracle account (not just the owner) can
+  `resolve`; the server's key cannot (function-call key limited to `report_epi`). No `remove_oracle` yet.
+- **No real money.** Testnet NEAR and Solana devnet only. Intents quotes are `dry: true` and never executed.
 
 ### Code map
 

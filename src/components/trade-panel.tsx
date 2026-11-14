@@ -79,11 +79,14 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
     if (confirming) confirmBtn.current?.focus();
   }, [confirming]);
 
+  const tooBig = side === "buy" && qty > 0 && !bq.ok;
   const invalid =
-    qty <= 0 || (side === "buy" ? bq.cost > cash : qty > units + 1e-9);
+    qty <= 0 || (side === "buy" ? !bq.ok || bq.cost > cash : qty > units + 1e-9);
   const reason =
     qty <= 0
       ? "Enter a quantity"
+      : tooBig
+        ? "Exceeds pool liquidity"
       : side === "buy" && bq.cost > cash
         ? `Not enough cash · need ${usd(bq.cost - cash)} more`
         : side === "sell" && qty > units
@@ -225,16 +228,16 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
 
       <dl className="mt-4 space-y-1.5 text-xs">
         <Row k="Market price" v={usd(price)} />
-        <Row k="Avg price per unit (incl. fee)" v={qty > 0 ? usd(avg) : "—"} />
+        <Row k="Avg price per unit (incl. fee)" v={qty > 0 && !tooBig ? usd(avg) : "—"} />
         <Row
           k="Price impact"
           hint="How much this order moves the price"
-          v={qty > 0 ? pct(impact) : "—"}
+          v={qty > 0 && !tooBig ? pct(impact) : "—"}
           tone={!invalid && Math.abs(impact) > 0.01 ? "warn" : undefined}
         />
-        <Row k={`Fee (${(FEE * 100).toFixed(1)}%)`} v={qty > 0 ? usd(total * FEE) : "—"} />
+        <Row k={`Fee (${(FEE * 100).toFixed(1)}%)`} v={qty > 0 && !tooBig ? usd(total * FEE) : "—"} />
         <div className="my-2 border-t border-line" />
-        <Row k={side === "buy" ? "Total cost" : "You receive"} v={usd(total)} strong />
+        <Row k={side === "buy" ? "Total cost" : "You receive"} v={tooBig ? "—" : usd(total)} strong />
       </dl>
 
       {confirming && !invalid ? (
@@ -336,7 +339,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
       <div className="mt-4 flex items-start gap-2 border-t border-line pt-3 text-xs leading-relaxed text-muted">
         <ShieldCheck size={14} className={clsx("mt-0.5 shrink-0", connected ? "text-sol" : "text-faint")} />
         {receipts.any
-          ? `Each trade's receipt will be signed and written to ${[receipts.active.solana && "Solana devnet (Memo)", receipts.active.near && "NEAR testnet (record_trade, 0.01 Ⓝ storage deposit, excess refunded)"].filter(Boolean).join(" + ")}. Prices remain simulated.`
+          ? `Each trade's receipt will be signed and written to ${[receipts.active.solana && "Solana devnet (Memo)", receipts.active.near && "NEAR testnet (record_trade, 0.01 Ⓝ storage deposit, excess refunded)"].filter(Boolean).join(" + ")}. It is a self-attested record of a simulated trade, not a settlement.`
           : MULTICHAIN
             ? "Optional: connect a Solana or NEAR wallet to sign an on-chain receipt for each trade. NEAR receipts hold a 0.01 Ⓝ storage deposit; the unused part is refunded."
             : CHAIN_ON.near
