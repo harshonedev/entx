@@ -62,6 +62,8 @@ export interface OracleEvent {
   detail: (a: AssetSeed) => string;
   delta: Partial<EpiParts>;
   metricMult: number;
+  /** Release states this news can plausibly happen in (e.g. no "opening weekend" for a streaming title). */
+  when: AssetSeed["status"][];
 }
 
 export const ORACLE_EVENTS: OracleEvent[] = [
@@ -74,6 +76,7 @@ export const ORACLE_EVENTS: OracleEvent[] = [
         : `${a.title} ratings beat projections by 38%`,
     delta: { boxOffice: 14, social: 6 },
     metricMult: 1.38,
+    when: ["In theaters", "Airing"],
   },
   {
     id: "viral-trailer",
@@ -81,6 +84,7 @@ export const ORACLE_EVENTS: OracleEvent[] = [
     detail: (a) => `${a.title} trailer crosses 60M views in 24h`,
     delta: { social: 16, streaming: 4 },
     metricMult: 1.12,
+    when: ["Upcoming", "In theaters", "Renewal pending"],
   },
   {
     id: "streaming-top",
@@ -88,6 +92,7 @@ export const ORACLE_EVENTS: OracleEvent[] = [
     detail: (a) => `${a.title} hits #1 on global streaming top-10`,
     delta: { streaming: 15, social: 5 },
     metricMult: 1.2,
+    when: ["Streaming", "Airing"],
   },
   {
     id: "critics-pan",
@@ -95,6 +100,7 @@ export const ORACLE_EVENTS: OracleEvent[] = [
     detail: (a) => `Audience reviews sour for ${a.title}: rating slides sharply`,
     delta: { critics: -22, social: -8, boxOffice: -6 },
     metricMult: 0.88,
+    when: ["Upcoming", "In theaters", "Streaming", "Airing", "Renewal pending"],
   },
   {
     id: "box-office-miss",
@@ -105,5 +111,10 @@ export const ORACLE_EVENTS: OracleEvent[] = [
         : `${a.title} viewership falls 30% week-over-week`,
     delta: { boxOffice: -16, streaming: -4 },
     metricMult: 0.7,
+    when: ["In theaters", "Airing"],
   },
 ];
+
+/** News events that fit a title's release state, so Demo news never contradicts the title's own facts. */
+export const eventsFor = (a: AssetSeed) => ORACLE_EVENTS.filter((e) => e.when.includes(a.status));
+

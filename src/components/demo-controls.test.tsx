@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ASSETS, ASSET_BY_ID, ORACLE_EVENTS } from "@/lib/assets";
+import { ASSETS, ASSET_BY_ID, ORACLE_EVENTS, eventsFor } from "@/lib/assets";
 import { PREDICTIONS } from "@/lib/predictions";
 import { useMarket } from "@/store/market";
 import { DemoControls } from "./demo-controls";
@@ -86,10 +86,18 @@ describe("DemoControls", () => {
     expect((screen.getByLabelText("Title") as HTMLSelectElement).value).toBe(ASSETS[0].id);
   });
 
-  it("lists every oracle news event with its EPI deltas", async () => {
+  it("lists only news that fits the title's release state, with EPI deltas", async () => {
+    const theaters = ASSETS.find((a) => a.status === "In theaters")!;
+    pathname = `/asset/${theaters.id}`;
     render(<DemoControls />);
     await openPanel();
-    for (const e of ORACLE_EVENTS) expect(screen.getByRole("button", { name: new RegExp(e.label) })).toBeInTheDocument();
+    for (const e of ORACLE_EVENTS) {
+      const btn = screen.queryByRole("button", { name: new RegExp(e.label) });
+      if (eventsFor(theaters).includes(e)) expect(btn).toBeInTheDocument();
+      else expect(btn).toBeNull();
+    }
+    // No "#1 on streaming" for a film that's still in theaters.
+    expect(screen.queryByRole("button", { name: /#1 on streaming/ })).toBeNull();
     expect(screen.getByRole("button", { name: /Box office beats forecast/ })).toHaveTextContent("Box office +14 · Social +6");
     expect(screen.getByRole("button", { name: /Reviews disappoint/ })).toHaveTextContent("Rating -22");
   });
@@ -154,6 +162,8 @@ describe("DemoControls", () => {
   });
 
   it("groups news events by whether they lift or drop EPI", async () => {
+    const theaters = ASSETS.find((a) => a.status === "In theaters")!;
+    pathname = `/asset/${theaters.id}`;
     render(<DemoControls />);
     await openPanel();
     const lifts = screen.getByRole("group", { name: "Lifts EPI" });
@@ -161,7 +171,7 @@ describe("DemoControls", () => {
     expect(within(lifts).getByRole("button", { name: /Box office beats forecast/ })).toBeInTheDocument();
     expect(within(drops).getByRole("button", { name: /Reviews disappoint/ })).toBeInTheDocument();
     expect(within(lifts).getAllByRole("button").length + within(drops).getAllByRole("button").length).toBe(
-      ORACLE_EVENTS.length,
+      eventsFor(theaters).length,
     );
   });
 });

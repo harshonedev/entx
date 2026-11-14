@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ASSETS, ASSET_BY_ID, CATALOG_META, ORACLE_EVENTS, computeEpi } from "./assets";
+import { ASSETS, ASSET_BY_ID, CATALOG_META, ORACLE_EVENTS, computeEpi, eventsFor } from "./assets";
 import { PREDICTIONS } from "./predictions";
 
 describe("catalog data integrity", () => {
@@ -71,5 +71,14 @@ describe("oracle event copy by kind", () => {
   it("box office miss: second weekend for movies, viewership for shows", () => {
     expect(ev("box-office-miss").detail(movie)).toBe("M second weekend drops 64%");
     expect(ev("box-office-miss").detail(show)).toBe("S viewership falls 30% week-over-week");
+  });
+
+  it("every title has news that fits its release state, both up and down", () => {
+    const sum = (e: (typeof ORACLE_EVENTS)[number]) => Object.values(e.delta).reduce((t, v) => t + (v ?? 0), 0);
+    for (const a of ASSETS) {
+      const fit = eventsFor(a);
+      expect(fit.some((e) => sum(e) > 0), `${a.id} lift`).toBe(true);
+      expect(fit.some((e) => sum(e) < 0), `${a.id} drop`).toBe(true);
+    }
   });
 });

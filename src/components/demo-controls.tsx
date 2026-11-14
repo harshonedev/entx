@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { FlaskConical, TrendingDown, TrendingUp, X } from "lucide-react";
-import { ASSETS, ASSET_BY_ID, ORACLE_EVENTS, type EpiParts } from "@/lib/assets";
+import { ASSETS, ASSET_BY_ID, ORACLE_EVENTS, eventsFor, type EpiParts } from "@/lib/assets";
 import { PREDICTIONS } from "@/lib/predictions";
 import { useMarket } from "@/store/market";
 
@@ -54,8 +54,8 @@ export function DemoControls() {
   const showSettle = group === "settle" && open_markets.length > 0;
   const lift = (e: (typeof ORACLE_EVENTS)[number]) => Object.values(e.delta).reduce((t, v) => t + (v ?? 0), 0) > 0;
   const newsGroups = [
-    { label: "Lifts EPI", events: ORACLE_EVENTS.filter(lift) },
-    { label: "Drops EPI", events: ORACLE_EVENTS.filter((e) => !lift(e)) },
+    { label: "Lifts EPI", events: eventsFor(asset).filter(lift) },
+    { label: "Drops EPI", events: eventsFor(asset).filter((e) => !lift(e)) },
   ].filter((g) => g.events.length > 0);
 
   return (
