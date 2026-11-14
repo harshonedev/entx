@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Check, ShieldCheck } from "lucide-react";
 import type { AssetSeed } from "@/lib/assets";
-import { quoteBuy, quoteSell, unitsForDollars, FEE } from "@/lib/engine";
+import { quoteBuy, quoteSell, unitsForDollars, FEE, MIN_ORDER } from "@/lib/engine";
 import { priceOf, useMarket } from "@/store/market";
 import { num, pct, usd } from "@/lib/format";
 import { useReceipts } from "@/lib/receipts";
@@ -90,14 +90,18 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
   // Asking to sell more than you hold: no figures for an order that can't fill.
   const oversell = side === "sell" && qty > units + 1e-9;
   const noQuote = qty <= 0 || tooBig || oversell;
+  // Orders worth less than a cent would fill as "$0.00" (and could cost a NEAR receipt for nothing).
+  const dust = !noQuote && total < MIN_ORDER;
   const invalid =
-    qty <= 0 || (side === "buy" ? !bq.ok || bq.cost > cash : qty > units + 1e-9);
+    qty <= 0 || dust || (side === "buy" ? !bq.ok || bq.cost > cash : qty > units + 1e-9);
   const reason = malformed
     ? "Enter a number like 25"
     : qty <= 0
       ? mode === "usd" ? "Enter an amount" : "Enter a quantity"
       : tooBig
         ? "Exceeds pool liquidity"
+      : dust
+        ? `Minimum order is ${usd(MIN_ORDER)}`
       : side === "buy" && bq.cost > cash
         ? `Not enough cash · need ${usd(bq.cost - cash)} more`
         : side === "sell" && qty > units

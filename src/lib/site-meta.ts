@@ -7,6 +7,10 @@ const siteUrl = IS_LIVE || CHAIN === "solana" ? chainUrl(CHAIN) : HOSTS.nearDemo
 export const title = "ENTX — Entertainment, now tradable";
 export const description = `An entertainment exchange on ${chainName}: trade movie & show markets priced by popularity, performance and sentiment.`;
 
+// Route-group layouts set `openGraph`/`twitter` objects, which replace (not merge) the file-based
+// app/opengraph-image.png, so the share image is named here explicitly.
+export const ogImage = { url: "/opengraph-image.png", width: 1200, height: 630, alt: "ENTX wordmark — Entertainment, now tradable" };
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: title, template: "%s · ENTX" },
@@ -21,8 +25,9 @@ export const metadata: Metadata = {
     title,
     description,
     locale: "en_US",
+    images: [ogImage],
   },
-  twitter: { card: "summary_large_image", title, description },
+  twitter: { card: "summary_large_image", title, description, images: [ogImage] },
 };
 
 export const viewport: Viewport = {

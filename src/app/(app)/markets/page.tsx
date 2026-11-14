@@ -174,7 +174,7 @@ export default function Discover() {
             </div>
             <LiveFeed
               limit={5}
-              empty="No activity yet. Trades, oracle news and on-chain receipts land here as they happen. Trade a title, or open Demo to push a news event."
+              empty="No activity yet. Trades, oracle news and on-chain receipts land here as they happen. Trade a title, or open Simulate to push a news event."
             />
           </div>
         </div>

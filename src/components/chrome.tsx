@@ -140,7 +140,7 @@ export function LiveFeed({
   refIds,
   limit = 12,
   className,
-  empty = "No activity yet. Place a trade, or open Demo to push a news event.",
+  empty = "No activity yet. Place a trade, or open Simulate to push a news event.",
 }: {
   refId?: string;
   /** Show items for any of these ids (e.g. a prediction market plus its linked title). */

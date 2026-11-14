@@ -115,6 +115,14 @@ describe("TradePanel", () => {
     expect(screen.getByText("Price impact").nextElementSibling).not.toHaveClass("text-warn");
   });
 
+  it("refuses orders worth less than a cent", async () => {
+    render(<TradePanel asset={asset} />);
+    await setAmount("0.001");
+    expect(screen.getByRole("button", { name: "Minimum order is $0.01" })).toBeDisabled();
+    await setAmount("0.01");
+    expect(submitBtn()).toBeEnabled();
+  });
+
   it("strips non-numeric characters from the amount", async () => {
     render(<TradePanel asset={asset} />);
     await setAmount("1a2b.5$");

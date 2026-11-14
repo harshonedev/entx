@@ -1,5 +1,6 @@
 export const usd = (n: number, digits = 2) =>
-  `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("en-US", {
+  // Sign from the rounded value, so -0.003 prints "$0.00", not "-$0.00".
+  `${Number(n.toFixed(digits)) < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("en-US", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   })}`;
