@@ -114,9 +114,9 @@ One Docker image, deployed per host on Coolify with different env:
 |------|----------|-------|
 | Demo host publishes simulated news to the same NEAR contract live reads, so live's oracle history mixes in demo events. Give live its own contract or oracle account | P1 | Fold into M1 |
 | Live asset trading still per-browser simulation ("preview") | P1 | M2 |
-| Firewall the VPS so ports 80/443 accept only Cloudflare IP ranges (`TRUST_PROXY=cloudflare` trusts `cf-connecting-ip`) | P1 | M5, earlier if origin IP leaks |
+| Put entx.space behind Cloudflare too, then firewall 80/443 to Cloudflare ranges and use `TRUST_PROXY=cloudflare` (per-visitor limits for proxied traffic) | P2 | M5 |
 | Coolify API token was pasted in chat: rotate it | P0 | After M0 deploy |
-| Switch hosts to `entx.space` once registration clears | P1 | M0 follow-up |
+| ~~Switch hosts to `entx.space`~~ done 2026-11-14 (TRUST_PROXY back to `true`: origin IP is public now) | P1 | M0 |
 | Solana host `/onchain` page is NEAR-only content (registry, oracle, receipts); give it a Solana view or hide the nav link | P2 | M3 |
 
 ## Accepted risks

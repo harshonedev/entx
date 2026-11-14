@@ -19,13 +19,12 @@ Hackathon tracks: **Unstoppable DeFi** + **Open Innovation**.
 
 | Site | Mode | What you get |
 | --- | --- | --- |
-| **[entx-demo.harshone.space](https://entx-demo.harshone.space)** | Demo (NEAR testnet) | Fully simulated market with demo controls: push news, watch EPI then price react, settle markets early. Best for a first look. |
-| **[entx.harshone.space](https://entx.harshone.space)** | Live (NEAR testnet) | Real TMDB data and real on-chain NEAR prediction pools. No demo controls. Asset trading is labelled *preview* (simulated prices) until the shared market ships. |
-| **[entx-solana.harshone.space](https://entx-solana.harshone.space)** | Demo (Solana devnet) | Same app on Solana: devnet memo receipts per trade. |
+| **[demo.entx.space](https://demo.entx.space)** | Demo (NEAR testnet) | Fully simulated market with demo controls: push news, watch EPI then price react, settle markets early. Best for a first look. |
+| **[entx.space](https://entx.space)** | Live (NEAR testnet) | Real TMDB data and real on-chain NEAR prediction pools. No demo controls. Asset trading is labelled *preview* (simulated prices) until the shared market ships. |
+| **[solana.entx.space](https://solana.entx.space)** | Demo (Solana devnet) | Same app on Solana: devnet memo receipts per trade. |
 
 The **Demo / Live** badge in the top bar, and **Settings → Environment**, jump between demo and live on the same
-page. `entx.space`, `demo.entx.space` and `solana.entx.space` are already attached to the same apps and take over
-once the domain registration clears.
+page. Mirrors: `entx.harshone.space`, `entx-demo.harshone.space`, `entx-solana.harshone.space`.
 
 You need a NEAR testnet wallet (Meteor, Intear, MyNearWallet) only for on-chain actions: staking, receipts. Get
 testnet NEAR from the [faucet](https://near-faucet.io).
