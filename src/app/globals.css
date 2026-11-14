@@ -33,6 +33,8 @@
   --bar: #141414;
   --bar-ink: #f4f1ea;
   --bar-field: #262626;
+  /* Rule under the top bar: invisible on paper (black bar on cream needs none), cream under lamp light. */
+  --bar-rule: #141414;
   --scrim: rgb(20 20 20 / 0.6);
   --lift: 0 8px 24px rgb(20 20 20 / 0.18);
   --grid: rgb(20 20 20 / 0.06);
@@ -67,6 +69,7 @@
   --bar: #0a0908;
   --bar-ink: #ece6d8;
   --bar-field: #1d1c19;
+  --bar-rule: #35322c;
   --scrim: rgb(0 0 0 / 0.7);
   --lift: 0 8px 24px rgb(0 0 0 / 0.55);
   --grid: rgb(236 230 216 / 0.06);
@@ -96,6 +99,7 @@
   --color-bar: var(--bar);
   --color-bar-ink: var(--bar-ink);
   --color-bar-field: var(--bar-field);
+  --color-bar-rule: var(--bar-rule);
   --shadow-lift: var(--lift);
   --font-sans: var(--font-ui);
   --font-mono: var(--font-code);
@@ -372,14 +376,8 @@ button, .press {
   .toast-in { animation-name: toast-in; }
 }
 
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
-.live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
-
 @media (prefers-reduced-motion: reduce) {
-  .live-dot, .flash-up, .flash-down { animation: none; }
+  .flash-up, .flash-down { animation: none; }
 }
 
 /* Wallet adapter button restyle: neutral, flat, matches the shell */

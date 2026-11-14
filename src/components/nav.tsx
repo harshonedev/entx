@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   Droplets,
@@ -17,7 +18,7 @@ import { yesPrice } from "@/lib/engine";
 import { STARTING_CASH, change24h, portfolioValue, priceOf, useMarket } from "@/store/market";
 import { compactUsd, pct, usd } from "@/lib/format";
 import { useAirdrop } from "@/lib/solana";
-import { useNear } from "@/lib/near";
+import { useChainWallets } from "@/lib/chain-wallets";
 import { Poster } from "./poster";
 import { WalletMenu } from "./wallet-menu";
 import { DemoControls } from "./demo-controls";
@@ -149,6 +150,10 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
           </ul>
         </nav>
         <div className="space-y-4 border-t-2 border-ink p-4">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <ModeBadge />
+            <span className="text-muted">{MULTICHAIN ? CHAIN_NAMES.join(" · ") : CHAIN_LABEL[CHAIN]}</span>
+          </div>
           <AccountCard onNavigate={onClose} />
           <ReceiptToggles />
         </div>
@@ -178,73 +183,108 @@ function AccountFigure() {
   return (
     <Link
       href="/portfolio"
-      aria-label={`Portfolio value ${usd(total)}, ${pct(ret)} all time`}
       className="cursor-pointer inline-flex h-full items-center gap-2 border-l border-line pl-4 hover:text-accent"
     >
-      <span className="text-muted">Portfolio</span>
-      <span className="num font-semibold">{usd(total)}</span>
-      <span className={clsx("num", signTone(ret))}>{pct(ret)}</span>
+      {/* No aria-label: the accessible name is the visible text, so speech users can say what they see. */}
+      <span className="text-muted">Portfolio</span>{" "}
+      <span className="num font-semibold">{usd(total)}</span>{" "}
+      <span className={clsx("num", signTone(ret))}>
+        {pct(ret)}{" "}
+        <span className="sr-only">all time</span>
+      </span>
     </Link>
   );
 }
 
+const RECEIPT_CHAINS = [
+  { key: "solana", short: "Solana", long: "Solana devnet" },
+  { key: "near", short: "NEAR", long: "NEAR testnet" },
+] as const;
+
 function ReceiptToggles({ inline = false }: { inline?: boolean }) {
   const chains = useMarket((s) => s.chains);
   const setChains = useMarket((s) => s.setChains);
-  const { accountId } = useNear();
-  const { connected: solConnected } = useWallet();
-  // A receipt toggle only means something once that chain's wallet is connected.
-  const live = { solana: solConnected, near: !!accountId };
-  const missing = MULTICHAIN
-    ? live.solana ? "NEAR" : live.near ? "Solana" : "Solana or NEAR"
-    : CHAIN_NAMES[0];
-  const allLive = (["solana", "near"] as const).every((k) => !CHAIN_ON[k] || live[k]);
+  const wallets = useChainWallets();
+  const enabled = RECEIPT_CHAINS.filter((c) => CHAIN_ON[c.key]);
+  const missingChains = enabled.filter((c) => !wallets[c.key].connected).map((c) => c.short);
+  const missing = missingChains.join(" or ");
+  const anyLive = missingChains.length < enabled.length;
   const hintId = inline ? "receipts-hint-inline" : "receipts-hint";
   const labelId = inline ? "receipts-label-inline" : "receipts-label";
-  return (
-    <div role="group" aria-labelledby={labelId} className={clsx(inline && "flex h-full items-center gap-1")}>
-      <div id={labelId} className={clsx(inline ? "mr-1 text-muted" : "label mb-2")}>
-        {inline ? "Receipts" : "On-chain receipts"}
-      </div>
-      <div className={clsx(inline ? "flex items-center gap-1" : "space-y-1")}>
-        {(
-          [
-            ["solana", inline ? "Solana" : "Solana devnet", "bg-sol"],
-            ["near", inline ? "NEAR" : "NEAR testnet", "bg-near"],
-          ] as const
-        ).filter(([k]) => CHAIN_ON[k]).map(([k, label, dot]) => {
-          const on = live[k] && chains[k];
-          return (
-          <button
-            key={k}
-            // aria-disabled (not disabled) keeps the row focusable, so screen readers reach it and hear why it is off.
-            onClick={() => live[k] && setChains({ [k]: !chains[k] })}
-            aria-disabled={!live[k] || undefined}
-            aria-pressed={on}
-            aria-describedby={live[k] ? undefined : hintId}
-            title={live[k] ? undefined : `Connect a ${missing} wallet to sign receipts for your trades.`}
+
+  // A switch only means something once that chain's wallet is connected.
+  const toggle = (c: (typeof RECEIPT_CHAINS)[number], label: string) => {
+    const live = wallets[c.key].connected;
+    const on = live && chains[c.key];
+    return (
+      <button
+        key={c.key}
+        // aria-disabled (not disabled) keeps the row focusable, so screen readers reach it and hear why it is off.
+        onClick={() => live && setChains({ [c.key]: !chains[c.key] })}
+        aria-disabled={!live || undefined}
+        aria-pressed={on}
+        aria-describedby={live ? undefined : hintId}
+        title={live ? undefined : `Connect a ${missing} wallet to sign receipts for your trades.`}
+        className={clsx(
+          "flex items-center gap-2 text-[12.5px] transition-colors",
+          inline ? "h-9 px-2" : "h-8 w-full px-1",
+          live ? "cursor-pointer text-text hover:bg-panel-2" : "cursor-not-allowed text-faint",
+        )}
+      >
+        <span>{label}</span>
+        <span className={clsx("relative h-3.5 w-6 border border-ink transition-colors", inline ? "" : "ml-auto", on ? "bg-ink" : "bg-transparent")}>
+          <span
             className={clsx(
-              "flex items-center gap-2 text-[12.5px] transition-colors",
-              inline ? "h-7 px-2" : "h-8 w-full px-1",
-              live[k] ? "cursor-pointer text-text hover:bg-panel-2" : "cursor-not-allowed text-faint",
+              "absolute left-[1px] top-[1px] h-2.5 w-2.5 motion-safe:transition-[translate,background-color] motion-safe:duration-150 motion-safe:ease-out",
+              on ? "translate-x-2.5 bg-bg" : "bg-line-2",
             )}
-          >
-            <span className={clsx("h-1.5 w-1.5 rounded-full", dot, !on && "opacity-30")} />
-            <span>{label}</span>
-            <span className={clsx("relative h-3.5 w-6 border border-ink transition-colors", inline ? "" : "ml-auto", on ? "bg-ink" : "bg-transparent")}>
-              <span
-                className={clsx(
-                  "absolute left-[1px] top-[1px] h-2.5 w-2.5 motion-safe:transition-[translate,background-color] motion-safe:duration-150 motion-safe:ease-out",
-                  on ? "translate-x-2.5 bg-bg" : "bg-line-2",
-                )}
-              />
-            </span>
-          </button>
+          />
+        </span>
+      </button>
+    );
+  };
+
+  // In the dateline a dead switch reads as broken: a chain without a wallet gets its connect action instead,
+  // so every enabled chain stays reachable from the strip whether or not another one is connected.
+  if (inline) {
+    return (
+      <div role="group" aria-labelledby={labelId} className="flex h-full items-center gap-1">
+        <div id={labelId} className="mr-1 whitespace-nowrap text-muted">
+          {anyLive ? "Receipts" : "Receipts off"}
+        </div>
+        {enabled.map((c) => {
+          if (wallets[c.key].connected) return toggle(c, c.short);
+          const { ready, connect } = wallets[c.key];
+          return (
+            <button
+              key={c.key}
+              type="button"
+              // aria-disabled while the connector loads, so the control stays in the tab order and says why.
+              onClick={() => ready && connect()}
+              aria-disabled={!ready || undefined}
+              title={ready ? undefined : `The ${c.short} wallet is still loading.`}
+              className={clsx(
+                "inline-flex h-9 items-center whitespace-nowrap px-2 text-[12.5px] font-medium underline decoration-line-2 underline-offset-[3px] transition-colors",
+                ready ? "cursor-pointer text-text hover:text-accent hover:decoration-current" : "cursor-wait text-faint",
+              )}
+            >
+              Connect {c.short}
+              {enabled.length === 1 && " to sign them"}
+            </button>
           );
         })}
       </div>
-      {!allLive && (
-        <p id={hintId} className={clsx(inline ? "sr-only" : "mt-2 text-xs leading-snug text-muted")}>
+    );
+  }
+
+  return (
+    <div role="group" aria-labelledby={labelId}>
+      <div id={labelId} className="label mb-2">
+        On-chain receipts
+      </div>
+      <div className="space-y-1">{enabled.map((c) => toggle(c, c.long))}</div>
+      {missing && (
+        <p id={hintId} className="mt-2 text-xs leading-snug text-muted">
           Connect a {missing} wallet to sign receipts for your trades.
         </p>
       )}
@@ -278,7 +318,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
                   href={href}
                   aria-current={active ? "page" : undefined}
                   className={clsx(
-                    "cursor-pointer flex h-full items-center border-b-[3px] px-3.5 pt-[3px] text-[13.5px] font-medium transition-colors xl:px-4",
+                    "cursor-pointer flex h-full items-center whitespace-nowrap border-b-[3px] px-3.5 pt-[3px] text-[13.5px] font-medium transition-colors xl:px-4",
                     active ? "border-accent text-bar-ink" : "border-transparent text-bar-ink/65 hover:text-bar-ink",
                   )}
                 >
@@ -312,8 +352,8 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
 /** Dateline strip under the top bar: environment, market-wide stats, receipt toggles and portfolio value. */
 function Dateline() {
   return (
-    <section aria-label="Market status" className="@container hidden h-10 shrink-0 items-center gap-4 border-b border-ink bg-bg px-6 text-[12px] md:flex">
-      <ModeBadge />
+    <section aria-label="Market status" className="@container hidden h-10 shrink-0 items-center gap-4 border-y border-t-bar-rule border-b-ink bg-bg px-6 text-[12px] md:flex">
+      <ModeBadge cell />
       <StatChips />
       <div className="ml-auto flex h-full shrink-0 items-center gap-4">
         <ReceiptToggles inline />
@@ -333,10 +373,7 @@ function StatChips() {
   const chips: [string, ReactNode, string][] = [
     [
       "Network",
-      <span key="n" className="flex items-center gap-1.5">
-        <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
-        {MULTICHAIN ? CHAIN_NAMES.join(" · ") : CHAIN_LABEL[CHAIN]}
-      </span>,
+      <span key="n">{MULTICHAIN ? CHAIN_NAMES.join(" · ") : CHAIN_LABEL[CHAIN]}</span>,
       "@min-[860px]:flex",
     ],
     ["All titles 24h", <Change key="c" value={avgChg} />, "@min-[980px]:flex"],
@@ -346,7 +383,7 @@ function StatChips() {
   return (
     <div className="flex h-full min-w-0 items-center overflow-hidden">
       {chips.map(([k, v, show]) => (
-        <div key={k} className={clsx("hidden h-full shrink-0 items-center gap-2 whitespace-nowrap border-l border-line px-4", show)}>
+        <div key={k} className={clsx("hidden h-full shrink-0 items-center gap-2 whitespace-nowrap border-l border-line px-4 first:border-l-0 first:pl-0", show)}>
           <span className="text-muted">{k}</span>
           <span className="font-medium text-text">{v}</span>
         </div>
@@ -368,6 +405,16 @@ const marketItem = (p: (typeof PREDICTIONS)[number]): SearchItem => ({
   marketId: p.id,
 });
 
+const noSubscribe = () => () => {};
+/** "⌘K" on Apple platforms and on the server render, "Ctrl K" elsewhere (the handler accepts both). */
+function useShortcutLabel() {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => (/Mac|iPhone|iPad/i.test(navigator.userAgent) ? "⌘K" : "Ctrl K"),
+    () => "⌘K",
+  );
+}
+
 /** ⌘K search over titles (title or ticker) and prediction markets (question text), grouped, one listbox. */
 function AssetSearch() {
   const router = useRouter();
@@ -376,19 +423,39 @@ function AssetSearch() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
+  // Phones only: the field lives behind a search button and opens as a full-width bar over the header.
+  const [expanded, setExpanded] = useState(false);
+  const shortcut = useShortcutLabel();
   const input = useRef<HTMLInputElement>(null);
+  const opener = useRef<HTMLButtonElement>(null);
+  const refocusOpener = useRef(false);
+
+  // The field is display:none on phones until expanded. Render it synchronously, then focus inside the same
+  // event: iOS Safari only raises the keyboard for a focus() that runs within the user's tap.
+  const openSearch = useCallback(() => {
+    flushSync(() => setExpanded(true));
+    input.current?.focus();
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        input.current?.focus();
+        openSearch();
         setOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [openSearch]);
+
+  // Escape on phones collapses the field; hand focus back to the search button instead of dropping it on <body>.
+  useEffect(() => {
+    if (!expanded && refocusOpener.current) {
+      refocusOpener.current = false;
+      opener.current?.focus();
+    }
+  }, [expanded]);
 
   const term = q.trim().toLowerCase();
   // Every word must appear somewhere, so "dune box" finds "Will Dune … box office …".
@@ -424,47 +491,70 @@ function AssetSearch() {
   const offsets = groups.map((_, g) => groups.slice(0, g).reduce((n, x) => n + x.items.length, 0));
   return (
     <div className="relative">
-      {/* Phones: an icon-wide field that opens up on focus. sm+: always-open field. The 2px accent ring on the
-          wrapper is the focus indicator (the bare input sits inside it, so it never needs its own outline). */}
-      <div className="flex h-9 w-11 items-center gap-2 overflow-hidden border border-bar-ink/20 bg-bar-field px-[14px] text-bar-ink/60 focus-within:w-44 focus-within:border-accent focus-within:text-bar-ink motion-safe:transition-[width] motion-safe:duration-200 sm:w-56 sm:px-3 sm:focus-within:w-56 xl:w-64 xl:focus-within:w-64 pointer-coarse:h-11">
-        <Search size={14} className="shrink-0" aria-hidden onClick={() => input.current?.focus()} />
-        <input
-          ref={input}
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setHi(0);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown") {
-              e.preventDefault();
-              setHi((h) => Math.min(h + 1, results.length - 1));
-            } else if (e.key === "ArrowUp") {
-              e.preventDefault();
-              setHi((h) => Math.max(h - 1, 0));
-            } else if (e.key === "Enter" && results[hi]) {
-              go(results[hi].href);
-            } else if (e.key === "Escape") {
-              input.current?.blur();
-            }
-          }}
-          name="q"
-          placeholder="Search titles, markets…"
+      {/* Phones: a search button; tapping it lays a full-width field over the header row. sm+: always-open field.
+          The accent border on the wrapper is the focus indicator (the bare input never needs its own outline). */}
+      {!expanded && (
+        <button
+          ref={opener}
+          type="button"
+          onClick={openSearch}
           aria-label="Search titles and markets"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={open}
-          aria-controls="asset-search-list"
-          aria-activedescendant={open && results[hi] ? `search-opt-${results[hi].id}` : undefined}
-          className="w-full min-w-0 bg-transparent text-[12.5px] text-bar-ink outline-none placeholder:text-bar-ink/55"
-        />
-        <kbd className="hidden border border-bar-ink/20 px-1.5 py-0.5 text-[11px] text-bar-ink/60 sm:inline">⌘K</kbd>
+          className="cursor-pointer grid h-9 w-9 place-items-center border border-bar-ink/20 bg-bar-field text-bar-ink/75 transition-colors hover:text-bar-ink sm:hidden pointer-coarse:h-11 pointer-coarse:w-11"
+        >
+          <Search size={15} aria-hidden />
+        </button>
+      )}
+      <div
+        className={
+          expanded
+            ? "max-sm:fixed max-sm:inset-x-0 max-sm:top-0 max-sm:z-50 max-sm:flex max-sm:h-[52px] max-sm:items-center max-sm:bg-bar max-sm:px-2"
+            : "hidden sm:block"
+        }
+      >
+        <div className="flex h-9 w-full items-center gap-2 border border-bar-ink/20 bg-bar-field px-3 text-bar-ink/60 focus-within:border-accent focus-within:text-bar-ink sm:w-56 lg:w-44 xl:w-64 pointer-coarse:h-11">
+          <Search size={14} className="shrink-0" aria-hidden onClick={() => input.current?.focus()} />
+          <input
+            ref={input}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setHi(0);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => {
+              setOpen(false);
+              setExpanded(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setHi((h) => Math.min(h + 1, results.length - 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setHi((h) => Math.max(h - 1, 0));
+              } else if (e.key === "Enter" && results[hi]) {
+                go(results[hi].href);
+              } else if (e.key === "Escape") {
+                refocusOpener.current = expanded;
+                input.current?.blur();
+              }
+            }}
+            name="q"
+            placeholder="Search titles, markets…"
+            aria-label="Search titles and markets"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={open}
+            aria-controls="asset-search-list"
+            aria-activedescendant={open && results[hi] ? `search-opt-${results[hi].id}` : undefined}
+            className="w-full min-w-0 bg-transparent text-[12.5px] text-bar-ink outline-none placeholder:text-bar-ink/55"
+          />
+          <kbd className="hidden border border-bar-ink/20 px-1.5 py-0.5 text-[11px] text-bar-ink/60 sm:inline lg:hidden xl:inline">{shortcut}</kbd>
+        </div>
       </div>
       {open && results.length > 0 && (
-        <div className="absolute right-0 top-11 z-50 max-h-[min(32rem,calc(100dvh-80px))] w-[min(22rem,calc(100vw-32px))] overflow-y-auto overscroll-contain border-2 border-ink bg-panel p-0.5 text-text shadow-lift">
+        <div className="absolute right-0 top-11 z-50 max-h-[min(32rem,calc(100dvh-80px))] w-[min(22rem,calc(100vw-32px))] overflow-y-auto max-sm:fixed max-sm:inset-x-2 max-sm:top-[52px] max-sm:w-auto overscroll-contain border-2 border-ink bg-panel p-0.5 text-text shadow-lift">
           {noMatch && (
             <p id="asset-search-empty" role="status" className="px-2 pb-1 pt-2 text-[12px] text-muted">
               Nothing matches &ldquo;<span className="text-text">{q.trim()}</span>&rdquo;. Most traded titles:

@@ -58,14 +58,15 @@ export function DemoControls() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="demo-controls"
-        aria-label="Demo controls"
+        aria-label="Simulate market events"
         className={clsx(
           "cursor-pointer flex h-9 min-w-9 items-center justify-center gap-2 border px-2.5 text-[12.5px] sm:px-3 font-medium transition-colors pointer-coarse:h-11",
           open ? "border-bar-ink bg-bar-ink text-bar" : "border-bar-ink/25 text-bar-ink/75 hover:border-bar-ink/60 hover:text-bar-ink",
         )}
       >
         <FlaskConical size={14} />
-        <span className="hidden sm:inline">Demo</span>
+        {/* lg–xl the five nav links need the room; the flask + aria-label carry it there. */}
+        <span className="hidden sm:inline lg:hidden xl:inline">Simulate</span>
       </button>
 
       {open && (
@@ -74,14 +75,14 @@ export function DemoControls() {
           ref={panel}
           tabIndex={-1}
           role="dialog"
-          aria-label="Demo controls"
+          aria-label="Simulate market events"
           className="fixed right-4 top-[60px] z-50 max-h-[calc(100vh-76px)] w-[min(360px,calc(100vw-32px))] overflow-y-auto border-2 border-ink bg-panel p-4 shadow-lift outline-none"
         >
           <div className="flex items-center gap-2">
-            <h2 className="h-panel">Demo controls</h2>
+            <h2 className="h-panel">Simulate market events</h2>
             <button
               onClick={() => setOpen(false)}
-              aria-label="Close demo controls"
+              aria-label="Close simulation controls"
               className="cursor-pointer ml-auto grid h-7 w-7 place-items-center rounded text-muted hover:text-text"
             >
               <X size={14} />

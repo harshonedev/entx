@@ -117,7 +117,7 @@ export default function PredictionMarketPage() {
                 <>Settled {resolved} in simulation · trading closed</>
               ) : (
                 <>
-                  <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-up" />
                   Live simulation{asset ? ` · ${asset.ticker} news marked by its effect on YES` : ""}
                 </>
               )}
