@@ -55,5 +55,9 @@ NEXT_PUBLIC_NEAR_CONTRACT=$CONTRACT
 NEAR_ORACLE_ACCOUNT=$ORACLE
 # Function-call access key: can only call report_epi on $CONTRACT (1 NEAR gas allowance)
 NEAR_ORACLE_PRIVATE_KEY=$SECRET
+# Demo mode: in-app oracle buttons may publish (globally rate-limited). Set to false in production.
+ENTX_PUBLIC_ORACLE=true
+# Bearer secret for server-side publishers (cron/jobs)
+ORACLE_API_SECRET=$(node -e "console.log(require('crypto').randomBytes(24).toString('hex'))")
 ENV
 echo "✓ Deployed. Contract: $CONTRACT · Oracle: $ORACLE — .env.local written. Run: pnpm dev"

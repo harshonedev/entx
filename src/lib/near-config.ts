@@ -1,7 +1,7 @@
 // Shared (client + server) NEAR configuration.
 
 export const NEAR_NETWORK = "testnet" as const;
-export const NEAR_CONTRACT = process.env.NEXT_PUBLIC_NEAR_CONTRACT ?? "entx-market-1794653894.testnet";
+export const NEAR_CONTRACT = process.env.NEXT_PUBLIC_NEAR_CONTRACT ?? "entx-market-1794654167.testnet";
 export const NEAR_RPC = process.env.NEXT_PUBLIC_NEAR_RPC ?? "https://rpc.testnet.fastnear.com";
 
 export const nearTxUrl = (hash: string) => `https://testnet.nearblocks.io/txns/${hash}`;

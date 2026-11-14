@@ -19,6 +19,8 @@ pub const MIN_STAKE: NearToken = NearToken::from_millinear(10); // 0.01 NEAR
 const MAX_STR: usize = 96;
 const MAX_REF: usize = 128;
 const MAX_PAGE: u32 = 50;
+/// Trusted EPI reports are kept in a fixed-size ring per market, so contract-paid storage is bounded.
+pub const REPORT_RING: u32 = 32;
 
 uint::construct_uint! {
     pub struct U256(4);
@@ -128,9 +130,12 @@ pub struct Entx {
     /// Per-account receipt index: count + "{account}#{i}" -> receipt id.
     account_receipt_count: LookupMap<AccountId, u32>,
     account_receipts: LookupMap<String, u64>,
-    /// Per-market EPI report index: count + "{market}#{i}" -> report.
+    /// Trusted EPI reports: per-market ring of REPORT_RING slots ("t:{market}#{i % RING}"), contract-paid.
     market_report_count: LookupMap<String, u32>,
     market_reports: LookupMap<String, EpiReport>,
+    /// Untrusted EPI reports: per-market append-only index ("u:{market}#{i}"), caller-paid. Kept separate so
+    /// untrusted spam can never evict trusted history.
+    untrusted_report_count: LookupMap<String, u32>,
     epi_report_total: u64,
     stakes: LookupMap<String, Stake>,
     total_staked: NearToken,
@@ -172,6 +177,7 @@ impl Entx {
             account_receipts: LookupMap::new(b"a"),
             market_report_count: LookupMap::new(b"n"),
             market_reports: LookupMap::new(b"e"),
+            untrusted_report_count: LookupMap::new(b"u"),
             epi_report_total: 0,
             stakes: LookupMap::new(b"s"),
             total_staked: NearToken::from_yoctonear(0),
@@ -196,6 +202,7 @@ impl Entx {
         self.account_receipts.flush();
         self.market_report_count.flush();
         self.market_reports.flush();
+        self.untrusted_report_count.flush();
         self.stakes.flush();
     }
 
@@ -278,9 +285,16 @@ impl Entx {
                 r#"{{"market_id":"{market_id}","reporter":"{reporter}","trusted":{trusted},"epi_x10":{epi_x10},"note":"{note}"}}"#
             ),
         );
-        let i = self.market_report_count.get(&market_id).copied().unwrap_or(0);
+        let counts = if trusted { &mut self.market_report_count } else { &mut self.untrusted_report_count };
+        let i = counts.get(&market_id).copied().unwrap_or(0);
+        counts.insert(market_id.clone(), i + 1);
+        let key = if trusted {
+            idx_key(&format!("t:{market_id}"), i % REPORT_RING)
+        } else {
+            idx_key(&format!("u:{market_id}"), i)
+        };
         self.market_reports.insert(
-            idx_key(&market_id, i),
+            key,
             EpiReport {
                 market_id: market_id.clone(),
                 reporter,
@@ -290,7 +304,6 @@ impl Entx {
                 ts_ms: env::block_timestamp_ms(),
             },
         );
-        self.market_report_count.insert(market_id, i + 1);
         self.epi_report_total += 1;
 
         if !trusted {
@@ -477,14 +490,29 @@ impl Entx {
         (n - take..n).rev().filter_map(|i| self.receipts.get(i).cloned()).collect()
     }
 
-    /// Newest-first EPI reports for one market. `before` is an exclusive per-market index for paging.
+    /// Newest-first trusted EPI reports for one market (at most the last REPORT_RING are retained).
+    /// `before` is an exclusive per-market index for paging.
     pub fn get_epi_reports(&self, market_id: String, limit: Option<u32>, before: Option<u32>) -> Vec<EpiReport> {
         let n = self.market_report_count.get(&market_id).copied().unwrap_or(0);
+        let oldest = n.saturating_sub(REPORT_RING);
         let end = before.unwrap_or(n).min(n);
-        let take = limit.unwrap_or(20).min(MAX_PAGE).min(end);
+        let take = limit.unwrap_or(20).min(MAX_PAGE).min(end.saturating_sub(oldest));
+        let scope = format!("t:{market_id}");
         (end - take..end)
             .rev()
-            .filter_map(|i| self.market_reports.get(&idx_key(&market_id, i)).cloned())
+            .filter_map(|i| self.market_reports.get(&idx_key(&scope, i % REPORT_RING)).cloned())
+            .collect()
+    }
+
+    /// Newest-first untrusted (community) EPI reports for one market.
+    pub fn get_untrusted_reports(&self, market_id: String, limit: Option<u32>, before: Option<u32>) -> Vec<EpiReport> {
+        let n = self.untrusted_report_count.get(&market_id).copied().unwrap_or(0);
+        let end = before.unwrap_or(n).min(n);
+        let take = limit.unwrap_or(20).min(MAX_PAGE).min(end);
+        let scope = format!("u:{market_id}");
+        (end - take..end)
+            .rev()
+            .filter_map(|i| self.market_reports.get(&idx_key(&scope, i)).cloned())
             .collect()
     }
 
@@ -587,10 +615,34 @@ mod tests {
         assert!(c.report_epi("dune-drift".into(), 906, "box office beat".into()));
         assert_eq!(c.get_market("dune-drift".into()).unwrap().epi_x10, 906);
         let reports = c.get_epi_reports("dune-drift".into(), None, None);
-        assert_eq!(reports.len(), 2);
-        assert!(reports[0].trusted); // newest first
+        assert_eq!(reports.len(), 1);
+        assert!(reports[0].trusted);
+        let community = c.get_untrusted_reports("dune-drift".into(), None, None);
+        assert_eq!(community.len(), 1);
+        assert!(!community[0].trusted);
         assert_eq!(c.get_epi_reports("drift-opening-250".into(), None, None).len(), 0);
         assert_eq!(c.get_stats().epi_reports, 2);
+    }
+
+    #[test]
+    fn trusted_reports_use_bounded_ring() {
+        let mut c = setup();
+        ctx(0, NearToken::from_yoctonear(0));
+        for i in 0..REPORT_RING {
+            c.report_epi("dune-drift".into(), 800 + i, "x".into());
+        }
+        c.flush_all();
+        let full = env::storage_usage();
+        for i in 0..40 {
+            c.report_epi("dune-drift".into(), 900 + i, "x".into());
+        }
+        c.flush_all();
+        // ring is full: further trusted reports overwrite slots instead of growing storage
+        assert_eq!(env::storage_usage(), full);
+        let r = c.get_epi_reports("dune-drift".into(), Some(50), None);
+        assert_eq!(r.len(), REPORT_RING as usize);
+        assert_eq!(r[0].epi_x10, 939); // newest first
+        assert_eq!(c.get_market("dune-drift".into()).unwrap().epi_x10, 939);
     }
 
     #[test]

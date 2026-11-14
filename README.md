@@ -20,8 +20,8 @@ Hackathon tracks: **Unstoppable DeFi** + **Open Innovation**.
 
 | Thing | Where |
 | --- | --- |
-| NEAR contract (testnet) | [`entx-market-1794653894.testnet`](https://testnet.nearblocks.io/address/entx-market-1794653894.testnet) |
-| Trusted oracle (testnet) | [`entx-oracle-1794653894.testnet`](https://testnet.nearblocks.io/address/entx-oracle-1794653894.testnet) (function-call key, `report_epi` only) |
+| NEAR contract (testnet) | [`entx-market-1794654167.testnet`](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet) |
+| Trusted oracle (testnet) | [`entx-oracle-1794654167.testnet`](https://testnet.nearblocks.io/address/entx-oracle-1794654167.testnet) (function-call key, `report_epi` only) |
 | Contract source | [`contracts/near/src/lib.rs`](contracts/near/src/lib.rs) (Rust, near-sdk 5.30) |
 | Solana receipts | SPL Memo program `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` on devnet |
 | NEAR Intents | 1Click API `https://1click.chaindefuser.com/v0/quote` (dry-run) |
@@ -29,10 +29,10 @@ Hackathon tracks: **Unstoppable DeFi** + **Open Innovation**.
 Check the contract state from any terminal (needs [near-cli-rs](https://near.cli.rs)):
 
 ```bash
-near contract call-function as-read-only entx-market-1794653894.testnet get_stats json-args '{}' network-config testnet now
-near contract call-function as-read-only entx-market-1794653894.testnet get_epi_reports json-args '{"market_id":"dune-drift"}' network-config testnet now
-near contract call-function as-read-only entx-market-1794653894.testnet get_oracles json-args '{}' network-config testnet now
-near contract call-function as-read-only entx-market-1794653894.testnet get_recent_receipts json-args '{"limit":10}' network-config testnet now
+near contract call-function as-read-only entx-market-1794654167.testnet get_stats json-args '{}' network-config testnet now
+near contract call-function as-read-only entx-market-1794654167.testnet get_epi_reports json-args '{"market_id":"dune-drift"}' network-config testnet now
+near contract call-function as-read-only entx-market-1794654167.testnet get_oracles json-args '{}' network-config testnet now
+near contract call-function as-read-only entx-market-1794654167.testnet get_recent_receipts json-args '{"limit":10}' network-config testnet now
 ```
 
 ---
@@ -59,7 +59,7 @@ rustup target add wasm32-unknown-unknown
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
 
-pnpm contract:test   # 10 unit tests: registry, receipts, storage deposits/refunds, oracle trust,
+pnpm contract:test   # 11 unit tests: registry, receipts, storage deposits/refunds, oracle trust, report ring,
                      # parimutuel payout, permissions, input sanitising
 pnpm near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers 19 markets,
                      # allow-lists the oracle, gives it a report_epi-only key, writes .env.local
@@ -139,12 +139,20 @@ All state changes emit NEP-297 `EVENT_JSON` logs (`standard: "entx"`).
   a deposit to cover it, refunding any excess. Spam costs the spammer, not the contract.
 - **Bounded reads.** Receipts and EPI reports are indexed per account and per market (count + keyed entries).
   Every view is paginated (`limit` ≤ 50, `before` cursor), so no view scans global history.
+- **Bounded contract-paid storage.** Trusted EPI reports (the only writes the contract pays for) live in a fixed
+  32-slot ring per market. Once full, new reports overwrite old slots and storage stops growing, so oracle activity
+  can never lock up staked NEAR. Untrusted reports are caller-paid and indexed separately
+  (`get_untrusted_reports`), so they can't evict trusted history.
 - **Least-privilege oracle.** The server signs with a separate oracle account's **function-call access key**,
   limited to `report_epi` on the ENTX contract with a 1 NEAR gas allowance. It cannot `resolve` markets, touch
   stakes or transfer funds (verified on testnet: `Access key does not allow method resolve`).
 - **Clients can't choose oracle values.** `/api/oracle` accepts only `{assetId, eventId}` from a fixed event
-  catalogue. The server derives the new EPI from the current on-chain value. It requires a same-origin request
-  and is rate-limited per IP and globally.
+  catalogue. The server derives the new EPI from the current on-chain value.
+- **Oracle access.** By default publishing requires `Authorization: Bearer $ORACLE_API_SECRET` (for server-side
+  jobs). `ENTX_PUBLIC_ORACLE=true` (demo mode, set by the deploy script) lets the in-app buttons publish from the
+  same origin. Origin and IP headers are spoofable by scripts, so in demo mode the **global** limits (1 per 1.5 s,
+  240 per hour) are the real bound. Worst case is noisy demo EPI values: no funds at risk, storage bounded by the
+  ring, gas capped by the key's 1 NEAR allowance. Set it to `false` for anything beyond a demo.
 - **Honest limitation.** Oracle *events* are still simulated (demo buttons), and there's a single trusted
   reporter. See the roadmap for a multi-source quorum.
 
