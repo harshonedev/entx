@@ -89,8 +89,9 @@ export default function Discover() {
 
       <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-4 self-start">
-        <div className="panel min-w-0 overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
+        {/* The board sits on the newsprint itself, under ink rules, like a printed chart (not in a card). */}
+        <div className="min-w-0 overflow-hidden border-t-2 border-ink">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-3">
           <div className="flex items-center gap-2">
             <h2 className="h-panel">Markets</h2>
             <SimBadge quiet>Simulated prices</SimBadge>

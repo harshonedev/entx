@@ -311,9 +311,9 @@ button, .press {
 .wallet-adapter-modal-wrapper {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 0;
   box-shadow: none;
 }
-.wallet-adapter-modal-list .wallet-adapter-button { border-radius: 3px; }
-.wallet-adapter-dropdown-list { border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line-2); box-shadow: none; }
-.wallet-adapter-dropdown-list-item { border-radius: 3px; }
+.wallet-adapter-modal-list .wallet-adapter-button { border-radius: 0; }
+.wallet-adapter-dropdown-list { border-radius: 0; background: var(--panel-2); border: 1px solid var(--line-2); box-shadow: none; }
+.wallet-adapter-dropdown-list-item { border-radius: 0; }

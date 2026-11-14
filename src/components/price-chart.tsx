@@ -55,7 +55,7 @@ export function PriceChart({
   const series = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const markersApi = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
   // Canvas can't resolve CSS variables, so token colours are read once at mount.
-  const colors = useRef({ up: "#34c77b", down: "#ef5350", text: "#ededed" });
+  const colors = useRef({ up: "#1d7446", down: "#c4221b", text: "#141414" });
   const lastLen = useRef(0);
   const raw = useMarket((s) => s.candles[assetId]);
   const feed = useMarket((s) => s.feed);
@@ -138,7 +138,7 @@ export function PriceChart({
     const s = series.current;
     if (!s || !candles?.length) return;
     // Generated lead-in draws muted, so only recorded candles carry the up/down colours.
-    const muted = getComputedStyle(document.documentElement).getPropertyValue("--line-2").trim() || "#3a3a3a";
+    const muted = getComputedStyle(document.documentElement).getPropertyValue("--line-2").trim() || "#bdb5a4";
     // lightweight-charts rejects out-of-order or duplicate times (a persisted history meeting a fresh lead-in,
     // or a throttled background tab firing ticks late), so keep strictly ascending times, last candle wins.
     const byTime = new Map<number, (typeof candles)[number]>();

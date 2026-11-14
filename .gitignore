@@ -49,3 +49,7 @@ brag-output/
 # local tooling
 /.claude/
 /.impeccable/
+
+# tasteskill state
+.taste-skill/
+shots/
