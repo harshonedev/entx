@@ -10,7 +10,8 @@ const uiFont = IBM_Plex_Sans({ variable: "--font-ui", subsets: ["latin"], weight
 const codeFont = IBM_Plex_Mono({ variable: "--font-code", subsets: ["latin"], weight: ["400", "500"] });
 
 const chainName = CHAIN_LABEL[CHAIN].split(" ")[0];
-const siteUrl = IS_LIVE ? chainUrl(CHAIN) : HOSTS.nearDemo;
+// The host this build serves: solana.entx.space has one deployment (demo until M3); NEAR splits live and demo.
+const siteUrl = IS_LIVE || CHAIN === "solana" ? chainUrl(CHAIN) : HOSTS.nearDemo;
 const title = "ENTX — Entertainment, now tradable";
 const description = `An entertainment exchange on ${chainName}: trade movie & show markets priced by popularity, performance and sentiment.`;
 
