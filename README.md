@@ -12,7 +12,7 @@
 A multichain entertainment exchange. Movies and TV shows become markets priced by one live score,<br>
 the **Entertainment Popularity Index (EPI)**, with a NEAR contract for the registry, oracle, receipts and prediction pools.
 
-[![CI](https://github.com/harshonedev/entx/actions/workflows/ci.yml/badge.svg)](https://github.com/harshonedev/entx/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-554%20web%20%2B%2021%20contract%20passing-2ea44f)](#quick-start)
 [![Live demo](https://img.shields.io/badge/demo-demo.entx.space-ff7a1a?style=flat)](https://demo.entx.space)
 [![NEAR testnet](https://img.shields.io/badge/NEAR-testnet-00ec97?logo=near&logoColor=white)](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet)
 [![Solana devnet](https://img.shields.io/badge/Solana-devnet-9945ff?logo=solana&logoColor=white)](https://solana.entx.space)
