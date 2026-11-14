@@ -28,6 +28,7 @@ export default function PredictionsPage() {
           {CATS.map((c) => (
             <button
               key={c}
+              className="cursor-pointer"
               onClick={() => setCat(c)}
               aria-pressed={cat === c}
             >

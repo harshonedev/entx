@@ -20,7 +20,7 @@ export function TickerTape() {
             <li key={a.id} className="shrink-0">
               <Link
                 href={`/asset/${a.id}`}
-                className="flex h-10 items-center gap-2 border-r border-line px-5 text-[12px] transition-colors hover:bg-panel"
+                className="cursor-pointer flex h-10 items-center gap-2 border-r border-line px-5 text-[12px] transition-colors hover:bg-panel"
               >
                 <span className="font-medium">{a.ticker}</span>
                 <Flash value={price} className="num text-muted">
@@ -63,16 +63,16 @@ export function Toasts() {
           <div key={t.id} className="toast-in pointer-events-auto relative rounded border border-line-2 bg-panel-2 p-3 pr-8">
             {t.href ? (
               external ? (
-                <a href={t.href} target="_blank" rel="noreferrer" className="block">{body}</a>
+                <a href={t.href} target="_blank" rel="noreferrer" className="cursor-pointer block">{body}</a>
               ) : (
-                <Link href={t.href} className="block">{body}</Link>
+                <Link href={t.href} className="cursor-pointer block">{body}</Link>
               )
             ) : (
               body
             )}
             <button
               onClick={() => dismiss(t.id)}
-              className="absolute right-2 top-2 text-faint hover:text-text"
+              className="cursor-pointer absolute right-2 top-2 text-faint hover:text-text"
               aria-label="Dismiss"
             >
               <X size={14} />
@@ -106,9 +106,9 @@ export function LiveFeed({ refId, limit = 12, className }: { refId?: string; lim
               <div className="min-w-0 flex-1">
                 <div className={clsx("leading-snug", f.type === "oracle" ? "text-text" : "text-muted")}>
                   {f.href ? (
-                    <a href={f.href} target="_blank" rel="noreferrer" className="text-near hover:underline">{f.text} ↗</a>
+                    <a href={f.href} target="_blank" rel="noreferrer" className="cursor-pointer text-near hover:underline">{f.text} ↗</a>
                   ) : f.refId && ASSET_BY_ID[f.refId] && !refId ? (
-                    <Link href={`/asset/${f.refId}`} className="hover:text-accent">{f.text}</Link>
+                    <Link href={`/asset/${f.refId}`} className="cursor-pointer hover:text-accent">{f.text}</Link>
                   ) : (
                     f.text
                   )}

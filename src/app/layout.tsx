@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               (ENTX contract) · Prediction pools on NEAR use real testnet NEAR · Intents quotes are dry-run only · Not
               a real-money exchange.
               <span className="mt-2 flex items-center gap-2">
-                <a href="https://www.themoviedb.org" target="_blank" rel="noreferrer" className="font-semibold text-muted hover:text-text">
+                <a href="https://www.themoviedb.org" target="_blank" rel="noreferrer" className="cursor-pointer font-semibold text-muted hover:text-text">
                   TMDB
                 </a>
                 This product uses the TMDB API but is not endorsed or certified by TMDB.

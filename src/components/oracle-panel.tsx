@@ -61,7 +61,7 @@ export function OraclePanel({ asset }: { asset: AssetSeed }) {
               key={e.id}
               onClick={() => oracle(asset.id, e.id)}
               className={clsx(
-                "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                "cursor-pointer flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
                 positive
                   ? "border-up/20 hover:border-up/50 hover:bg-up/[0.06]"
                   : "border-down/20 hover:border-down/50 hover:bg-down/[0.06]",

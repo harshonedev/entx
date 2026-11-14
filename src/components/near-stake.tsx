@@ -110,7 +110,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
               onClick={() =>
                 run("claim", () => call("claim", { market_id: marketId }, "0", 50), "Payout claimed")
               }
-              className="ml-1 rounded-md bg-near px-2 py-1 font-semibold text-black disabled:opacity-50"
+              className="cursor-pointer ml-1 rounded-md bg-near px-2 py-1 font-semibold text-black disabled:opacity-50"
             >
               {busy === "claim" ? "Claiming…" : `Claim ${yoctoToNear(claimable, 3)} NEAR`}
             </button>
@@ -124,7 +124,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
         <button
           onClick={connect}
           disabled={!ready}
-          className="mt-2 w-full rounded-lg border border-near/40 py-1.5 text-xs font-semibold text-near hover:bg-near/10"
+          className="cursor-pointer mt-2 w-full rounded-lg border border-near/40 py-1.5 text-xs font-semibold text-near hover:bg-near/10"
         >
           Connect NEAR to stake real testnet NEAR
         </button>
@@ -135,7 +135,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
               key={a}
               onClick={() => setAmount(a)}
               className={clsx(
-                "num rounded-md border px-2 py-1 text-[11px]",
+                "cursor-pointer num rounded-md border px-2 py-1 text-[11px]",
                 amount === a ? "border-near text-near" : "border-line text-muted",
               )}
             >
@@ -155,7 +155,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
                   )
                 }
                 className={clsx(
-                  "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold text-black disabled:opacity-50",
+                  "cursor-pointer inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold text-black disabled:opacity-50",
                   side === "YES" ? "bg-up" : "bg-down",
                 )}
               >
@@ -179,7 +179,7 @@ export function NearStakePanel({ marketId }: { marketId: string }) {
           href={nearTxUrl(lastTx)}
           target="_blank"
           rel="noreferrer"
-          className="mt-1 inline-flex items-center gap-1 text-[11px] text-near hover:underline"
+          className="cursor-pointer mt-1 inline-flex items-center gap-1 text-[11px] text-near hover:underline"
         >
           Last tx {lastTx.slice(0, 8)}… <ExternalLink size={10} />
         </a>

@@ -80,7 +80,7 @@ export default function OnchainPage() {
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-text"
+          className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-text"
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
         </button>
@@ -93,7 +93,7 @@ export default function OnchainPage() {
             href={nearAccountUrl(NEAR_CONTRACT)}
             target="_blank"
             rel="noreferrer"
-            className="num mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-near hover:underline"
+            className="cursor-pointer num mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-near hover:underline"
           >
             {NEAR_CONTRACT} <ExternalLink size={12} />
           </a>
@@ -134,7 +134,7 @@ export default function OnchainPage() {
                 {assets.map((m) => (
                   <tr key={m.id} className="border-t border-line">
                     <td className="py-2 pl-4">
-                      <Link href={`/asset/${m.id}`} className="hover:text-accent">
+                      <Link href={`/asset/${m.id}`} className="cursor-pointer hover:text-accent">
                         <span className="font-semibold">{m.ticker}</span>{" "}
                         <span className="text-xs text-muted">{m.title}</span>
                       </Link>
@@ -206,7 +206,7 @@ export default function OnchainPage() {
                       <tr key={r.id} className="border-t border-line text-xs">
                         <td className="num py-2 pl-4 text-faint">{r.id}</td>
                         <td className="num max-w-[160px] truncate py-2">
-                          <a href={nearAccountUrl(r.account)} target="_blank" rel="noreferrer" className="hover:text-near">
+                          <a href={nearAccountUrl(r.account)} target="_blank" rel="noreferrer" className="cursor-pointer hover:text-near">
                             {r.account}
                           </a>
                         </td>
@@ -218,7 +218,7 @@ export default function OnchainPage() {
                         </td>
                         <td className="py-2 pl-4">
                           {solSig ? (
-                            <a href={explorerTx(solSig)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sol hover:underline">
+                            <a href={explorerTx(solSig)} target="_blank" rel="noreferrer" className="cursor-pointer inline-flex items-center gap-1 text-sol hover:underline">
                               Solana {solSig.slice(0, 6)}… <ExternalLink size={10} />
                             </a>
                           ) : (

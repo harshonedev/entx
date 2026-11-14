@@ -44,7 +44,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
     <div className="panel flex flex-col p-4">
       <div className="flex items-start gap-3">
         {asset && !compact && (
-          <Link href={`/asset/${asset.id}`}>
+          <Link className="cursor-pointer" href={`/asset/${asset.id}`}>
             <Poster asset={asset} size="sm" />
           </Link>
         )}
@@ -89,7 +89,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
             <button
               onClick={() => setSide(side === "YES" ? null : "YES")}
               className={clsx(
-                "rounded-xl border py-2.5 text-sm font-semibold transition-colors",
+                "cursor-pointer rounded-xl border py-2.5 text-sm font-semibold transition-colors",
                 side === "YES" ? "border-up bg-up text-black" : "border-transparent bg-up/[0.08] text-up hover:bg-up/[0.14]",
               )}
             >
@@ -98,7 +98,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
             <button
               onClick={() => setSide(side === "NO" ? null : "NO")}
               className={clsx(
-                "rounded-xl border py-2.5 text-sm font-semibold transition-colors",
+                "cursor-pointer rounded-xl border py-2.5 text-sm font-semibold transition-colors",
                 side === "NO" ? "border-down bg-down text-black" : "border-transparent bg-down/[0.08] text-down hover:bg-down/[0.14]",
               )}
             >
@@ -114,7 +114,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
                     key={a}
                     onClick={() => setAmount(a)}
                     className={clsx(
-                      "num rounded-lg border py-1.5 text-xs",
+                      "cursor-pointer num rounded-lg border py-1.5 text-xs",
                       amount === a ? "border-accent text-accent" : "border-line text-muted hover:text-text",
                     )}
                   >
@@ -135,7 +135,7 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               <button
                 disabled={amount > cash}
                 onClick={place}
-                className="mt-3 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-accent-ink disabled:opacity-40"
+                className="cursor-pointer mt-3 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-accent-ink disabled:opacity-40"
               >
                 {amount > cash ? "Insufficient balance" : `Buy ${side} · ${usd(amount, 0)}`}
               </button>
@@ -168,10 +168,10 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
           </summary>
           <p className="mt-2 leading-relaxed">{p.rules}</p>
           <div className="mt-2 flex gap-2">
-            <button onClick={() => resolve(p.id, "YES")} className="rounded-md border border-line px-2 py-1 hover:text-up">
+            <button onClick={() => resolve(p.id, "YES")} className="cursor-pointer rounded-md border border-line px-2 py-1 hover:text-up">
               Settle YES
             </button>
-            <button onClick={() => resolve(p.id, "NO")} className="rounded-md border border-line px-2 py-1 hover:text-down">
+            <button onClick={() => resolve(p.id, "NO")} className="cursor-pointer rounded-md border border-line px-2 py-1 hover:text-down">
               Settle NO
             </button>
           </div>

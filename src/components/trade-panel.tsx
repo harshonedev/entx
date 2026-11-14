@@ -56,7 +56,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
             key={s}
             onClick={() => setSide(s)}
             className={clsx(
-              "h-11 rounded text-[13px] font-medium capitalize transition-colors",
+              "cursor-pointer h-11 rounded text-[13px] font-medium capitalize transition-colors",
               side === s
                 ? s === "buy"
                   ? "bg-up/[0.12] text-up"
@@ -72,7 +72,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
       <div className="mt-4 flex items-center justify-between text-xs text-muted">
         <span>Quantity (units)</span>
         <button
-          className="hover:text-text"
+          className="cursor-pointer hover:text-text"
           onClick={() => setQtyText(String(side === "buy" ? maxBuy : Math.floor(units)))}
         >
           Max: <span className="num">{side === "buy" ? maxBuy : num(units, 0)}</span>
@@ -94,7 +94,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
             key={p}
             onClick={() => setQtyText(String(p))}
             aria-pressed={qtyText === String(p)}
-            className="num"
+            className="cursor-pointer num"
           >
             {p}
           </button>
@@ -118,7 +118,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
         disabled={invalid}
         onClick={submit}
         className={clsx(
-          "mt-4 h-12 w-full rounded text-[13.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-40",
+          "cursor-pointer mt-4 h-12 w-full rounded text-[13.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-40",
           side === "buy" ? "bg-accent text-accent-ink hover:brightness-110" : "bg-down text-black hover:brightness-110",
         )}
       >
