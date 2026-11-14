@@ -56,7 +56,12 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
               <Clock size={11} /> {st.resolved ? "Closed" : `${p.closesInDays}d left`}
             </span>
           </div>
-          <div className="mt-1.5 text-[15px] font-semibold leading-snug">{p.question}</div>
+          <Link
+            href={`/predictions/${p.id}`}
+            className="cursor-pointer mt-1.5 block text-[15px] font-semibold leading-snug hover:text-accent"
+          >
+            {p.question}
+          </Link>
         </div>
       </div>
 

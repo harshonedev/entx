@@ -155,7 +155,9 @@ export default function PortfolioPage() {
                       >
                         {p.side}
                       </span>
-                      <span className="min-w-0 flex-1">{seed.question}</span>
+                      <Link href={`/predictions/${p.marketId}`} className="cursor-pointer min-w-0 flex-1 hover:text-accent">
+                        {seed.question}
+                      </Link>
                       <span className="num text-xs text-muted">
                         {num(p.shares, 1)} sh @ {(px * 100).toFixed(0)}¢
                       </span>

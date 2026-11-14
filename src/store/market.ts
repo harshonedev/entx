@@ -87,6 +87,8 @@ export interface FeedItem {
   ts: number;
   type: "oracle" | "trade" | "bot" | "settle" | "chain";
   text: string;
+  /** Short label for chart markers, e.g. "Trailer goes viral". */
+  tag?: string;
   refId?: string;
   href?: string;
   tone: "up" | "down" | "neutral";
