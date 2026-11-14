@@ -1,19 +1,38 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Shell } from "@/components/nav";
 import { TickerTape, Toasts } from "@/components/chrome";
-import { CHAIN, CHAIN_LABEL, CHAIN_ON, IS_LIVE } from "@/lib/env";
+import { CHAIN, CHAIN_LABEL, CHAIN_ON, HOSTS, IS_LIVE, chainUrl } from "@/lib/env";
 import "./globals.css";
 
 const uiFont = IBM_Plex_Sans({ variable: "--font-ui", subsets: ["latin"], weight: ["400", "500", "600"] });
 const codeFont = IBM_Plex_Mono({ variable: "--font-code", subsets: ["latin"], weight: ["400", "500"] });
 
+const chainName = CHAIN_LABEL[CHAIN].split(" ")[0];
+const siteUrl = IS_LIVE ? chainUrl(CHAIN) : HOSTS.nearDemo;
+const title = "ENTX — Entertainment, now tradable";
+const description = `An entertainment exchange on ${chainName}: trade movie & show markets priced by popularity, performance and sentiment.`;
+
 export const metadata: Metadata = {
-  title: "ENTX — Entertainment, now tradable",
-  description:
-    `An entertainment exchange on ${CHAIN_LABEL[CHAIN].split(" ")[0]}: trade movie & show markets priced by popularity, performance and sentiment.`,
+  metadataBase: new URL(siteUrl),
+  title: { default: title, template: "%s · ENTX" },
+  description,
+  applicationName: "ENTX",
+  keywords: ["ENTX", "entertainment exchange", "prediction markets", "movies", "TV shows", chainName, "NEAR", "Solana", "TMDB"],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "ENTX",
+    url: "/",
+    title,
+    description,
+    locale: "en_US",
+  },
+  twitter: { card: "summary_large_image", title, description },
 };
+
+export const viewport: Viewport = { themeColor: "#0e0e0e", colorScheme: "dark" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
