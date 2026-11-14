@@ -218,13 +218,16 @@ describe("POST /api/oracle", () => {
       vi.stubEnv("TRUST_PROXY", "true");
       const { POST } = await load();
       const o = { origin: "http://localhost:3000" };
-      expect((await POST(req(body, { ...o, "x-real-ip": "1.1.1.1" }))).status).toBe(200);
-      expect((await POST(req(body, { ...o, "x-real-ip": "2.2.2.2" }))).status).toBe(429); // global 1.5s
+      expect((await POST(req(body, { ...o, "x-forwarded-for": "1.1.1.1" }))).status).toBe(200);
+      expect((await POST(req(body, { ...o, "x-forwarded-for": "2.2.2.2" }))).status).toBe(429); // global 1.5s
       vi.advanceTimersByTime(1600);
-      expect((await POST(req({ ...body, assetId: B }, { ...o, "x-forwarded-for": "3.3.3.3, 9.9.9.9" }))).status).toBe(200);
+      // Traefik appends the real peer last; a client-chosen first hop must not pick the bucket.
+      expect((await POST(req({ ...body, assetId: B }, { ...o, "x-forwarded-for": "1.1.1.1, 3.3.3.3" }))).status).toBe(200);
       vi.advanceTimersByTime(1600);
-      // 1.1.1.1 is still inside its own 6s per-IP window
-      expect((await POST(req({ ...body, assetId: ASSETS[2].id }, { ...o, "x-real-ip": "1.1.1.1" }))).status).toBe(429);
+      // 1.1.1.1 is still inside its own 6s per-IP window, even with a spoofed x-real-ip or leading hop
+      expect(
+        (await POST(req({ ...body, assetId: ASSETS[2].id }, { ...o, "x-real-ip": "7.7.7.7", "x-forwarded-for": "8.8.8.8, 1.1.1.1" }))).status,
+      ).toBe(429);
     });
 
     it("demo spam does not starve the authenticated bucket", async () => {
@@ -244,7 +247,7 @@ describe("POST /api/oracle", () => {
       for (let i = 0; i < 245; i++) {
         vi.advanceTimersByTime(step);
         const assetId = ASSETS[i % ASSETS.length].id;
-        const r = await POST(req({ ...body, assetId }, { origin: "http://localhost:3000", "x-real-ip": `10.0.0.${i}` }));
+        const r = await POST(req({ ...body, assetId }, { origin: "http://localhost:3000", "x-forwarded-for": `10.0.0.${i}` }));
         if (r.status === 200) ok++;
       }
       expect(ok).toBe(240);

@@ -29,7 +29,9 @@ import { useNear } from "@/lib/near";
 import { Poster } from "./poster";
 import { WalletMenu } from "./wallet-menu";
 import { DemoControls } from "./demo-controls";
-import { Change, Dim, SimBadge, signTone } from "./ui";
+import { ModeBadge, SettingsMenu } from "./settings-menu";
+import { CHAIN, CHAIN_LABEL, CHAIN_NAMES, CHAIN_ON, IS_DEMO, MULTICHAIN } from "@/lib/env";
+import { Change, Dim, signTone } from "./ui";
 
 type NavLink = { href: string; label: string; icon: LucideIcon };
 
@@ -347,7 +349,10 @@ function ReceiptToggles() {
   const { connected: solConnected } = useWallet();
   // A receipt toggle only means something once that chain's wallet is connected.
   const live = { solana: solConnected, near: !!accountId };
-  const missing = live.solana ? "NEAR" : live.near ? "Solana" : "Solana or NEAR";
+  const missing = MULTICHAIN
+    ? live.solana ? "NEAR" : live.near ? "Solana" : "Solana or NEAR"
+    : CHAIN_NAMES[0];
+  const allLive = (["solana", "near"] as const).every((k) => !CHAIN_ON[k] || live[k]);
   return (
     <div role="group" aria-labelledby="receipts-label">
       <div id="receipts-label" className="label mb-2 px-0.5">On-chain receipts</div>
@@ -357,7 +362,7 @@ function ReceiptToggles() {
             ["solana", "Solana devnet", "bg-sol"],
             ["near", "NEAR testnet", "bg-near"],
           ] as const
-        ).map(([k, label, dot]) => {
+        ).filter(([k]) => CHAIN_ON[k]).map(([k, label, dot]) => {
           const on = live[k] && chains[k];
           return (
           <button
@@ -391,7 +396,7 @@ function ReceiptToggles() {
           );
         })}
       </div>
-      {!(live.solana && live.near) && (
+      {!allLive && (
         <p id="receipts-hint" className="mt-2 px-0.5 text-xs leading-snug text-muted">
           Connect a {missing} wallet to sign receipts for your trades.
         </p>
@@ -418,8 +423,9 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
       <StatChips />
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <AssetSearch />
-        <DemoControls />
-        {connected && (
+        {IS_DEMO && <DemoControls />}
+        <SettingsMenu />
+        {CHAIN_ON.solana && connected && (
           <button
             onClick={airdrop}
             title="Request 1 devnet SOL to pay for on-chain receipts"
@@ -444,10 +450,10 @@ function StatChips() {
   // whole instead of being clipped mid-word. Testnets is the proof judges look for, so it stays longest.
   const chips: [string, ReactNode, string][] = [
     [
-      "Testnets",
+      "Network",
       <span key="n" className="flex items-center gap-1.5">
         <span className="live-dot h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
-        NEAR · Solana
+        {MULTICHAIN ? CHAIN_NAMES.join(" · ") : CHAIN_LABEL[CHAIN]}
       </span>,
       "@min-[820px]:flex",
     ],
@@ -457,9 +463,7 @@ function StatChips() {
   ];
   return (
     <div className="hidden min-w-0 items-center gap-1.5 overflow-hidden md:flex">
-      <span title="Prices, volume and EPI moves are simulated; chains are real testnets">
-        <SimBadge />
-      </span>
+      <ModeBadge />
       {chips.map(([k, v, show]) => (
         <div key={k} className={clsx("hidden h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded bg-panel px-3 text-[12px]", show)}>
           <span className="text-muted">{k}</span>

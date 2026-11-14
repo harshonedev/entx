@@ -38,6 +38,9 @@ vi.mock("@/lib/near", () => ({
 }));
 
 import PortfolioPage from "./page";
+// These tests cover the cross-chain view (both wallets), as with the chain switch on.
+vi.mock("@/lib/env", async (orig) => ({ ...(await orig<typeof import("@/lib/env")>()), CHAIN_ON: { near: true, solana: true }, MULTICHAIN: true, CHAIN_NAMES: ["NEAR", "Solana"] }));
+
 
 const panelOf = (heading: string | RegExp) =>
   screen.getByRole("heading", { name: heading }).closest(".panel") as HTMLElement;
@@ -56,7 +59,7 @@ describe("Portfolio page", () => {
   it("renders empty states for a fresh demo account", () => {
     render(<PortfolioPage />);
     expect(screen.getByRole("heading", { level: 1, name: "Portfolio" })).toBeInTheDocument();
-    expect(screen.getByText(/Connect a Solana and\/or NEAR wallet/)).toBeInTheDocument();
+    expect(screen.getByText(/Connect a NEAR and\/or Solana wallet/)).toBeInTheDocument();
     expect(card("Total value")).toHaveTextContent(usd(STARTING_CASH));
     expect(card("Total value")).toHaveTextContent(`${pct(0)} all-time`);
     expect(card("Available cash")).toHaveTextContent(usd(STARTING_CASH));

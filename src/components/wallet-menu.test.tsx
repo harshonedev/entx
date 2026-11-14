@@ -15,6 +15,9 @@ vi.mock("@solana/wallet-adapter-react", () => ({ useWallet: () => sol }));
 vi.mock("@solana/wallet-adapter-react-ui", () => ({ useWalletModal: () => modal }));
 
 import { WalletMenu } from "./wallet-menu";
+// These tests cover the cross-chain view (both wallets), as with the chain switch on.
+vi.mock("@/lib/env", async (orig) => ({ ...(await orig<typeof import("@/lib/env")>()), CHAIN_ON: { near: true, solana: true }, MULTICHAIN: true, CHAIN_NAMES: ["NEAR", "Solana"] }));
+
 
 const SOL_KEY = "So1ana1111111111111111111111111111111XyZ9";
 

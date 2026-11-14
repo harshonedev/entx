@@ -21,16 +21,29 @@ export interface Pool {
 
 export const poolPrice = (p: Pool) => p.cash / p.units;
 
-/** Cost (incl. fee) to buy q units. */
+/** A pool the AMM can price against: both reserves finite and strictly positive. */
+export const validPool = (p: Pool) =>
+  Number.isFinite(p.cash) && Number.isFinite(p.units) && p.cash > 0 && p.units > 0;
+
+/**
+ * Cost (incl. fee) to buy q units. `ok` is false for anything that is not a fillable order:
+ * zero/negative/non-finite q, q at or above the pool's whole unit reserve (the curve's asymptote,
+ * where cost would be infinite or negative), or a broken pool. Invalid quotes cost Infinity so any
+ * `cost > cash` check also rejects them; callers should still check `ok`.
+ */
 export function quoteBuy(p: Pool, q: number) {
-  if (q <= 0) return { cost: 0, avg: poolPrice(p), after: p, impact: 0 };
+  if (q <= 0) return { ok: false, cost: 0, avg: poolPrice(p), after: p, impact: 0 };
+  if (!validPool(p) || !Number.isFinite(q) || q >= p.units)
+    return { ok: false, cost: Infinity, avg: NaN, after: p, impact: 0 };
   const k = p.cash * p.units;
   const newUnits = p.units - q;
   const newCash = k / newUnits;
   const raw = newCash - p.cash;
   const cost = raw * (1 + FEE);
   const after = { cash: newCash, units: newUnits };
+  if (!Number.isFinite(cost) || cost <= 0) return { ok: false, cost: Infinity, avg: NaN, after: p, impact: 0 };
   return {
+    ok: true,
     cost,
     avg: cost / q,
     after,
@@ -38,16 +51,19 @@ export function quoteBuy(p: Pool, q: number) {
   };
 }
 
-/** Proceeds (net of fee) for selling q units. */
+/** Proceeds (net of fee) for selling q units. `ok` is false for zero/negative/non-finite q or a broken pool. */
 export function quoteSell(p: Pool, q: number) {
-  if (q <= 0) return { proceeds: 0, avg: poolPrice(p), after: p, impact: 0 };
+  if (q <= 0) return { ok: false, proceeds: 0, avg: poolPrice(p), after: p, impact: 0 };
+  if (!validPool(p) || !Number.isFinite(q)) return { ok: false, proceeds: 0, avg: NaN, after: p, impact: 0 };
   const k = p.cash * p.units;
   const newUnits = p.units + q;
   const newCash = k / newUnits;
   const raw = p.cash - newCash;
   const proceeds = raw * (1 - FEE);
   const after = { cash: newCash, units: newUnits };
+  if (!Number.isFinite(proceeds) || proceeds < 0) return { ok: false, proceeds: 0, avg: NaN, after: p, impact: 0 };
   return {
+    ok: true,
     proceeds,
     avg: proceeds / q,
     after,
@@ -57,6 +73,8 @@ export function quoteSell(p: Pool, q: number) {
 
 /** Move pool so price changes by `pct` (bots trading). Returns notional traded. */
 export function pushPrice(p: Pool, pct: number): { pool: Pool; notional: number } {
+  // A move of -100% or worse (or a NaN move) has no valid pool; leave it untouched rather than corrupt it.
+  if (!validPool(p) || !Number.isFinite(pct) || pct <= -1) return { pool: p, notional: 0 };
   const k = p.cash * p.units;
   const target = poolPrice(p) * (1 + pct);
   // price = cash/units, cash*units = k  => units = sqrt(k/price)

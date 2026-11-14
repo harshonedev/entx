@@ -3,9 +3,9 @@
 // *events* in the app are simulated.
 
 import catalog from "@/data/catalog.json";
-import { computeEpi, EPI_LABELS, EPI_WEIGHTS, type EpiParts } from "./epi";
+import { computeEpi, EPI_LABELS, EPI_SHORT_LABELS, EPI_WEIGHTS, type EpiParts } from "./epi";
 
-export { computeEpi, EPI_LABELS, EPI_WEIGHTS, type EpiParts };
+export { computeEpi, EPI_LABELS, EPI_SHORT_LABELS, EPI_WEIGHTS, type EpiParts };
 
 export type AssetKind = "movie" | "show";
 

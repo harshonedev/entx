@@ -48,7 +48,8 @@ describe("Providers", () => {
     expect(wa.connection).toHaveBeenCalledWith(
       process.env.NEXT_PUBLIC_SOLANA_RPC ?? "https://api.devnet.solana.test",
     );
-    expect(wa.wallet).toHaveBeenCalledWith(expect.objectContaining({ wallets: [], autoConnect: true }));
+    // Default deployment is NEAR: a remembered Phantom must not reconnect there.
+    expect(wa.wallet).toHaveBeenCalledWith(expect.objectContaining({ wallets: [], autoConnect: false }));
   });
 
   it("rehydrates persisted state, seeds history, then ticks every 1.5s", async () => {
