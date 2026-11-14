@@ -72,6 +72,13 @@ export default function OnchainPage() {
   const counts = stats ? marketCounts(stats, markets) : null;
   const assets = live.filter((m) => m.kind === "Asset");
   const preds = live.filter((m) => m.kind === "Prediction");
+  // The contract can hold markets from older catalogues; say so instead of rendering a blank table.
+  const emptyText = (noun: string) =>
+    err
+      ? "Couldn't reach NEAR testnet. Try Refresh."
+      : markets.length === 0
+        ? "Reading the NEAR contract…"
+        : `No ${noun} from this app's catalogue on the contract yet.`;
   // Where the empty-state CTA sends a visitor: the same spotlight title the home page leads with.
   const spot =
     [...ASSETS].filter((a) => a.status === "In theaters").sort((a, b) => (local[b.id]?.epi ?? 0) - (local[a.id]?.epi ?? 0))[0] ??
@@ -91,7 +98,7 @@ export default function OnchainPage() {
         </div>
         <button
           onClick={load}
-          className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-text sm:min-h-0"
+          className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-text pointer-coarse:min-h-11"
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
         </button>
@@ -107,7 +114,7 @@ export default function OnchainPage() {
             href={nearAccountUrl(NEAR_CONTRACT)}
             target="_blank"
             rel="noreferrer"
-            className="cursor-pointer num mt-1.5 inline-flex min-h-11 items-center gap-1.5 break-all text-sm font-semibold text-near hover:underline sm:min-h-0"
+            className="cursor-pointer num mt-1.5 inline-flex items-center gap-1.5 break-all text-sm font-semibold text-near hover:underline pointer-coarse:min-h-11"
           >
             {NEAR_CONTRACT} <ExternalLink size={12} />
           </a>
@@ -123,7 +130,7 @@ export default function OnchainPage() {
                   href={nearAccountUrl(o)}
                   target="_blank"
                   rel="noreferrer"
-                  className="cursor-pointer num inline-flex min-h-11 items-center text-text/80 hover:text-near sm:min-h-0"
+                  className="cursor-pointer num inline-flex items-center text-text/80 hover:text-near pointer-coarse:min-h-11"
                 >
                   <span className="inline-flex items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5">
                     {o}
@@ -174,7 +181,7 @@ export default function OnchainPage() {
 
       <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-4">
-          <div className="panel overflow-x-auto">
+          <div className="panel scroll-mt-20 overflow-x-auto">
             <h2 className="h-panel px-4 pt-4">Asset markets · Oracle EPI vs App EPI</h2>
             <p className="max-w-prose px-4 pt-1 text-xs leading-relaxed text-muted">
               Oracle EPI is the last value the trusted oracle published to NEAR: the title&apos;s TMDB baseline
@@ -195,10 +202,10 @@ export default function OnchainPage() {
                 </tr>
               </thead>
               <tbody>
-                {markets.length === 0 && (
+                {assets.length === 0 && (
                   <tr className="border-t border-line max-sm:block">
                     <td colSpan={7} className="px-4 py-4 text-xs text-muted max-sm:block" role="status">
-                      {err ? "Couldn't reach NEAR testnet. Try Refresh." : "Reading the NEAR contract…"}
+                      {emptyText("markets")}
                     </td>
                   </tr>
                 )}
@@ -208,7 +215,7 @@ export default function OnchainPage() {
                     className={clsx("border-t border-line max-sm:py-2", !allAssets && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block")}
                   >
                     <td className="py-2 pl-4 max-sm:block max-sm:px-4">
-                      <Link href={`/asset/${m.id}`} className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 hover:text-accent sm:min-h-0">
+                      <Link href={`/asset/${m.id}`} className="cursor-pointer inline-flex items-center gap-1.5 hover:text-accent pointer-coarse:min-h-11">
                         <span className="font-semibold">{m.ticker}</span>{" "}
                         <span className="text-xs text-muted">{m.title}</span>
                       </Link>
@@ -224,7 +231,7 @@ export default function OnchainPage() {
                           href={nearTxUrl(local[m.id].oracleTx!)}
                           target="_blank"
                           rel="noreferrer"
-                          className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-near hover:underline sm:min-h-0"
+                          className="cursor-pointer inline-flex items-center gap-1 text-near hover:underline pointer-coarse:min-h-11"
                         >
                           {local[m.id].oracleTx!.slice(0, 6)}… <ExternalLink size={10} />
                         </a>
@@ -239,7 +246,7 @@ export default function OnchainPage() {
             <ShowAllRows count={assets.length} open={allAssets} onToggle={() => setAllAssets((v) => !v)} noun="markets" />
           </div>
 
-          <div className="panel overflow-x-auto">
+          <div className="panel scroll-mt-20 overflow-x-auto">
             <div className="flex items-center gap-2 px-4 pt-4">
               <h2 className="h-panel">Prediction pools</h2>
               <RealBadge />
@@ -259,10 +266,10 @@ export default function OnchainPage() {
                 </tr>
               </thead>
               <tbody>
-                {markets.length === 0 && (
+                {preds.length === 0 && (
                   <tr className="border-t border-line max-sm:block">
                     <td colSpan={4} className="px-4 py-4 text-xs text-muted max-sm:block" role="status">
-                      {err ? "Couldn't reach NEAR testnet. Try Refresh." : "Reading the NEAR contract…"}
+                      {emptyText("prediction pools")}
                     </td>
                   </tr>
                 )}
@@ -274,7 +281,7 @@ export default function OnchainPage() {
                       className={clsx("border-t border-line max-sm:py-2", !allPools && i >= MOBILE_ROWS ? "max-sm:hidden" : "max-sm:block")}
                     >
                       <td className="py-2 pl-4 text-xs max-sm:block max-sm:px-4 sm:max-w-[360px] sm:truncate">
-                        <Link href={`/predictions/${m.id}`} className="cursor-pointer inline-flex min-h-11 items-center hover:text-accent sm:min-h-0">
+                        <Link href={`/predictions/${m.id}`} className="cursor-pointer inline-flex items-center hover:text-accent pointer-coarse:min-h-11">
                           {m.title}
                         </Link>
                       </td>
@@ -291,7 +298,7 @@ export default function OnchainPage() {
             <ShowAllRows count={preds.length} open={allPools} onToggle={() => setAllPools((v) => !v)} noun="pools" />
           </div>
 
-          <div className="panel overflow-x-auto">
+          <div className="panel scroll-mt-20 overflow-x-auto">
             <h2 className="h-panel px-4 pt-4">Latest NEAR trade receipts (all traders)</h2>
             {!loaded && receipts.length === 0 ? (
               <p className="px-4 pb-5 pt-3 text-sm text-muted">
@@ -306,7 +313,7 @@ export default function OnchainPage() {
                 </p>
                 <Link
                   href={`/asset/${spot.id}`}
-                  className="cursor-pointer press mt-3 inline-flex h-11 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110 sm:h-9"
+                  className="cursor-pointer press mt-3 inline-flex h-9 items-center gap-2 rounded bg-accent px-4 text-[13px] font-semibold text-accent-ink hover:brightness-110 pointer-coarse:h-11"
                 >
                   Make a trade to write the first receipt <ArrowRight size={14} aria-hidden />
                 </Link>
@@ -352,7 +359,7 @@ export default function OnchainPage() {
                         </td>
                         <td data-label="Cross-chain ref" className={clsx("py-2 pl-4", CELL)}>
                           {solSig ? (
-                            <a href={explorerTx(solSig)} target="_blank" rel="noreferrer" className="cursor-pointer inline-flex min-h-11 items-center gap-1 text-sol hover:underline sm:min-h-0">
+                            <a href={explorerTx(solSig)} target="_blank" rel="noreferrer" className="cursor-pointer inline-flex items-center gap-1 text-sol hover:underline pointer-coarse:min-h-11">
                               Solana {solSig.slice(0, 6)}… <ExternalLink size={10} />
                             </a>
                           ) : (
@@ -409,7 +416,7 @@ function Kpi({
           href={href}
           target="_blank"
           rel="noreferrer"
-          className="cursor-pointer mt-1.5 inline-flex min-h-11 items-center gap-1 text-xs text-near hover:underline sm:min-h-6"
+          className="cursor-pointer mt-1.5 inline-flex min-h-6 items-center gap-1 text-xs text-near hover:underline pointer-coarse:min-h-11"
         >
           View on NearBlocks <ExternalLink size={10} />
         </a>
@@ -417,7 +424,7 @@ function Kpi({
       {cta && (
         <Link
           href={cta.href}
-          className="cursor-pointer mt-1.5 inline-flex min-h-11 items-center gap-1 text-xs text-accent hover:underline sm:min-h-6"
+          className="cursor-pointer mt-1.5 inline-flex min-h-6 items-center gap-1 text-xs text-accent hover:underline pointer-coarse:min-h-11"
         >
           {cta.label} <ArrowRight size={11} aria-hidden />
         </Link>
