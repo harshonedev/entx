@@ -91,12 +91,16 @@ export function ProbabilityChart({ p, height = 340 }: { p: PredictionSeed; heigh
         vertLines: { visible: false },
         horzLines: { color: "rgba(255,255,255,0.04)" },
       },
-      rightPriceScale: { borderColor: token("--line") },
+      // Thin margins, and no axis label outside 0–100%, so a settled market never shows "110%".
+      rightPriceScale: { borderColor: token("--line"), scaleMargins: { top: 0.06, bottom: 0.06 } },
       // Room on the right so the "Live" marker and the newest point never touch the price scale.
       timeScale: { borderColor: token("--line"), timeVisible: true, secondsVisible: false, rightOffset: 12 },
       crosshair: { mode: 0 },
       // Whole-percent ticks collide on narrow ranges (37.5 and 38 both read "38%"), so keep the half.
-      localization: { priceFormatter: (v: number) => `${Number.isInteger(v) ? v.toFixed(0) : v.toFixed(1)}%` },
+      localization: {
+        priceFormatter: (v: number) =>
+          v > 100.0001 || v < -0.0001 ? "" : `${Number.isInteger(v) ? v.toFixed(0) : v.toFixed(1)}%`,
+      },
     });
     // Live (recorded) line in full color; added first so it owns the markers and the last-value label.
     const s = c.addSeries(LineSeries, {
