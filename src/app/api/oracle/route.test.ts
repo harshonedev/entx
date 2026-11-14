@@ -158,12 +158,15 @@ describe("POST /api/oracle", () => {
     expect((await POST(req({ assetId: A, eventId: "viral-trailer" }, auth))).status).toBe(404);
   });
 
-  it("502 with truncated message when signing fails", async () => {
-    callFunctionRaw.mockRejectedValue(new Error("x".repeat(500)));
+  it("502 with a generic message when signing fails, never the RPC error", async () => {
+    callFunctionRaw.mockRejectedValue(new Error("secret-oracle.testnet: rpc internals"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
     const { POST } = await load();
     const res = await POST(req({ assetId: A, eventId: "viral-trailer" }, auth));
     expect(res.status).toBe(502);
-    expect((await res.json()).error).toHaveLength(200);
+    const { error } = await res.json();
+    expect(error).toBe("Oracle publish failed, try again shortly");
+    expect(error).not.toContain("secret-oracle");
   });
 
   it("rate-limits authenticated callers at 250ms", async () => {

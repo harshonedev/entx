@@ -315,8 +315,12 @@ Every state change emits an NEP-297 `EVENT_JSON` log (`standard: "entx"`).
 - **Least-privilege oracle.** The server signs with a separate account's function-call key, limited to `report_epi`
   with a 1 NEAR gas allowance. It cannot `resolve`, touch stakes or move funds (verified on testnet:
   `Access key does not allow method resolve`).
+- **Self-reported receipts.** `record_trade` notarises a trader's own claim; it is capped per receipt but not
+  settled volume, and `/onchain` labels it that way. Only trusted oracle reports count toward EPI report totals.
+- **Safe claims.** A claim whose payout transfer fails is restored by a callback, so the stake can be claimed again.
 - **Clients can't choose oracle values.** `/api/oracle` accepts only `{assetId, eventId}` from a fixed event
-  catalogue. The server derives the new EPI from the current on-chain value.
+  catalogue. The server derives the new EPI from the title's seeded baseline plus that one event, held within
+  ±15 of the baseline, so repeated clicks can't drift it.
 - **Oracle access.** Publishing requires `Authorization: Bearer $ORACLE_API_SECRET` by default.
   `ENTX_PUBLIC_ORACLE=true` (demo site only) lets in-app buttons publish, bounded by global limits (1 per 1.5 s,
   240 per hour). Authenticated publishers get a separate rate-limit bucket. Client IPs are trusted only behind a

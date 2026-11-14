@@ -118,6 +118,7 @@ One Docker image, deployed per host on Coolify with different env:
 | Put entx.space behind Cloudflare too, then firewall 80/443 to Cloudflare ranges and use `TRUST_PROXY=cloudflare` (per-visitor limits for proxied traffic) | P2 | M5 |
 | Coolify API token was pasted in chat: rotate it | P0 | After M0 deploy |
 | ~~Switch hosts to `entx.space`~~ done 2026-11-14 (TRUST_PROXY back to `true`: origin IP is public now) | P1 | M0 |
+| Redeploy the NEAR contract with the post-M0 security review fixes (trade size caps, trusted-only counters, failed-claim restore). State layout unchanged, so `near deploy` upgrades in place | P1 | After judging freeze (Nov 18) |
 | Solana host `/onchain` page is NEAR-only content (registry, oracle, receipts); give it a Solana view or hide the nav link | P2 | M3 |
 
 ## Accepted risks
@@ -125,10 +126,14 @@ One Docker image, deployed per host on Coolify with different env:
 | Milestone | Risk | Why accepted |
 |-----------|------|--------------|
 | M0 | Demo host's public oracle path is guarded only by a same-origin check (fakeable by scripts). Demo and live share one NEAR contract, so anyone can shift a live title's on-chain EPI by up to ±15 within rate limits | Testnet only, bounded, rate-limited; demo video needs click-to-publish. Fixed in M1 (separate contract/oracle for live) |
+| M0 | Staking stays open until the oracle calls `close_market`/`resolve` (or `closes_at_ms`). If a real-world outcome becomes known first, informed users can still back the winning side | Testnet only; operator closes markets promptly. Settlement process with evidence and dispute window in M5 |
+| M0 | Trade receipts are self-reported: anyone can file `record_trade` on any market, so receipt counts and reported size are not settled volume | Labelled "self-reported" on /onchain; per-receipt size capped in the contract. Real volume comes from the server AMM in M2 |
+| M0 | `bun audit`: `stream-json` (via `@solana/web3.js` → `jayson`) and `minimatch` (eslint, dev-only) advisories | `@solana/web3.js` loads only jayson's browser client, which never runs stream-json; minimatch only parses our own lint globs. `uuid` fixed via override |
 | M0 | `report_epi` in the contract accepts any value ≤100 from an allow-listed oracle; the ±15 bound lives only in the API route | Oracle key is server-only FC key; rotation runbook in docs/deploy-coolify.md. Move bound into contract in M1 |
 
 ## Changelog
 
+- 2026-11-15: Post-M0 security review. Fixed: oracle bearer check is constant-time, oracle 502s no longer echo RPC errors, contract caps receipt size, counts only trusted EPI reports, restores a claim whose transfer fails, uuid override. Logged 3 accepted risks. Contract redeploy waits for the judging freeze to end.
 - 2026-11-14: Submitted to NEAR Hackathon 2026 (tracks: Unstoppable DeFi, Open Innovation). M0 done. Freeze main during judging (Nov 16–18); keep all hosts up until at least Nov 25.
 - 2026-11-14: Wallet-flow test found two bugs: app toasted "Receipt recorded" when the wallet sent nothing (#13), and Meteor Web silently no-ops signing on a session stored by an older near-connect executor (now disconnects and asks to reconnect). Contract now shows 1 receipt, 0.1 Ⓝ staked.
 - 2026-11-14: Deploys had failed since PR #4 (empty public/ broke Docker COPY; *.png ignore dropped icons/OG image). Fixed in #6; brand metadata (#5) and Solana metadataBase (#7) live. Deploy check re-run on entx.space hosts. Remaining: testnet wallet flow, X post, submit.

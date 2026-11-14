@@ -62,11 +62,11 @@ export function OrderBook({ assetId }: { assetId: string }) {
         How many units it takes to move the price each step, derived from the simulated price pool.
       </p>
       <table className="w-full overflow-hidden">
-        <thead>
-          <tr className="text-left text-xs uppercase tracking-wider text-muted">
-            <th className="py-1 pl-3 font-medium">Price</th>
-            <th className="py-1 text-right font-medium">Size</th>
-            <th className="py-1 pr-3 text-right font-medium">Total</th>
+        <thead className="th-chart">
+          <tr className="text-left">
+            <th className="py-1 pl-3">Price</th>
+            <th className="py-1 text-right">Size</th>
+            <th className="py-1 pr-3 text-right">Total</th>
           </tr>
         </thead>
         <tbody>

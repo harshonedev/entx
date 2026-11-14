@@ -15,7 +15,7 @@
 //! account so views never scan unbounded global lists.
 
 use near_sdk::store::{IterableMap, LookupMap, Vector};
-use near_sdk::{env, near, require, AccountId, NearToken, PanicOnDefault, Promise};
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise, PromiseError};
 
 pub const MIN_STAKE: NearToken = NearToken::from_millinear(10); // 0.01 NEAR
 const MAX_STR: usize = 96;
@@ -23,6 +23,10 @@ const MAX_REF: usize = 128;
 const MAX_PAGE: u32 = 50;
 /// Trusted EPI reports are kept in a fixed-size ring per market, so contract-paid storage is bounded.
 pub const REPORT_RING: u32 = 32;
+/// Receipts are self-reported, so cap one receipt's size: no single call can post an absurd volume.
+pub const MAX_PRICE_MICRO: u64 = 10_000 * 1_000_000; // $10,000 or 100% odds, well above any ENTX price
+pub const MAX_QTY_MICRO: u64 = 1_000_000 * 1_000_000; // 1M units
+const CLAIM_CALLBACK_GAS: Gas = Gas::from_tgas(10);
 
 uint::construct_uint! {
     pub struct U256(4);
@@ -291,8 +295,9 @@ impl Entx {
         let market = self.markets.get_mut(&market_id).unwrap_or_else(|| env::panic_str("Unknown market"));
         if trusted {
             market.epi_x10 = epi_x10;
+            // Only trusted reports count as oracle updates; community reports have their own index.
+            market.oracle_updates += 1;
         }
-        market.oracle_updates += 1;
         let note = clean(note, MAX_STR);
         emit(
             "epi_report",
@@ -319,7 +324,9 @@ impl Entx {
                 ts_ms: env::block_timestamp_ms(),
             },
         );
-        self.epi_report_total += 1;
+        if trusted {
+            self.epi_report_total += 1;
+        }
 
         if !trusted {
             self.charge_storage(before);
@@ -345,6 +352,8 @@ impl Entx {
             "side must be BUY, SELL, YES or NO"
         );
         require!(qty_micro > 0, "qty must be positive");
+        require!(qty_micro <= MAX_QTY_MICRO, "qty too large");
+        require!(price_micro <= MAX_PRICE_MICRO, "price too large");
         let account = env::predecessor_account_id();
         let market = self.markets.get_mut(&market_id).unwrap_or_else(|| env::panic_str("Unknown market"));
         market.trades += 1;
@@ -486,7 +495,38 @@ impl Entx {
             "claim",
             format!(r#"{{"market_id":"{market_id}","account":"{account}","amount":"{payout}"}}"#),
         );
-        Promise::new(account).transfer(NearToken::from_yoctonear(payout))
+        Promise::new(account.clone()).transfer(NearToken::from_yoctonear(payout)).then(
+            Self::ext(env::current_account_id())
+                .with_static_gas(CLAIM_CALLBACK_GAS)
+                .on_claim(market_id, account, NearToken::from_yoctonear(payout)),
+        )
+    }
+
+    /// Restores a claim whose transfer failed, so the staker can retry. Returns `false` on failure (the
+    /// transaction still succeeds, so clients read this value). A persistent failure (e.g. a deleted account)
+    /// leaves the payout in the contract until the account exists again.
+    #[private]
+    pub fn on_claim(
+        &mut self,
+        market_id: String,
+        account_id: AccountId,
+        payout: NearToken,
+        #[callback_result] result: Result<(), PromiseError>,
+    ) -> bool {
+        if result.is_ok() {
+            return true;
+        }
+        let key = stake_key(&market_id, &account_id);
+        if let Some(mut s) = self.stakes.get(&key).cloned() {
+            s.claimed = false;
+            self.stakes.insert(key, s);
+            self.total_staked = self.total_staked.saturating_add(payout);
+        }
+        emit(
+            "claim_failed",
+            format!(r#"{{"market_id":"{market_id}","account":"{account_id}","amount":"{}"}}"#, payout.as_yoctonear()),
+        );
+        false
     }
 
     // ---------- views (all bounded) ----------
@@ -679,7 +719,9 @@ mod tests {
         assert_eq!(community.len(), 1);
         assert!(!community[0].trusted);
         assert_eq!(c.get_epi_reports("drift-opening-250".into(), None, None).len(), 0);
-        assert_eq!(c.get_stats().epi_reports, 2);
+        // only the trusted report counts; the community report is indexed separately
+        assert_eq!(c.get_stats().epi_reports, 1);
+        assert_eq!(c.get_market("dune-drift".into()).unwrap().oracle_updates, 1);
     }
 
     #[test]
@@ -871,5 +913,53 @@ mod tests {
         c.resolve("drift-opening-250".into(), true);
         ctx(1, NearToken::from_near(1));
         c.stake("drift-opening-250".into(), true);
+    }
+
+    #[test]
+    #[should_panic(expected = "price too large")]
+    fn record_trade_caps_price() {
+        let mut c = setup();
+        ctx(1, RECEIPT_DEPOSIT);
+        c.record_trade("dune-drift".into(), "BUY".into(), 1, MAX_PRICE_MICRO + 1, None);
+    }
+
+    #[test]
+    #[should_panic(expected = "qty too large")]
+    fn record_trade_caps_qty() {
+        let mut c = setup();
+        ctx(1, RECEIPT_DEPOSIT);
+        c.record_trade("dune-drift".into(), "BUY".into(), MAX_QTY_MICRO + 1, 1, None);
+    }
+
+    #[test]
+    fn failed_claim_transfer_is_restored() {
+        let mut c = setup();
+        ctx(1, NearToken::from_near(2));
+        c.stake("drift-opening-250".into(), true);
+        ctx(0, NearToken::from_yoctonear(0));
+        c.resolve("drift-opening-250".into(), true);
+        ctx(1, NearToken::from_yoctonear(0));
+        let _ = c.claim("drift-opening-250".into());
+        let s = c.get_stake("drift-opening-250".into(), accounts(1)).unwrap();
+        assert!(s.claimed);
+        let payout = s.yes;
+        assert!(!c.on_claim("drift-opening-250".into(), accounts(1), payout, Err(PromiseError::Failed)));
+        assert!(!c.get_stake("drift-opening-250".into(), accounts(1)).unwrap().claimed);
+        assert_eq!(c.get_stats().total_staked, payout);
+    }
+
+    #[test]
+    fn successful_claim_stays_claimed() {
+        let mut c = setup();
+        ctx(1, NearToken::from_near(2));
+        c.stake("drift-opening-250".into(), true);
+        ctx(0, NearToken::from_yoctonear(0));
+        c.resolve("drift-opening-250".into(), true);
+        ctx(1, NearToken::from_yoctonear(0));
+        let _ = c.claim("drift-opening-250".into());
+        let payout = c.get_stake("drift-opening-250".into(), accounts(1)).unwrap().yes;
+        assert!(c.on_claim("drift-opening-250".into(), accounts(1), payout, Ok(())));
+        assert!(c.get_stake("drift-opening-250".into(), accounts(1)).unwrap().claimed);
+        assert_eq!(c.get_stats().total_staked, NearToken::from_near(0));
     }
 }

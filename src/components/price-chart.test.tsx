@@ -69,7 +69,7 @@ describe("PriceChart", () => {
   it("does not push data until candles exist, and labels the empty state", () => {
     render(<PriceChart assetId={asset.id} />);
     expect(lc.series.setData).not.toHaveBeenCalled();
-    expect(screen.getByRole("img")).toHaveAccessibleName("Price chart. No news events or trades in this window yet.");
+    expect(screen.getByRole("img")).toHaveAccessibleName(/^Price chart with the EPI-implied price as a dashed line\. No news events or trades in this window yet\./);
   });
 
   it("sets the full series once, then streams single-candle updates", () => {
@@ -122,7 +122,7 @@ describe("PriceChart", () => {
       ],
     });
     render(<PriceChart assetId={asset.id} />);
-    expect(screen.getByRole("img")).toHaveAccessibleName("Price chart. Marked: 2 news events, 1 of your trades.");
+    expect(screen.getByRole("img")).toHaveAccessibleName(/Marked: 2 news events, 1 of your trades\./);
 
     const markers = lc.markers.setMarkers.mock.calls.at(-1)![0] as { shape: string; text: string; position: string; time: number }[];
     expect(markers).toHaveLength(3);
@@ -136,7 +136,7 @@ describe("PriceChart", () => {
     setCandles(candles(10));
     useMarket.setState({ feed: [feedItem({ type: "oracle" })] });
     render(<PriceChart assetId={asset.id} />);
-    expect(screen.getByRole("img")).toHaveAccessibleName("Price chart. Marked: 1 news event, 0 of your trades.");
+    expect(screen.getByRole("img")).toHaveAccessibleName(/Marked: 1 news event, 0 of your trades\./);
   });
 
   it("removes the chart on unmount and recreates it when the asset changes", () => {

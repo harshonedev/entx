@@ -67,9 +67,45 @@ describe("Asset page", () => {
   it("labels the session EPI as simulated and the headline metric's source", () => {
     render(<AssetPage />);
     const header = screen.getByRole("heading", { level: 1 }).closest("section") as HTMLElement;
-    expect(header).toHaveTextContent(/EPI [\d.]+ \(this session, simulated\)/);
+    expect(header).toHaveTextContent(/EPI · this session[\d.]+simulated/);
     expect(header).toHaveTextContent(`${withPreds.metric.label}`);
     expect(header).toHaveTextContent(/TMDB/);
+  });
+
+  it("puts this title's latest news on the oracle wire, with the NEAR report for that news linked", () => {
+    const st = useMarket.getState();
+    const m = st.markets[withPreds.id];
+    useMarket.setState({
+      markets: {
+        ...st.markets,
+        [withPreds.id]: { ...m, lastNews: { id: "n1", ts: Date.now(), text: "Trailer crosses 60M views · App EPI 80.0 → 85.0", tx: "abc" } },
+      },
+      // The shared feed has long since dropped it: the wire must not depend on the feed.
+      feed: [],
+    });
+    render(<AssetPage />);
+    const wire = screen.getByText("Oracle wire").closest(".wire") as HTMLElement;
+    expect(within(wire).getByRole("status")).toHaveTextContent("Trailer crosses 60M views · App EPI 80.0 → 85.0");
+    // The timestamp sits outside the live region, so it isn't re-announced as it ticks.
+    expect(within(wire).getByRole("status")).not.toHaveTextContent("ago");
+    expect(within(wire).getByRole("link", { name: /Signed on NEAR/ })).toHaveAttribute("href", expect.stringContaining("abc"));
+  });
+
+  it("leaves the NEAR link off news whose own report hasn't landed", () => {
+    const st = useMarket.getState();
+    const m = st.markets[withPreds.id];
+    useMarket.setState({
+      markets: { ...st.markets, [withPreds.id]: { ...m, oracleTx: "older", lastNews: { id: "n2", ts: Date.now(), text: "Reviews disappoint" } } },
+    });
+    render(<AssetPage />);
+    const wire = screen.getByText("Oracle wire").closest(".wire") as HTMLElement;
+    expect(wire).toHaveTextContent("Reviews disappoint");
+    expect(within(wire).queryByRole("link", { name: /Signed on NEAR/ })).not.toBeInTheDocument();
+  });
+
+  it("says plainly when there is no news on the title yet", () => {
+    render(<AssetPage />);
+    expect(screen.getByText("Oracle wire").closest(".wire")).toHaveTextContent(`No news on ${withPreds.ticker} this session`);
   });
 
   it("shows the oracle EPI from NEAR with its gap to the session EPI", async () => {
@@ -80,10 +116,26 @@ describe("Asset page", () => {
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response(JSON.stringify({ result: { result } })));
     render(<AssetPage />);
-    const link = await screen.findByRole("link", { name: /Oracle EPI · NEAR/ });
+    const link = await screen.findByRole("link", { name: /oracle report/ });
     expect(link).toHaveTextContent(oracle.toFixed(1));
     expect(screen.getByText(/Session is \d+\.\d lower/)).toBeInTheDocument();
-    expect(screen.getByText(/the oracle value is the last report on NEAR/)).toBeInTheDocument();
+    expect(screen.getByText(/the NEAR value is the last report the trusted/)).toBeInTheDocument();
+    fetchMock.mockRestore();
+  });
+
+  it("says when the NEAR read fails instead of reading forever", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("429"));
+    render(<AssetPage />);
+    expect(await screen.findByText("Unavailable right now")).toBeInTheDocument();
+    fetchMock.mockRestore();
+  });
+
+  it("explains the two EPI readings even when they match", async () => {
+    const m = useMarket.getState().markets[withPreds.id];
+    const result = Array.from(new TextEncoder().encode(JSON.stringify({ epi_x10: Math.round(m.epi * 10) })));
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ result: { result } })));
+    render(<AssetPage />);
+    expect(await screen.findByText("Session matches NEAR")).toBeInTheDocument();
     fetchMock.mockRestore();
   });
 
