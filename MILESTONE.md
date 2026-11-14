@@ -55,6 +55,7 @@ One Docker image, deployed per host on Coolify with different env:
 ### Submission
 - [x] README: hosts, modes, how to run locally, how to reproduce
 - [x] Launch video made (brag-output/brag.mp4, 20s); longer walkthrough optional (docs/demo-video-script.md)
+- [x] Testnet wallet flow verified end-to-end and recorded (brag-output/testnet-walkthrough.mp4, 3:25): Meteor connect → buy → `record_trade` receipt → stake 0.1 Ⓝ on a live pool → on-chain page; resolve + claim on test market `walkthrough-settle-1794688742` (resolve CD3XJq39…, claim xqvUto58…)
 - [ ] X post tagging @NEARProtocol #NEARHackathon
 - [x] Repo public, MIT license present
 
@@ -128,6 +129,7 @@ One Docker image, deployed per host on Coolify with different env:
 
 ## Changelog
 
+- 2026-11-14: Wallet-flow test found two bugs: app toasted "Receipt recorded" when the wallet sent nothing (#13), and Meteor Web silently no-ops signing on a session stored by an older near-connect executor (now disconnects and asks to reconnect). Contract now shows 1 receipt, 0.1 Ⓝ staked.
 - 2026-11-14: Deploys had failed since PR #4 (empty public/ broke Docker COPY; *.png ignore dropped icons/OG image). Fixed in #6; brand metadata (#5) and Solana metadataBase (#7) live. Deploy check re-run on entx.space hosts. Remaining: testnet wallet flow, X post, submit.
 - 2026-11-14: Each host is now single-chain (`CHAIN_ON`): NEAR sites show no Solana wallet, toggle or copy; Solana site shows no NEAR wallet.
 - 2026-11-14: entx.space, demo., solana., www. live with Let's Encrypt certs; badges link across. Launch video in brag-output/. Remaining: post video + X post.

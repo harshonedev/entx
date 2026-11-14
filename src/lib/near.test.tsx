@@ -177,6 +177,9 @@ describe("useNearNotarize", () => {
     await act(() => r.current.notarize(trade()));
     expect(useMarket.getState().trades[0].nearStatus).toBe("failed");
     expect(useMarket.getState().toasts.at(-1)).toMatchObject({ title: "NEAR receipt not recorded", tone: "down" });
+    // A stale wallet session is the usual cause; dropping it makes the next connect start clean.
+    expect(connector.disconnect).toHaveBeenCalled();
+    expect(useMarket.getState().toasts.at(-1)?.body).toMatch(/reconnect/i);
   });
 
   it("no-op without a connected account", async () => {
