@@ -43,7 +43,7 @@ One Docker image, deployed per host on Coolify with different env:
 ### Build
 - [x] Mode config: `ENTX_MODE` + `NEXT_PUBLIC_CHAIN` read in one place (`src/lib/env.ts`), exposed to client safely
 - [x] Live mode: hide demo controls and simulated bots/news; EPI from real TMDB numbers
-- [ ] Live mode: prediction markets read/write on-chain NEAR pools as source of truth
+- [~] Live mode: on-chain NEAR pool leads the prediction page; odds still simulated. Moved to M2 (needs the shared market)
 - [x] Live mode: asset trading labelled "preview"
 - [x] Demo / Live badge on every page, links to the other host
 - [x] Settings menu in nav with chain switch, behind `NEXT_PUBLIC_FLAG_CHAIN_SWITCH` (switch = go to the other chain's host)
@@ -53,10 +53,10 @@ One Docker image, deployed per host on Coolify with different env:
 - [x] Oracle: server-only keys set only on hosts that need them; `ENTX_PUBLIC_ORACLE` off on live
 
 ### Submission
-- [ ] README: hosts, modes, how to run locally, how to reproduce
-- [ ] Demo video recorded on `demo.entx.space`
+- [x] README: hosts, modes, how to run locally, how to reproduce
+- [ ] Demo video recorded on the demo site (script: docs/demo-video-script.md)
 - [ ] X post tagging @NEARProtocol #NEARHackathon
-- [ ] Repo public, MIT license present
+- [x] Repo public, MIT license present
 
 ### Exit gate
 - [x] Testing (536 tests, lint, tsc, live image smoke test + desktop/mobile screenshots)
@@ -82,6 +82,7 @@ One Docker image, deployed per host on Coolify with different env:
 - [ ] Every trade recorded on NEAR via `record_trade`
 - [ ] Server-built candles, portfolio, trade history
 - [ ] Remove "preview" label; live asset trading on `entx.space`
+- [ ] Live prediction odds come from the on-chain pool, not the simulation (moved from M0)
 - [ ] Exit gate: testing · security audit · deploy check
 
 ## M3 — Solana live  `P2`

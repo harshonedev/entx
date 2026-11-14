@@ -15,6 +15,21 @@ for each trade.
 
 Hackathon tracks: **Unstoppable DeFi** + **Open Innovation**.
 
+## Try it
+
+| Site | Mode | What you get |
+| --- | --- | --- |
+| **[entx-demo.harshone.space](https://entx-demo.harshone.space)** | Demo (NEAR testnet) | Fully simulated market with demo controls: push news, watch EPI then price react, settle markets early. Best for a first look. |
+| **[entx.harshone.space](https://entx.harshone.space)** | Live (NEAR testnet) | Real TMDB data and real on-chain NEAR prediction pools. No demo controls. Asset trading is labelled *preview* (simulated prices) until the shared market ships. |
+| **[entx-solana.harshone.space](https://entx-solana.harshone.space)** | Demo (Solana devnet) | Same app on Solana: devnet memo receipts per trade. |
+
+The **Demo / Live** badge in the top bar, and **Settings → Environment**, jump between demo and live on the same
+page. `entx.space`, `demo.entx.space` and `solana.entx.space` are already attached to the same apps and take over
+once the domain registration clears.
+
+You need a NEAR testnet wallet (Meteor, Intear, MyNearWallet) only for on-chain actions: staking, receipts. Get
+testnet NEAR from the [faucet](https://near-faucet.io).
+
 ---
 
 ## Live deployment
@@ -92,14 +107,14 @@ trending rank, an EPI target and a weekend-drop market.
 
 ---
 
-## What to try (demo script)
+## What to try (on the demo site)
 
-1. **Connect wallets.** Use *Connect NEAR* for a testnet wallet (Meteor, Intear, MyNearWallet, or NEAR CLI via
-   near-connect). *Select Wallet* is optional and connects Phantom, Solflare or Backpack on Solana devnet.
+1. **Connect a wallet.** On the NEAR sites, *Connect wallet* opens near-connect (Meteor, Intear, MyNearWallet). On
+   the Solana site it connects Phantom, Solflare or Backpack on devnet. Each site shows only its own chain.
 2. **Discover** → open the **Spotlight** title (the highest-EPI film in theaters, e.g. *Resident Evil*).
-3. **Buy 10 units.** The AMM fills the simulated trade. The wallet then signs:
-   - a Solana devnet memo receipt, then
-   - a NEAR `record_trade` call whose `chain_ref` stores the Solana signature, so the two chains are linked.
+3. **Buy 10 units.** The AMM fills the simulated trade. The wallet then signs a NEAR `record_trade` receipt (or a
+   Solana devnet memo on the Solana site). With both wallets connected, the NEAR receipt's `chain_ref` stores the
+   Solana signature, linking the two chains; that cross-chain view returns with the chain switch.
 4. **Entertainment oracle → "Box office beats forecast".** The EPI recalculates (e.g. 83.8 → 90.7). The browser sends
    only the event name. The **oracle service** publishes the title's seeded baseline EPI plus that one event's
    weighted impact (clamped to ±15 of baseline and to [1, 100], so clicks never accumulate on-chain) and signs
@@ -178,7 +193,14 @@ All state changes emit NEP-297 `EVENT_JSON` logs (`standard: "entx"`).
   240 per hour) are the real bound. Worst case is noisy demo EPI values: no funds at risk, storage bounded by the
   ring, gas capped by the key's 1 NEAR allowance. Set it to `false` for anything beyond a demo.
   Authenticated publishers use a separate rate-limit bucket, so demo spam can't starve them. Client IPs are only
-  trusted behind a known proxy (`VERCEL`, or `TRUST_PROXY=true`).
+  trusted behind a known proxy (`VERCEL`, `TRUST_PROXY=true` for Traefik's last hop, or `TRUST_PROXY=cloudflare`), and
+  must parse as an IP address.
+- **Hardened public routes.** JSON bodies are capped at 2 KB, catalogue lookups use own keys only, and the Intents
+  proxy is rate-limited with an 8 s upstream timeout. Every response carries `X-Frame-Options: DENY`, HSTS,
+  `nosniff` and a strict referrer policy.
+- **Live is locked down.** The live site sets `ENTX_PUBLIC_ORACLE=false`, so only a holder of `ORACLE_API_SECRET`
+  can publish. Known gap, fixed in M1: demo and live share one contract, so demo-site news reaches live's on-chain
+  EPI history.
 - **Honest limitation.** Oracle *events* are still simulated (demo buttons), and there's a single trusted
   reporter. See the roadmap for a multi-source quorum.
 
@@ -202,12 +224,29 @@ src/app/api/intents/quote/route.ts  1Click dry-run proxy
 scripts/near-deploy.sh           one-command testnet deploy
 ```
 
+## Deployment
+
+One `Dockerfile` (Next.js standalone output, about 85 MB, runs as non-root), deployed three times on Coolify with
+different build variables. Full steps, env per site and DNS: [`docs/deploy-coolify.md`](docs/deploy-coolify.md).
+
+```bash
+docker build --build-arg NEXT_PUBLIC_ENTX_MODE=live -t entx:live .
+docker run --rm -p 3000:3000 entx:live
+```
+
 ## Environment
 
 See [`.env.example`](.env.example). All variables are optional.
 
 | Var | Purpose |
 | --- | --- |
+| `NEXT_PUBLIC_ENTX_MODE` | `demo` (default, fully simulated) or `live` (no demo controls, on-chain pools first). Build-time |
+| `NEXT_PUBLIC_CHAIN` | `near` (default) or `solana`: the chain this deployment shows. Build-time |
+| `NEXT_PUBLIC_FLAG_CHAIN_SWITCH` | `true` shows the chain switch in Settings. Off until after the hackathon |
+| `NEXT_PUBLIC_URL_NEAR_LIVE` / `_NEAR_DEMO` / `_SOLANA` | where the badge and Settings send people |
+| `ENTX_PUBLIC_ORACLE` | `true` lets in-app buttons publish oracle reports (demo site only) |
+| `ORACLE_API_SECRET` | bearer secret for server-side oracle publishers |
+| `TRUST_PROXY` | `true` behind Traefik (last `X-Forwarded-For` hop), `cloudflare` behind Cloudflare (`CF-Connecting-IP`) |
 | `NEXT_PUBLIC_NEAR_CONTRACT` | contract to use (defaults to the shared testnet deployment) |
 | `NEAR_ORACLE_ACCOUNT` / `NEAR_ORACLE_PRIVATE_KEY` | server-only oracle signer: a function-call key limited to `report_epi` (testnet) |
 | `NEXT_PUBLIC_SOLANA_RPC`, `NEXT_PUBLIC_NEAR_RPC` | RPC overrides |
@@ -219,6 +258,8 @@ Everything in this repository was built during the event: the web app, the marke
 the oracle service, the Intents integration and the Solana receipts.
 
 ## Roadmap
+
+Tracked milestone by milestone in [`MILESTONE.md`](MILESTONE.md). Each one ends with tests and a security audit.
 
 - Replace simulated spot trading with on-chain AMM pools on NEAR, collateralised in USDC, with Intents deposits
   executed for real (`dry: false` → deposit address → `/v0/status`).
