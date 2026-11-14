@@ -1,50 +1,209 @@
-# ENTX — Entertainment, now tradable
+<div align="center">
 
-**A multichain entertainment exchange.** Movies and TV shows become tradable markets priced by popularity,
-performance and sentiment. Popularity comes from one score, the **Entertainment Popularity Index (EPI)**. A
-**NEAR** contract holds the market registry, a trusted EPI oracle, trade receipts and real-NEAR prediction pools.
-**NEAR Intents** quotes show how users could fund from any chain. **Solana** devnet stores a second, linked receipt
-for each trade.
+<a href="https://entx.space">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/wordmark-light.svg">
+    <img alt="ENTX" src="docs/assets/wordmark-dark.svg" width="260">
+  </picture>
+</a>
 
-> **Honesty note.** The **titles, posters, release info and EPI inputs are real**, seeded from TMDB (box
-> office, popularity, vote counts, ratings). **Spot prices, AMM trades, balances and oracle events are simulated**
-> off-chain, and the UI labels them that way. These parts are **real on-chain**: the NEAR contract and its state, oracle EPI reports,
-> trade receipts, YES/NO staking with testnet NEAR plus settlement and claims, and the Solana memo receipts.
-> Trade receipts are **self-attested notarisations** of simulated trades: the contract stores what the wallet
-> signs and does not verify the trade or the linked Solana signature. Linked NEAR + Solana receipts are
-> **not** an atomic cross-chain settlement.
-> NEAR Intents quotes are **live mainnet prices requested with `dry: true`**. No deposit address is created
-> and no funds move, because Intents has no testnet.
+### Entertainment, now tradable.
 
-Hackathon tracks: **Unstoppable DeFi** + **Open Innovation**.
+A multichain entertainment exchange. Movies and TV shows become markets priced by one live score,<br>
+the **Entertainment Popularity Index (EPI)**, with a NEAR contract for the registry, oracle, receipts and prediction pools.
+
+[![Tests](https://img.shields.io/badge/tests-554%20web%20%2B%2021%20contract%20passing-2ea44f)](#quick-start)
+[![Live demo](https://img.shields.io/badge/demo-demo.entx.space-ff7a1a?style=flat)](https://demo.entx.space)
+[![NEAR testnet](https://img.shields.io/badge/NEAR-testnet-00ec97?logo=near&logoColor=white)](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet)
+[![Solana devnet](https://img.shields.io/badge/Solana-devnet-9945ff?logo=solana&logoColor=white)](https://solana.entx.space)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)](https://nextjs.org)
+[![React 19](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Rust](https://img.shields.io/badge/contract-Rust%20·%20near--sdk%205-dea584?logo=rust&logoColor=white)](contracts/near/src/lib.rs)
+[![Bun](https://img.shields.io/badge/Bun-1.3-f9f1e1?logo=bun&logoColor=black)](https://bun.sh)
+[![NEAR Hackathon 2026](https://img.shields.io/badge/NEAR%20Hackathon-2026-ff7a1a)](#hackathon)
+
+**[Try the demo](https://demo.entx.space)** · **[Live site](https://entx.space)** · **[Solana build](https://solana.entx.space)** · **[Contract on NearBlocks](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet)**
+
+<br>
+
+<a href="https://demo.entx.space"><img src="docs/assets/screenshots/discover.jpg" alt="ENTX Discover page: market table with prices, 24h change, EPI and sparklines" width="900"></a>
+
+</div>
+
+---
+
+## Contents
+
+- [What it is](#what-it-is)
+- [Try it](#try-it)
+- [Screenshots](#screenshots)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works)
+- [NEAR contract](#near-contract)
+- [Security model](#security-model)
+- [Known limitations](#known-limitations)
+- [Project structure](#project-structure)
+- [Deployment](#deployment)
+- [Environment](#environment)
+- [Roadmap](#roadmap)
+- [Hackathon](#hackathon)
+
+## What it is
+
+ENTX turns movies and shows into tradable markets. Each title gets a 0–100 **EPI** built from box office,
+popularity, audience activity and ratings. When the EPI moves, simulated traders reprice the market and linked
+YES/NO prediction markets shift.
+
+- **NEAR** holds the market registry, a trusted EPI oracle, trade receipts and real-NEAR parimutuel prediction pools.
+- **NEAR Intents** quotes show how a user could fund from SOL, ETH or USDC on any chain.
+- **Solana** devnet stores a second, linked memo receipt for each trade.
+- **ENTX Analyst** gives a rule-based signal with every factor and weight visible. It recommends, never trades.
+
+> [!IMPORTANT]
+> **What is real and what is simulated.**
+> Titles, posters, release info and EPI inputs are **real**, seeded from TMDB. Spot prices, AMM trades, balances
+> and oracle *events* are **simulated** off-chain, and the UI labels them that way.
+> **Real on-chain:** the NEAR contract and its state, oracle EPI reports, trade receipts, YES/NO staking with
+> testnet NEAR plus settlement and claims, and the Solana memo receipts.
+> Trade receipts are self-attested notarisations: the contract stores what the wallet signs and does not verify
+> the trade. Linked NEAR + Solana receipts are **not** an atomic cross-chain settlement. NEAR Intents quotes are
+> live mainnet prices requested with `dry: true`, so no deposit address is created and no funds move.
 
 ## Try it
 
 | Site | Mode | What you get |
 | --- | --- | --- |
-| **[demo.entx.space](https://demo.entx.space)** | Demo (NEAR testnet) | Fully simulated market with demo controls: push news, watch EPI then price react, settle markets early. Best for a first look. |
-| **[entx.space](https://entx.space)** | Live (NEAR testnet) | Real TMDB data and real on-chain NEAR prediction pools. No demo controls. Asset trading is labelled *preview* (simulated prices) until the shared market ships. |
-| **[solana.entx.space](https://solana.entx.space)** | Demo (Solana devnet) | Same app on Solana: devnet memo receipts per trade. |
+| **[demo.entx.space](https://demo.entx.space)** | Demo · NEAR testnet | Fully simulated market with demo controls: push news, watch EPI then price react, settle markets early. **Start here.** |
+| **[entx.space](https://entx.space)** | Live · NEAR testnet | Real TMDB data and real on-chain NEAR prediction pools. No demo controls. Asset trading is labelled *preview*. |
+| **[solana.entx.space](https://solana.entx.space)** | Demo · Solana devnet | Same app on Solana, with a devnet memo receipt per trade. |
 
-The **Demo / Live** badge in the top bar, and **Settings → Environment**, jump between demo and live on the same
-page. Mirrors: `entx.harshone.space`, `entx-demo.harshone.space`, `entx-solana.harshone.space`.
+The **Demo / Live** badge in the top bar, and **Settings → Environment**, switch between the sites.
+On-chain actions (staking, receipts) need a NEAR testnet wallet (Meteor, Intear, MyNearWallet) and testnet NEAR from
+the [faucet](https://near-faucet.io).
 
-You need a NEAR testnet wallet (Meteor, Intear, MyNearWallet) only for on-chain actions: staking, receipts. Get
-testnet NEAR from the [faucet](https://near-faucet.io).
+<details>
+<summary><b>Five-minute walkthrough on the demo site</b></summary>
 
----
+1. **Connect a wallet.** On NEAR sites, *Connect wallet* opens near-connect. On the Solana site it connects Phantom,
+   Solflare or Backpack on devnet. Each site shows only its own chain.
+2. **Discover** → open the **Spotlight** title (the highest-EPI film in theaters, e.g. *Resident Evil*).
+3. **Buy 10 units.** The AMM fills the simulated trade, then the wallet signs a NEAR `record_trade` receipt (or a
+   Solana devnet memo on the Solana site).
+4. **Demo → "Box office beats forecast".** The EPI recalculates (e.g. 83.8 → 90.7). The oracle service publishes
+   the title's baseline EPI plus that event's weighted impact (clamped to ±15 of baseline) and signs `report_epi`
+   with a key that can call nothing else. A toast links the transaction on NearBlocks. Simulated traders reprice
+   the market and the linked prediction odds move.
+5. **ENTX Analyst** shows the signal and every factor behind it.
+6. **Prediction market → On-chain pool.** Stake **0.1 testnet NEAR on YES**. After `near:resolve`, press
+   **Claim** for a pro-rata payout.
+7. **On-chain** (`/onchain`) shows live contract stats, oracle EPI vs app EPI, pools, receipts and the
+   **NEAR Intents** quote panel.
+8. **Portfolio** shows P&L, holdings, open predictions, trade history with receipt links, and the leaderboard.
 
-## Live deployment
+</details>
 
-| Thing | Where |
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screenshots/terminal.jpg" alt="Asset terminal: price chart with EPI fair value line and buy panel"><br><sub><b>Asset terminal</b>: live price, EPI fair value, AMM trade ticket</sub></td>
+    <td width="50%"><img src="docs/assets/screenshots/prediction-detail.jpg" alt="Prediction market: chance of YES chart and bet ticket"><br><sub><b>Prediction market</b>: odds driven by the title's EPI</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/screenshots/epi.jpg" alt="EPI leaderboard with signal breakdown and methodology"><br><sub><b>EPI</b>: per-title score, inputs and methodology</sub></td>
+    <td><img src="docs/assets/screenshots/onchain.jpg" alt="On-chain page with NEAR contract stats and NEAR Intents quote"><br><sub><b>On-chain</b>: contract state, oracle reports, NEAR Intents quotes</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/screenshots/predictions.jpg" alt="Prediction markets list"><br><sub><b>Predictions</b>: markets generated from the catalogue</sub></td>
+    <td><img src="docs/assets/screenshots/portfolio.jpg" alt="Portfolio page"><br><sub><b>Portfolio</b>: P&amp;L, holdings, receipts, leaderboard</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/assets/screenshots/mobile-discover.jpg" alt="ENTX Discover on a phone" width="260">
+  &nbsp;&nbsp;
+  <img src="docs/assets/screenshots/mobile-terminal.jpg" alt="ENTX asset terminal on a phone" width="260">
+</p>
+
+## Quick start
+
+Requires **Node ≥ 22** and **[Bun](https://bun.sh)**. No keys needed.
+
+```bash
+git clone https://github.com/harshonedev/entx.git && cd entx
+bun install
+bun run dev            # http://localhost:3000
+```
+
+The app reads the shared testnet contract with no configuration. Without an oracle key, EPI updates stay
+off-chain; wallets, receipts, staking and Intents quotes still work.
+
+| Command | What it does |
 | --- | --- |
-| NEAR contract (testnet) | [`entx-market-1794654167.testnet`](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet) |
-| Trusted oracle (testnet) | [`entx-oracle-1794654167.testnet`](https://testnet.nearblocks.io/address/entx-oracle-1794654167.testnet) (function-call key, `report_epi` only) |
-| Contract source | [`contracts/near/src/lib.rs`](contracts/near/src/lib.rs) (Rust, near-sdk 5.30) |
-| Solana receipts | SPL Memo program `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` on devnet |
-| NEAR Intents | 1Click API `https://1click.chaindefuser.com/v0/quote` (dry-run) |
+| `bun run dev` | Dev server on port 3000 |
+| `bun run test` | Vitest suite (components, engine, store, API routes) |
+| `bun run lint` | ESLint |
+| `bun run build` | Production build (standalone output) |
+| `bun run contract:test` | NEAR contract unit tests (`cargo test`) |
+| `bun run near:deploy` | Deploy your own contract + oracle to testnet |
+| `bun run seed:tmdb` | Refresh the catalogue from TMDB |
 
-Check the contract state from any terminal (needs [near-cli-rs](https://near.cli.rs)):
+<details>
+<summary><b>Deploy your own contract and trusted oracle (about 5 minutes)</b></summary>
+
+Requires Rust with the `wasm32-unknown-unknown` target, [`cargo-near`](https://github.com/near/cargo-near) and
+[`near-cli-rs`](https://github.com/near/near-cli-rs):
+
+```bash
+rustup target add wasm32-unknown-unknown
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
+
+bun run contract:test   # registry, receipts, storage deposits/refunds, oracle trust, report ring,
+                        # parimutuel payout, permissions, input sanitising
+bun run near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers all
+                        # catalogue markets, allow-lists the oracle with a report_epi-only key, writes .env.local
+bun run dev
+```
+
+Resolve a prediction market on-chain (owner/oracle only):
+
+```bash
+bun run near:resolve resident-evil-popularity-7 true
+```
+
+</details>
+
+<details>
+<summary><b>Refresh the catalogue from TMDB</b></summary>
+
+The committed `src/data/catalog.json` was seeded from TMDB, so no key is needed to run the app.
+
+```bash
+echo 'TMDB_TOKEN=<v4 read access token>' >> .env.local   # or TMDB_API_KEY=<v3 key>
+bun run seed:tmdb       # trending movies + upcoming tentpoles + trending shows → src/data/catalog.json
+bun run near:register   # registers new markets on the contract (idempotent)
+```
+
+| EPI input (0–100) | Derived from (TMDB) |
+| --- | --- |
+| Box office proxy | movies: log-scaled worldwide revenue (budget if unreleased); shows: log-scaled vote count |
+| TMDB popularity proxy | TMDB popularity, rank-normalised within the catalogue. **Not** streaming viewership. |
+| Audience activity | log-scaled TMDB vote count. **Not** audience size. |
+| Audience rating | vote average × 10 |
+
+Prediction markets are generated from the catalogue: box-office milestones, opening weekends, awards, renewals,
+trending rank, an EPI target and a weekend-drop market.
+
+</details>
+
+<details>
+<summary><b>Inspect the live contract from a terminal</b></summary>
+
+Needs [near-cli-rs](https://near.cli.rs):
 
 ```bash
 near contract call-function as-read-only entx-market-1794654167.testnet get_stats json-args '{}' network-config testnet now
@@ -53,89 +212,9 @@ near contract call-function as-read-only entx-market-1794654167.testnet get_orac
 near contract call-function as-read-only entx-market-1794654167.testnet get_recent_receipts json-args '{"limit":10}' network-config testnet now
 ```
 
----
+</details>
 
-## Quick start (about 2 minutes, no keys needed)
-
-Requires **Node ≥ 22** and **Bun**.
-
-```bash
-bun install
-bun run dev            # http://localhost:3000
-```
-
-The app reads the shared testnet contract above with no configuration. Without an oracle key, EPI updates
-stay off-chain. Everything else still works: wallets, receipts, staking, Intents quotes.
-
-### Full reproduction: your own contract + trusted oracle (about 5 minutes)
-
-Requires Rust plus the `wasm32-unknown-unknown` target, [`cargo-near`](https://github.com/near/cargo-near) and
-[`near-cli-rs`](https://github.com/near/near-cli-rs):
-
-```bash
-rustup target add wasm32-unknown-unknown
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
-
-bun run contract:test   # 21 unit tests: registry, receipts, storage deposits/refunds, oracle trust, report ring,
-                     # parimutuel payout, permissions, input sanitising
-bun run near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers all catalogue markets,
-                     # allow-lists the oracle, gives it a report_epi-only key, writes .env.local
-bun run dev
-```
-
-To resolve a prediction market on-chain (owner/oracle only), run `bun run near:resolve resident-evil-popularity-7 true`.
-
-### Refresh the real catalogue (optional, needs a TMDB key)
-
-The committed `src/data/catalog.json` was seeded from TMDB, so no key is needed to run the app. To pull the
-current trending titles instead:
-
-```bash
-echo 'TMDB_TOKEN=<v4 read access token>' >> .env.local   # or TMDB_API_KEY=<v3 key>
-bun run seed:tmdb       # trending movies + upcoming tentpoles + trending shows → src/data/catalog.json
-bun run near:register   # registers the new markets on the contract (idempotent)
-```
-
-| EPI input (0–100) | Derived from (TMDB) |
-| --- | --- |
-| Box office proxy | movies: log-scaled worldwide revenue (budget for unreleased); shows: log-scaled vote count |
-| TMDB popularity proxy | TMDB popularity, rank-normalised within the catalogue. **Not** streaming viewership. |
-| Audience activity | log-scaled TMDB vote count. **Not** audience size or viewership. |
-| Audience rating | vote average × 10 |
-
-Prediction markets are generated from the catalogue: box-office milestones, opening weekends, awards, renewals,
-trending rank, an EPI target and a weekend-drop market.
-
----
-
-## What to try (on the demo site)
-
-1. **Connect a wallet.** On the NEAR sites, *Connect wallet* opens near-connect (Meteor, Intear, MyNearWallet). On
-   the Solana site it connects Phantom, Solflare or Backpack on devnet. Each site shows only its own chain.
-2. **Discover** → open the **Spotlight** title (the highest-EPI film in theaters, e.g. *Resident Evil*).
-3. **Buy 10 units.** The AMM fills the simulated trade. The wallet then signs a NEAR `record_trade` receipt (or a
-   Solana devnet memo on the Solana site). With both wallets connected, the NEAR receipt's `chain_ref` stores the
-   Solana signature, linking the two chains; that cross-chain view returns with the chain switch.
-4. **Entertainment oracle → "Box office beats forecast".** The EPI recalculates (e.g. 83.8 → 90.7). The browser sends
-   only the event name. The **oracle service** publishes the title's seeded baseline EPI plus that one event's
-   weighted impact (clamped to ±15 of baseline and to [1, 100], so clicks never accumulate on-chain) and signs
-   `report_epi` with a key that can call nothing else. Demo publishes are limited to one per title per 60s.
-   A toast and the activity feed link to NearBlocks.
-   Simulated traders then reprice the market, the chart rips and the linked prediction odds move.
-5. **ENTX Analyst** shows a transparent rule-based signal. Every factor and weight is visible. It only
-   recommends and never trades.
-6. **Prediction market → On-chain pool.** Stake **0.1 testnet NEAR on YES**. After `near:resolve`, press
-   **Claim** for a pro-rata parimutuel payout.
-7. **On-chain** page (`/onchain`) shows live contract stats, on-chain vs app EPI, pools, every trader's receipts with
-   Solana cross-links, and the **NEAR Intents** panel. Pick SOL, ETH or USDC on Solana, Ethereum, Base or
-   Arbitrum to get a live quote into USDC on NEAR.
-8. **Portfolio** shows P&L, holdings, open predictions, trade history with **Solana and NEAR receipt links**,
-   and the leaderboard.
-
----
-
-## Architecture
+## How it works
 
 ```
             ┌──────────────────────── Next.js 16 app ─────────────────────────┐
@@ -143,7 +222,7 @@ trending rank, an EPI target and a weekend-drop market.
             │                                                                  │
             │  Market engine (client, simulated)                               │
             │   ├─ constant-product AMM per title (0.3% fee, live candles)     │
-            │   ├─ EPI = .35 box-office proxy + .25 TMDB popularity + .25 TMDB votes + .15 audience rating
+            │   ├─ EPI = .35 box office + .25 popularity + .25 votes + .15 rating
             │   ├─ oracle event → ΔEPI × 2.6 = target move → bot traders       │
             │   └─ CPMM YES/NO markets linked to titles                        │
             │  ENTX Analyst (rule-based, explainable, advisory only)           │
@@ -159,7 +238,15 @@ trending rank, an EPI target and a weekend-drop market.
    Solana devnet ── SPL Memo receipt (wallet-adapter) ──┘
 ```
 
-### NEAR contract (`contracts/near`)
+| Component | Where |
+| --- | --- |
+| NEAR contract (testnet) | [`entx-market-1794654167.testnet`](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet) |
+| Trusted oracle (testnet) | [`entx-oracle-1794654167.testnet`](https://testnet.nearblocks.io/address/entx-oracle-1794654167.testnet), function-call key limited to `report_epi` |
+| Contract source | [`contracts/near/src/lib.rs`](contracts/near/src/lib.rs) (Rust, near-sdk 5.30) |
+| Solana receipts | SPL Memo program `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` on devnet |
+| NEAR Intents | 1Click API `https://1click.chaindefuser.com/v0/quote` (dry run) |
+
+## NEAR contract
 
 | Method | Who | What |
 | --- | --- | --- |
@@ -169,85 +256,82 @@ trending rank, an EPI target and a weekend-drop market.
 | `report_epi(market_id, epi_x10, note)` *payable* | anyone | oracles move canonical EPI; others file untrusted reports and pay storage |
 | `record_trade(market_id, side, qty_micro, price_micro, chain_ref?)` *payable* | any trader | notarised receipt; caller pays storage (~0.003–0.008 Ⓝ), excess refunded |
 | `stake(market_id, outcome)` *payable* | any trader | parimutuel YES/NO pool, min 0.01 NEAR |
-| `resolve(market_id, outcome)` | oracle | settle prediction market |
+| `resolve(market_id, outcome)` | oracle | settle a prediction market |
 | `claim(market_id)` | stakers | payout = stake × total / winning pool (U256 math; refunds if nobody won) |
 
-All state changes emit NEP-297 `EVENT_JSON` logs (`standard: "entx"`).
+Every state change emits an NEP-297 `EVENT_JSON` log (`standard: "entx"`).
 
-### Security model
+## Security model
 
-- **Storage is caller-paid.** `record_trade` and untrusted `report_epi` measure the storage they add and require
-  a deposit to cover it, refunding any excess. Spam costs the spammer, not the contract.
-- **Bounded reads.** Receipts and EPI reports are indexed per account and per market (count + keyed entries).
-  Every view is paginated (`limit` ≤ 50, `before` cursor), so no view scans global history.
-- **Bounded contract-paid storage.** Trusted EPI reports (the only writes the contract pays for) live in a fixed
-  32-slot ring per market. Once full, new reports overwrite old slots and storage stops growing, so oracle activity
-  can never lock up staked NEAR. Untrusted reports are caller-paid and indexed separately
-  (`get_untrusted_reports`), so they can't evict trusted history.
-- **Least-privilege oracle.** The server signs with a separate oracle account's **function-call access key**,
-  limited to `report_epi` on the ENTX contract with a 1 NEAR gas allowance. It cannot `resolve` markets, touch
-  stakes or transfer funds (verified on testnet: `Access key does not allow method resolve`).
+- **Caller-paid storage.** `record_trade` and untrusted `report_epi` measure the storage they add and require a
+  deposit to cover it, refunding any excess. Spam costs the spammer, not the contract.
+- **Bounded reads.** Receipts and EPI reports are indexed per account and per market. Every view is paginated
+  (`limit` ≤ 50, `before` cursor), so no view scans global history.
+- **Bounded contract-paid storage.** Trusted EPI reports live in a fixed 32-slot ring per market, so oracle activity
+  can never lock up staked NEAR. Untrusted reports are indexed separately and can't evict trusted history.
+- **Least-privilege oracle.** The server signs with a separate account's function-call key, limited to `report_epi`
+  with a 1 NEAR gas allowance. It cannot `resolve`, touch stakes or move funds (verified on testnet:
+  `Access key does not allow method resolve`).
 - **Clients can't choose oracle values.** `/api/oracle` accepts only `{assetId, eventId}` from a fixed event
   catalogue. The server derives the new EPI from the current on-chain value.
-- **Oracle access.** By default publishing requires `Authorization: Bearer $ORACLE_API_SECRET` (for server-side
-  jobs). `ENTX_PUBLIC_ORACLE=true` (demo mode, set by the deploy script) lets the in-app buttons publish from the
-  same origin. Origin and IP headers are spoofable by scripts, so in demo mode the **global** limits (1 per 1.5 s,
-  240 per hour) are the real bound. Worst case is noisy demo EPI values: no funds at risk, storage bounded by the
-  ring, gas capped by the key's 1 NEAR allowance. Set it to `false` for anything beyond a demo.
-  Authenticated publishers use a separate rate-limit bucket, so demo spam can't starve them. Client IPs are only
-  trusted behind a known proxy (`VERCEL`, `TRUST_PROXY=true` for Traefik's last hop, or `TRUST_PROXY=cloudflare`), and
-  must parse as an IP address.
-- **Hardened public routes.** JSON bodies are capped at 2 KB, catalogue lookups use own keys only, and the Intents
-  proxy is rate-limited with an 8 s upstream timeout. Every response carries `X-Frame-Options: DENY`, HSTS,
-  `nosniff` and a strict referrer policy.
-- **Live is locked down.** The live site sets `ENTX_PUBLIC_ORACLE=false`, so only a holder of `ORACLE_API_SECRET`
-  can publish. Known gap, fixed in M1: demo and live share one contract, so demo-site news reaches live's on-chain
-  EPI history.
-- **Honest limitation.** Oracle *events* are still simulated (demo buttons), and there's a single trusted
-  reporter. See the roadmap for a multi-source quorum.
+- **Oracle access.** Publishing requires `Authorization: Bearer $ORACLE_API_SECRET` by default.
+  `ENTX_PUBLIC_ORACLE=true` (demo site only) lets in-app buttons publish, bounded by global limits (1 per 1.5 s,
+  240 per hour). Authenticated publishers get a separate rate-limit bucket. Client IPs are trusted only behind a
+  known proxy (`VERCEL`, `TRUST_PROXY=true` or `TRUST_PROXY=cloudflare`) and must parse as an IP.
+- **Hardened public routes.** JSON bodies capped at 2 KB, own-key catalogue lookups, rate-limited Intents proxy with
+  an 8 s upstream timeout. Every response sends `X-Frame-Options: DENY`, HSTS, `nosniff` and a strict referrer policy.
+- **Live is locked down.** The live site sets `ENTX_PUBLIC_ORACLE=false`.
 
-### Known limitations (testnet prototype)
+## Known limitations
 
-- **Two EPIs, by design.** *App EPI* is this browser's local simulation and accumulates every event you fire.
-  *Oracle EPI* is what the trusted oracle published to NEAR (seeded baseline + latest event). They can differ;
-  `/onchain` shows both side by side.
-- **EPI inputs are TMDB proxies.** "Popularity" is TMDB's popularity score, not streaming viewership; "audience
-  activity" is TMDB vote count, not audience size; unreleased films use production budget, not box office.
-- **Self-attested receipts.** `record_trade` accepts caller-supplied quantity, price and `chain_ref`. It proves a
-  wallet signed that record, not that the trade happened or that the Solana transaction exists. Anyone paying
-  storage can add receipts, so per-market `trades`/`volume` counters are not trustworthy metrics.
-- **Public oracle mode is testnet-only by convention.** `ENTX_PUBLIC_ORACLE=true` is meant for the demo site on
-  testnet only; nothing in code checks the network. Its rate limits are in-memory per process (reset on restart,
-  not shared across instances). It will be turned off after the hackathon.
-- **Claims.** `claim` marks the stake claimed and then sends a plain transfer with no callback; if that transfer
-  failed, the payout would stay in the contract. Any allow-listed oracle account (not just the owner) can
-  `resolve`; the server's key cannot (function-call key limited to `report_epi`). No `remove_oracle` yet.
-- **No real money.** Testnet NEAR and Solana devnet only. Intents quotes are `dry: true` and never executed.
+This is a testnet prototype.
 
-### Code map
+- **Two EPIs, by design.** *App EPI* is this browser's simulation and accumulates every event you fire.
+  *Oracle EPI* is what the trusted oracle published to NEAR. `/onchain` shows both.
+- **EPI inputs are TMDB proxies**, not streaming viewership or audience size.
+- **Self-attested receipts.** `record_trade` proves a wallet signed a record, not that the trade happened.
+  Per-market `trades`/`volume` counters are not trustworthy metrics.
+- **Shared contract.** Demo and live use one contract, so demo-site news reaches live's on-chain EPI history (fix
+  planned in M1). Oracle events are still demo buttons, with a single trusted reporter.
+- **Public oracle mode is testnet-only by convention.** Its rate limits are in-memory per process.
+- **Claims.** `claim` marks the stake claimed, then sends a plain transfer with no callback. Any allow-listed oracle
+  can `resolve`. No `remove_oracle` yet.
+- **No real money.** Testnet NEAR and Solana devnet only. Intents quotes are never executed.
+
+## Project structure
 
 ```
-contracts/near/src/lib.rs        NEAR contract + unit tests
-src/lib/engine.ts                AMM, CPMM, candle generation
-src/data/catalog.json            real TMDB catalogue (assets + generated prediction markets)
-scripts/seed-tmdb.ts             TMDB importer: metrics → EPI inputs, market generation
-src/lib/epi.ts                   EPI formula (shared by app + seeder)
-src/lib/assets.ts                catalogue types, simulated oracle events
-src/store/market.ts              simulation tick, trades, oracle (+ publish to NEAR), settlement
-src/lib/near.tsx                 near-connect provider, record_trade receipts
-src/lib/near-config.ts           RPC view helper, contract types
-src/lib/solana.ts                Solana memo receipts + devnet airdrop
-src/lib/receipts.ts              Solana → NEAR linked receipt flow
-src/lib/analyst.ts               explainable signal engine
-src/app/api/oracle/route.ts      oracle service (server-derived EPI, FC-key signer)
-src/app/api/intents/quote/route.ts  1Click dry-run proxy
-scripts/near-deploy.sh           one-command testnet deploy
+entx/
+├── contracts/near/          NEAR contract (Rust) + unit tests
+├── docs/                    deploy guide, demo script, README assets
+├── scripts/                 testnet deploy/register/resolve, TMDB seeder
+├── src/
+│   ├── app/                 Next.js App Router pages + API routes
+│   │   ├── api/oracle/          oracle service (server-derived EPI, FC-key signer)
+│   │   └── api/intents/quote/   NEAR Intents 1Click dry-run proxy
+│   ├── components/          UI (trade panel, charts, order book, wallets…)
+│   ├── data/catalog.json    real TMDB catalogue + generated prediction markets
+│   ├── lib/                 engine (AMM/CPMM), EPI, NEAR + Solana clients, analyst
+│   └── store/market.ts      simulation tick, trades, oracle publish, settlement
+├── test/                    Vitest setup
+└── Dockerfile               standalone Next.js image, non-root
 ```
+
+| File | Role |
+| --- | --- |
+| [`src/lib/engine.ts`](src/lib/engine.ts) | AMM, CPMM, candle generation |
+| [`src/lib/epi.ts`](src/lib/epi.ts) | EPI formula, shared by app and seeder |
+| [`src/store/market.ts`](src/store/market.ts) | simulation, trades, oracle publish, settlement |
+| [`src/lib/near.tsx`](src/lib/near.tsx) | near-connect provider, `record_trade` receipts |
+| [`src/lib/solana.ts`](src/lib/solana.ts) | Solana memo receipts, devnet airdrop |
+| [`src/lib/receipts.ts`](src/lib/receipts.ts) | Solana → NEAR linked receipt flow |
+| [`src/lib/analyst.ts`](src/lib/analyst.ts) | explainable signal engine |
+| [`scripts/near-deploy.sh`](scripts/near-deploy.sh) | one-command testnet deploy |
 
 ## Deployment
 
-One `Dockerfile` (Next.js standalone output, about 85 MB, runs as non-root), deployed three times on Coolify with
-different build variables. Full steps, env per site and DNS: [`docs/deploy-coolify.md`](docs/deploy-coolify.md).
+One `Dockerfile` (Next.js standalone output, about 85 MB, non-root) deployed three times on Coolify with different
+build variables. Full steps, per-site env and DNS: [`docs/deploy-coolify.md`](docs/deploy-coolify.md).
 
 ```bash
 docker build --build-arg NEXT_PUBLIC_ENTX_MODE=live -t entx:live .
@@ -256,37 +340,36 @@ docker run --rm -p 3000:3000 entx:live
 
 ## Environment
 
-See [`.env.example`](.env.example). All variables are optional.
+All variables are optional. See [`.env.example`](.env.example).
 
-| Var | Purpose |
+| Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_ENTX_MODE` | `demo` (default, fully simulated) or `live` (no demo controls, on-chain pools first). Build-time |
-| `NEXT_PUBLIC_CHAIN` | `near` (default) or `solana`: the chain this deployment shows. Build-time |
-| `NEXT_PUBLIC_FLAG_CHAIN_SWITCH` | `true` shows the chain switch in Settings. Off until after the hackathon |
-| `NEXT_PUBLIC_URL_NEAR_LIVE` / `_NEAR_DEMO` / `_SOLANA` | where the badge and Settings send people |
-| `ENTX_PUBLIC_ORACLE` | `true` lets in-app buttons publish oracle reports (demo site only) |
+| `NEXT_PUBLIC_ENTX_MODE` | `demo` (default, fully simulated) or `live` (no demo controls). Build time |
+| `NEXT_PUBLIC_CHAIN` | `near` (default) or `solana`: the chain this deployment shows. Build time |
+| `NEXT_PUBLIC_FLAG_CHAIN_SWITCH` | `true` shows the chain switch in Settings |
+| `NEXT_PUBLIC_URL_NEAR_LIVE` / `_NEAR_DEMO` / `_SOLANA` | where the mode badge and Settings link to |
+| `ENTX_PUBLIC_ORACLE` | `true` lets in-app buttons publish oracle reports (demo only) |
 | `ORACLE_API_SECRET` | bearer secret for server-side oracle publishers |
-| `TRUST_PROXY` | `true` behind Traefik (last `X-Forwarded-For` hop), `cloudflare` behind Cloudflare (`CF-Connecting-IP`) |
+| `TRUST_PROXY` | `true` behind Traefik, `cloudflare` behind Cloudflare |
 | `NEXT_PUBLIC_NEAR_CONTRACT` | contract to use (defaults to the shared testnet deployment) |
-| `NEAR_ORACLE_ACCOUNT` / `NEAR_ORACLE_PRIVATE_KEY` | server-only oracle signer: a function-call key limited to `report_epi` (testnet) |
+| `NEAR_ORACLE_ACCOUNT` / `NEAR_ORACLE_PRIVATE_KEY` | server-only oracle signer (function-call key, `report_epi` only) |
 | `NEXT_PUBLIC_SOLANA_RPC`, `NEXT_PUBLIC_NEAR_RPC` | RPC overrides |
 | `ONECLICK_JWT` | 1Click API key (lower fee tier; quotes work without it) |
 
-## Built during the hackathon
-
-Everything in this repository was built during the event: the web app, the market engine, the NEAR contract,
-the oracle service, the Intents integration and the Solana receipts.
-
 ## Roadmap
 
-Tracked milestone by milestone in [`MILESTONE.md`](MILESTONE.md). Each one ends with tests and a security audit.
+Tracked milestone by milestone in [`MILESTONE.md`](MILESTONE.md). Each milestone ends with tests and a security audit.
 
-- Replace simulated spot trading with on-chain AMM pools on NEAR, collateralised in USDC, with Intents deposits
-  executed for real (`dry: false` → deposit address → `/v0/status`).
-- Multi-source oracle quorum (box office, streaming charts, social APIs) with signed attestations.
-- Let the analyst act as an agent under a limited function-call key and user-set risk limits.
-- Scheduled TMDB re-seeding feeding the on-chain oracle, so EPI updates come from real metric changes rather
-  than demo buttons.
+- [ ] On-chain AMM pools on NEAR, collateralised in USDC, with Intents deposits executed for real
+- [ ] Multi-source oracle quorum (box office, streaming charts, social APIs) with signed attestations
+- [ ] Analyst as an agent under a limited function-call key and user-set risk limits
+- [ ] Scheduled TMDB re-seeding feeding the oracle, so EPI moves with real metric changes
+
+## Hackathon
+
+Built for **NEAR Hackathon 2026**, tracks **Unstoppable DeFi** and **Open Innovation**. Everything in this
+repository was built during the event: the web app, market engine, NEAR contract, oracle service, Intents
+integration and Solana receipts.
 
 ## Attribution
 

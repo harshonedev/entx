@@ -45,3 +45,7 @@ next-env.d.ts
 # rust
 /contracts/near/target
 brag-output/
+
+# local tooling
+/.claude/
+/.impeccable/

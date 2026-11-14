@@ -1,0 +1,41 @@
+name: CI
+
+# Manual-only for now: GitHub Actions is unavailable on this account until a
+# billing lock is cleared. Restore push/pull_request triggers after that.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web app (lint, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run test
+      - run: bun run build
+
+  contract:
+    name: NEAR contract (cargo test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/near
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts/near
+      - run: cargo test
