@@ -11,8 +11,10 @@
   Every count and score below is read from src/data/catalog.json at build time.
 */
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 import catalog from "@/data/catalog.json";
 import { computeEpi, type EpiParts } from "@/lib/epi";
+import { generateHistory } from "@/lib/engine";
 import { NEAR_CONTRACT, nearAccountUrl } from "@/lib/near-config";
 
 type Asset = (typeof catalog.assets)[number];
@@ -30,23 +32,68 @@ const poster = (a: Asset, size: "w342" | "w500" | "w780") => a.posterUrl.replace
 const money = (n: number) => `$${n.toFixed(2)}`;
 const cents = (p: number) => `${Math.round(p * 100)}¢`;
 const one = (n: number) => n.toFixed(1);
-const pred = (id: string) => predictions.find((p) => p.id === id)!;
 
 // the people in the pictures are the catalogue's own titles, each poster used once on the page
 const lead = ranked[0]; // the board's open item
 const heart = byId("heart-of-the-beast"); // the EPI section's poster
 const evil = byId("resident-evil");
-const navCards = [byId("godzilla-minus-zero"), byId("ebenezer"), byId("visionquest")];
+const navCards = [byId("godzilla-minus-zero"), byId("ebenezer"), byId("other-mommy"), byId("visionquest")];
 
-const pSpidey = pred("spider-man-brand-new-day-box-office-0");
 const pOdyssey = predictions.find((p) => p.assetId === "the-odyssey")!;
-const wall = [
-  pred("avengers-doomsday-box-office-2"),
-  pred("the-lord-of-the-rings-the-rings-of-power-renewal"),
-  pred("resident-evil-popularity-7"),
-  pred("12-12-12-renewal-5"),
-  pred("heart-of-the-beast-box-office-8"),
-].map((p) => ({ p, a: byId(p.assetId) }));
+
+// Price charts: the app's own generator (src/lib/engine.ts generateHistory, the board's lead-in history),
+// seeded at a fixed time so the static page draws the same lines on every build. Prices are simulated.
+const NOW = 1794700800;
+type Series = { line: string; area: string; up: boolean; pct: number; y: number; event?: number };
+function series(a: Asset, w: number, h: number, n = 64, jumpAt?: number): Series {
+  let c = generateHistory(a.id, a.basePrice, a.volatility, n, NOW).map((k) => k.close);
+  // the demo oracle event: a re-rating at jumpAt, the history before it sits 6% lower
+  if (jumpAt !== undefined) c = c.map((v, i) => (i < jumpAt ? v / 1.06 : v));
+  const lo = Math.min(...c), hi = Math.max(...c), pad = h * 0.08;
+  const X = (i: number) => (i / (n - 1)) * w;
+  const Y = (v: number) => pad + (1 - (v - lo) / (hi - lo || 1)) * (h - 2 * pad);
+  const line = "M" + c.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("L");
+  const pct = c[n - 1] / c[0] - 1;
+  return { line, area: `${line}L${w},${h}L0,${h}Z`, up: pct >= 0, pct, y: Y(c[n - 1]) / h, event: jumpAt !== undefined ? X(jumpAt) / w : undefined };
+}
+const leadS = series(lead, 300, 110);
+const evilS = series(evil, 640, 260, 64, 46);
+const movers = ["the-odyssey", "spider-man-brand-new-day", "the-lord-of-the-rings-the-rings-of-power", "heart-of-the-beast", "mobland"]
+  .map((id) => byId(id)).map((a) => ({ a, s: series(a, 120, 36) }));
+// YES odds over the same window: the app's coupling (src/lib/prediction-history.ts), YES moves by
+// sensitivity x 2.2 x the title's relative change, here read from its simulated price history
+function odds(p: (typeof predictions)[number], w: number, h: number, n = 64): Series {
+  const a = byId(p.assetId);
+  const c = generateHistory(a.id, a.basePrice, a.volatility, n, NOW).map((k) => k.close);
+  const end = c[n - 1];
+  const v = c.map((x) => Math.min(0.98, Math.max(0.02, p.yesProb + p.sensitivity * 2.2 * (x / end - 1))));
+  const pad = h * 0.06, Y = (q: number) => pad + (1 - q) * (h - 2 * pad), X = (i: number) => (i / (n - 1)) * w;
+  const line = "M" + v.map((q, i) => `${X(i).toFixed(1)},${Y(q).toFixed(1)}`).join("L");
+  const pct = v[n - 1] - v[0];
+  return { line, area: `${line}L${w},${h}L0,${h}Z`, up: pct >= 0, pct, y: Y(v[n - 1]) / h };
+}
+const byPid = (id: string) => predictions.find((p) => p.id === id)!;
+const pLead = byPid("spider-man-brand-new-day-box-office-0");
+const pLeadA = byId(pLead.assetId);
+const pLeadS = odds(pLead, 300, 120);
+const pRows = ["avengers-doomsday-box-office-2", "the-lord-of-the-rings-the-rings-of-power-renewal", "resident-evil-popularity-7", "12-12-12-renewal-5"]
+  .map(byPid).map((p) => ({ p, a: byId(p.assetId) }));
+const pts = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(Math.round(x * 100))} pts`;
+const pctText = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x * 100).toFixed(1)}%`;
+
+function Chart({ s, w, h, spark }: { s: Series; w: number; h: number; spark?: boolean }) {
+  return (
+    <div className={`ch ${s.up ? "ch--up" : "ch--down"}${spark ? " ch--spark" : ""}`} aria-hidden="true">
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+        {!spark && <path className="ch__grid" d={`M0 ${h * 0.25}H${w}M0 ${h * 0.5}H${w}M0 ${h * 0.75}H${w}`} />}
+        {!spark && <path className="ch__area" d={s.area} />}
+        <path className="ch__line" d={s.line} pathLength={1} />
+      </svg>
+      {!spark && s.event !== undefined && <i className="ch__event" style={{ left: `${s.event * 100}%` }} />}
+      {!spark && <i className="ch__dot" style={{ top: `${s.y * 100}%` }} />}
+    </div>
+  );
+}
 
 // the demo oracle event "Box office beats forecast": box office +14, votes +6 (src/lib/assets.ts)
 const evilAfter = computeEpi({
@@ -55,6 +102,7 @@ const evilAfter = computeEpi({
   social: Math.min(100, evil.epiParts.social + 6),
 });
 
+const SHORT = ["Box office", "Popularity", "Votes", "Rating"];
 const WEIGHTS: [keyof EpiParts, string, string, number][] = [
   ["boxOffice", "Box office proxy", "Worldwide revenue; budget before release; votes for shows", 35],
   ["streaming", "TMDB popularity", "TMDB popularity, ranked within the catalogue", 25],
@@ -120,11 +168,12 @@ export default function Landing() {
                 <div className="wrap grid">
                   {[
                     ["#top", "The board", `${titleCount} titles ranked by EPI`, navCards[0]],
-                    ["#markets", "Prediction markets", `${predictionCount} YES/NO markets on what happens next`, navCards[1]],
-                    ["#onchain", "On-chain proof", "Registry, oracle, receipts and pools on NEAR", navCards[2]],
+                    ["#markets", "Price charts", `${titleCount} titles that trade like stocks`, navCards[1]],
+                    ["#predictions", "Predictions", `${predictionCount} YES/NO markets on what happens next`, navCards[2]],
+                    ["#onchain", "On-chain proof", "Registry, oracle, receipts and pools on NEAR", navCards[3]],
                   ].map(([href, name, line, a]) => (
-                    <a key={name as string} className="menu-card span-4" href={href as string}>
-                      <div className="panel"><img className="frame__img" src={poster(a as Asset, "w500")} alt={`${(a as Asset).title} poster`} loading="lazy" data-source="client" data-subject="TMDB poster" /></div>
+                    <a key={name as string} className="menu-card menu-card--poster span-3" href={href as string}>
+                      <div className="panel"><img className="frame__img" src={poster(a as Asset, "w342")} alt={`${(a as Asset).title} poster`} loading="lazy" data-source="client" data-subject="TMDB poster" /></div>
                       <span className="t-card">{name as string}</span>
                       <span className="t-small muted">{line as string}</span>
                     </a>
@@ -133,11 +182,13 @@ export default function Landing() {
               </div>
             </div>
             <div className="nav__item"><a className="nav__link" href="#epi">EPI</a></div>
+            <div className="nav__item"><a className="nav__link" href="#predictions">Predictions</a></div>
             <div className="nav__item"><a className="nav__link" href="#trade">Trading</a></div>
             <div className="nav__item"><a className="nav__link" href="#onchain">On-chain</a></div>
             <div className="nav__item"><a className="nav__link" href="#faq">Questions</a></div>
           </nav>
           <div className="nav__actions">
+            <ThemeToggle />
             <Link className="btn btn--primary" href="/markets">Open the markets</Link>
           </div>
           <button className="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
@@ -155,7 +206,7 @@ export default function Landing() {
             <div className="hero__text span-5">
               <h1 id="hero-h">Movie and TV exchange on NEAR</h1>
               <p className="hero__lead">
-                One score, the EPI, built from TMDB box office, popularity, votes and ratings, prices {titleCount} movies and shows and {predictionCount} YES or NO markets.
+                Buy and sell units of {titleCount} movies and shows. Each price follows one score, the EPI, built from TMDB box office, popularity, votes and ratings.
               </p>
               <div className="btn-row">
                 <Link className="btn btn--primary" href="/markets">Open the markets{arrow}</Link>
@@ -163,7 +214,7 @@ export default function Landing() {
               </div>
               <p className="hero__proof">Built for NEAR Hackathon 2026. Pools stake testnet NEAR; prices are simulated.</p>
             </div>
-            <div className="hero__art span-6 start-7" role="img" aria-label={`The ENTX board ranked by EPI, led by ${lead.title}, and a YES/NO ticket on ${pSpidey.question}`}>
+            <div className="hero__art span-6 start-7" role="img" aria-label={`The ENTX board ranked by EPI with each title\u2019s price trend, and the price chart of ${lead.title}`}>
               <div className="ly-piece ly-piece--main hw" aria-hidden="true">
                 <div className="bd">
                   <div className="bd__mast">
@@ -172,61 +223,65 @@ export default function Landing() {
                   </div>
                   <div className="bd__wire"><b>Oracle wire</b><span>{evil.title} EPI {one(epiOf(evil))} to {one(evilAfter)}</span></div>
                   <table className="bd__table">
-                    <thead><tr><th>Rank</th><th className="l">Title</th><th>Price</th><th className="s">EPI</th></tr></thead>
+                    <thead><tr><th>Rank</th><th className="l">Title</th><th className="tr">Trend</th><th>Price</th></tr></thead>
                     <tbody>
                       {board.map((a, i) => (
                         <tr key={a.id} className={i === 0 ? "is-sel" : undefined}>
                           <td className="rk">{i + 1}</td>
                           <td className="l"><div className="bd__t"><img src={poster(a, "w342")} alt="" width="26" height="38" data-source="client" data-subject="TMDB poster" /><div><b>{a.title}</b><small>{a.ticker} · {a.kind === "movie" ? "Movie" : "Show"}</small></div></div></td>
+                          <td className="tr"><Chart s={series(a, 120, 32)} w={120} h={32} spark /></td>
                           <td className="pr">{money(a.basePrice)}</td>
-                          <td>{one(epiOf(a))}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-              <div className="ly-piece ly-piece--note pc-ticket pc-ticket--ui hn" aria-hidden="true" data-ly-steps="700">
-                <span className="pc-kicker">{pSpidey.category} · closes in {pSpidey.closesInDays} days</span>
-                <p className="pc-q">{pSpidey.question}</p>
-                <div className="pc-yesno"><span className="yes">Yes {cents(pSpidey.yesProb)}</span><span className="no">No {cents(1 - pSpidey.yesProb)}</span></div>
-                <div className="tk__rows">
-                  <div data-step=""><span>Stake</span><span>0.1 testnet NEAR on YES</span></div>
-                  <div data-step=""><span>Pays if right</span><span>$1 a share</span></div>
-                  <div data-step=""><span>Signed</span><span>stake on NEAR testnet</span></div>
-                </div>
+              <div className="ly-piece ly-piece--note pc-ticket--ui hn" aria-hidden="true" data-m-loop="">
+                <span className="pc-kicker">{lead.ticker} · {lead.title}</span>
+                <div className="hn__px"><b>{money(lead.basePrice)}</b><span className={leadS.up ? "up" : "down"}>{pctText(leadS.pct)}</span><span className="pc-sim">Simulated</span></div>
+                <Chart s={leadS} w={300} h={110} />
               </div>
             </div>
           </div></div>
         </section>
 
-        {/* MARKETS: a poster wall of four live YES/NO markets, each linked to the prediction board */}
+        {/* MARKETS: the product's core. One title's price chart drawing on a loop, with the oracle event that
+            re-rated it, beside five more titles with their trend lines. All prices simulated. */}
         <section className="section" id="markets" aria-labelledby="markets-h">
           <div className="wrap">
             <div className="grid grid--top">
-              <h2 id="markets-h" className="span-5">{predictionCount} markets on what happens next</h2>
+              <h2 id="markets-h" className="span-5">{titleCount} titles that trade like stocks</h2>
               <div className="span-6 start-7 stack-4">
-                <p className="t-lead">Box office, awards, renewals and popularity. A share costs its price in cents and pays $1 if right, so the price is the odds.</p>
-                <Link className="link" href="/predictions">See every prediction market</Link>
+                <p className="t-lead">Every title has a price, a chart and an order ticket. When the oracle signs a new EPI on NEAR, the price re-rates.</p>
+                <Link className="link" href="/markets">See every market chart</Link>
               </div>
             </div>
             <div className="grid mk-wall">
-              <Link className="mk-lead span-6" href="/predictions">
-                <div className="mk__pic"><img className="frame__img" src={poster(wall[0].a, "w780")} alt={`${wall[0].a.title} poster`} loading="lazy" data-source="client" data-subject="TMDB poster" /></div>
-                <div className="mk-lead__body">
-                  <span className="pc-kicker">{wall[0].p.category} · closes in {wall[0].p.closesInDays} days</span>
-                  <h3>{wall[0].p.question}</h3>
-                  <div className="pc-yesno"><span className="yes">Yes {cents(wall[0].p.yesProb)}</span><span className="no">No {cents(1 - wall[0].p.yesProb)}</span></div>
-                  <p className="pc-fact">{wall[0].a.title} holds an EPI of {one(epiOf(wall[0].a))}. When the oracle reports a new EPI on NEAR, these odds move with it.</p>
+              <Link className="mk-chart span-7" href={`/asset/${evil.id}`} data-m-loop="">
+                <div className="mk-chart__head">
+                  <img src={poster(evil, "w342")} alt="" width="48" height="72" data-source="client" data-subject="TMDB poster" />
+                  <div><b>{evil.title}</b><small>{evil.ticker} · {evil.kind === "movie" ? "Movie" : "Show"} · {evil.status}</small></div>
+                  <div className="mk-chart__px"><strong>{money(evil.basePrice)}</strong><span className={evilS.up ? "up" : "down"}>{pctText(evilS.pct)}</span></div>
                 </div>
+                <div className="mk-chart__plot">
+                  <Chart s={evilS} w={640} h={260} />
+                  <span className="mk-chart__tag" style={{ left: `${(evilS.event ?? 0) * 100}%` }}>Oracle: EPI {one(epiOf(evil))} to {one(evilAfter)}</span>
+                </div>
+                <dl className="mk-chart__kv">
+                  <div><dt>EPI</dt><dd>{one(evilAfter)}</dd></div>
+                  <div><dt>Fee</dt><dd>0.3%</dd></div>
+                  <div><dt>Price</dt><dd>Simulated</dd></div>
+                </dl>
               </Link>
-              <ul className="mk-list span-6">
-                {wall.slice(1).map(({ p, a }) => (
-                  <li key={p.id}>
-                    <Link className="mk-row" href="/predictions">
-                      <img src={poster(a, "w342")} alt={`${a.title} poster`} width="72" height="108" loading="lazy" data-source="client" data-subject="TMDB poster" />
-                      <span className="mk-row__q"><span className="pc-kicker">{p.category} · closes in {p.closesInDays} days</span><b>{p.question}</b></span>
-                      <span className="mk-row__odds"><span className="yes">Yes {cents(p.yesProb)}</span><span className="no">No {cents(1 - p.yesProb)}</span></span>
+              <ul className="mk-list span-5">
+                {movers.map(({ a, s: sr }) => (
+                  <li key={a.id}>
+                    <Link className="mk-row" href={`/asset/${a.id}`}>
+                      <img src={poster(a, "w342")} alt={`${a.title} poster`} width="44" height="66" loading="lazy" data-source="client" data-subject="TMDB poster" />
+                      <span className="mk-row__q"><b>{a.title}</b><span className="pc-kicker">{a.ticker} · EPI {one(epiOf(a))}</span></span>
+                      <Chart s={sr} w={120} h={36} spark />
+                      <span className="mk-row__px"><b>{money(a.basePrice)}</b><span className={sr.up ? "up" : "down"}>{pctText(sr.pct)}</span></span>
                     </Link>
                   </li>
                 ))}
@@ -239,7 +294,7 @@ export default function Landing() {
         <section className="section g2m" id="epi" aria-labelledby="epi-h">
           <div className="wrap">
             <div className="grid grid--top">
-              <div className="span-5 stack-5">
+              <div className="span-5 stack-5 epi-text">
                 <h2 id="epi-h">One score from four TMDB inputs</h2>
                 <p className="t-lead">The EPI runs from 0 to 100 and sets each title&rsquo;s fair value. Here is {heart.title}, scored {one(epiOf(heart))}.</p>
                 <ul className="epi-rows">
@@ -253,7 +308,8 @@ export default function Landing() {
                 </ul>
                 <Link className="link" href="/epi">See every title&rsquo;s EPI</Link>
               </div>
-              <figure className="frame frame--photo frame--split span-6 start-7 poster-frame" data-moment="liquid-hover" data-moment-opts='{"strength": 0.7}'>
+              <div className="span-6 start-7 epi-art">
+              <figure className="frame frame--photo poster-frame" data-moment="liquid-hover" data-moment-opts='{"strength": 0.7}'>
                 <img
                   className="frame__img"
                   src={`/_next/image?url=${encodeURIComponent(poster(heart, "w780"))}&w=1080&q=75`}
@@ -266,6 +322,66 @@ export default function Landing() {
                   data-subject="TMDB poster"
                 />
               </figure>
+              <div className="epi-gauge" data-m-loop="" role="img" aria-label={`${heart.title}'s EPI of ${one(epiOf(heart))}, built from ${WEIGHTS.map(([k, label, , w]) => `${label} ${one((heart.epiParts[k] * w) / 100)} points`).join(", ")}`}>
+                <span className="pc-kicker">EPI · {heart.ticker}</span>
+                <strong>{one(epiOf(heart))}</strong>
+                <div className="epi-gauge__body">
+                  <div className="epi-gauge__bar">
+                    {WEIGHTS.map(([k, , , w], i) => (
+                      <div key={k} className={`epi-gauge__seg s${i}`} style={{ ["--p" as string]: `${(heart.epiParts[k] * w) / 100}%` }} />
+                    ))}
+                  </div>
+                  <ul className="epi-gauge__legend">
+                    {WEIGHTS.map(([k, , , w], i) => {
+                      const below = WEIGHTS.slice(0, i).reduce((t, [kk, , , ww]) => t + (heart.epiParts[kk] * ww) / 100, 0);
+                      const mine = (heart.epiParts[k] * w) / 100;
+                      return (
+                        <li key={k} className={`s${i}`} style={{ ["--b" as string]: `${below + mine / 2}%` }}>
+                          {SHORT[i]} <b>{one(mine)}</b>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PREDICTIONS: one lead market with its poster big and its YES odds drawing on a loop, four more
+            markets as linked rows with their odds. Odds history modelled from the title's simulated price. */}
+        <section className="section" id="predictions" aria-labelledby="predictions-h">
+          <div className="wrap">
+            <div className="grid grid--top">
+              <h2 id="predictions-h" className="span-5">{predictionCount} YES/NO markets on what happens next</h2>
+              <div className="span-6 start-7 stack-4">
+                <p className="t-lead">Box office, awards, renewals and popularity. A share costs its price in cents and pays $1 if right. Pools stake real testnet NEAR.</p>
+                <Link className="link" href="/predictions">See every prediction market</Link>
+              </div>
+            </div>
+            <div className="grid pd-wall">
+              <Link className="pd-lead span-6" href={`/predictions/${pLead.id}`} data-m-loop="">
+                <div className="pd-pic"><img className="frame__img" src={poster(pLeadA, "w780")} alt={`${pLeadA.title} poster`} loading="lazy" data-source="client" data-subject="TMDB poster" /></div>
+                <div className="pd-lead__body">
+                  <span className="pc-kicker">{pLead.category} · closes in {pLead.closesInDays} days</span>
+                  <h3>{pLead.question}</h3>
+                  <div className="pd-odds"><b>{cents(pLead.yesProb)}</b><span>YES</span><em className={pLeadS.up ? "up" : "down"}>{pts(pLeadS.pct)}</em></div>
+                  <div className="pd-plot"><Chart s={pLeadS} w={300} h={120} /></div>
+                  <div className="pc-yesno"><span className="yes">Yes {cents(pLead.yesProb)}</span><span className="no">No {cents(1 - pLead.yesProb)}</span></div>
+                </div>
+              </Link>
+              <ul className="pd-list span-6">
+                {pRows.map(({ p, a }) => (
+                  <li key={p.id}>
+                    <Link className="pd-row" href={`/predictions/${p.id}`}>
+                      <img src={poster(a, "w342")} alt={`${a.title} poster`} width="56" height="84" loading="lazy" data-source="client" data-subject="TMDB poster" />
+                      <span className="pd-row__q"><span className="pc-kicker">{p.category} · closes in {p.closesInDays} days</span><b>{p.question}</b></span>
+                      <span className="pd-row__odds"><span className="yes">Yes {cents(p.yesProb)}</span><span className="no">No {cents(1 - p.yesProb)}</span></span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
