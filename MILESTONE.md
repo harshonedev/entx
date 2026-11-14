@@ -54,7 +54,7 @@ One Docker image, deployed per host on Coolify with different env:
 
 ### Submission
 - [x] README: hosts, modes, how to run locally, how to reproduce
-- [ ] Demo video recorded on the demo site (script: docs/demo-video-script.md)
+- [x] Launch video made (brag-output/brag.mp4, 20s); longer walkthrough optional (docs/demo-video-script.md)
 - [ ] X post tagging @NEARProtocol #NEARHackathon
 - [x] Repo public, MIT license present
 
@@ -129,6 +129,7 @@ One Docker image, deployed per host on Coolify with different env:
 ## Changelog
 
 - 2026-11-14: Each host is now single-chain (`CHAIN_ON`): NEAR sites show no Solana wallet, toggle or copy; Solana site shows no NEAR wallet.
+- 2026-11-14: entx.space, demo., solana., www. live with Let's Encrypt certs; badges link across. Launch video in brag-output/. Remaining: post video + X post.
 - 2026-11-14: M0 deployed to Coolify (fallback hosts). Remaining: README, video, X post.
 - 2026-11-14: M0 build + security audit done; waiting on DNS/Coolify deploy.
 - 2026-11-14: File created. M0 active. M1–M5 set from the initial plan.
