@@ -47,10 +47,10 @@ One Docker image, deployed per host on Coolify with different env:
 - [x] Live mode: asset trading labelled "preview"
 - [x] Demo / Live badge on every page, links to the other host
 - [x] Settings menu in nav with chain switch, behind `NEXT_PUBLIC_FLAG_CHAIN_SWITCH` (switch = go to the other chain's host)
-- [ ] `solana.entx.space` build: Solana chain, demo mode, memo receipts
+- [x] `solana.entx.space` build: Solana chain, demo mode, memo receipts
 - [x] Dockerfile (Next.js `output: "standalone"`, bun) + `.dockerignore`
-- [ ] Coolify: 3 apps from the same repo/image, env per host, DNS A records, TLS
-- [ ] Oracle: server-only keys set only on hosts that need them; `ENTX_PUBLIC_ORACLE` off on live
+- [x] Coolify: 3 apps from the same repo/image, env per host, DNS A records, TLS
+- [x] Oracle: server-only keys set only on hosts that need them; `ENTX_PUBLIC_ORACLE` off on live
 
 ### Submission
 - [ ] README: hosts, modes, how to run locally, how to reproduce
@@ -61,7 +61,7 @@ One Docker image, deployed per host on Coolify with different env:
 ### Exit gate
 - [x] Testing (536 tests, lint, tsc, live image smoke test + desktop/mobile screenshots)
 - [x] Security audit (1 high, 9 medium found; 9 fixed in d39620f, 2 logged as accepted risks)
-- [ ] Deploy check (all 3 hosts)
+- [x] Deploy check (all 3 hosts on *.harshone.space fallback: all routes 200, healthy, security headers present, live oracle rejects unauthenticated POST with 401)
 
 ---
 
@@ -116,6 +116,7 @@ One Docker image, deployed per host on Coolify with different env:
 | Firewall the VPS so ports 80/443 accept only Cloudflare IP ranges (`TRUST_PROXY=cloudflare` trusts `cf-connecting-ip`) | P1 | M5, earlier if origin IP leaks |
 | Coolify API token was pasted in chat: rotate it | P0 | After M0 deploy |
 | Switch hosts to `entx.space` once registration clears | P1 | M0 follow-up |
+| Solana host still shows the NEAR contract proof strip on Discover; make it chain-aware | P2 | M4 |
 
 ## Accepted risks
 
@@ -126,5 +127,6 @@ One Docker image, deployed per host on Coolify with different env:
 
 ## Changelog
 
+- 2026-11-14: M0 deployed to Coolify (fallback hosts). Remaining: README, video, X post.
 - 2026-11-14: M0 build + security audit done; waiting on DNS/Coolify deploy.
 - 2026-11-14: File created. M0 active. M1–M5 set from the initial plan.
