@@ -4,6 +4,15 @@ import clsx from "clsx";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { pct } from "@/lib/format";
 
+/**
+ * Gain/loss colour with a dead band: moves inside `band` (default ±0.25%) read as neutral,
+ * so a fee-sized dip right after a trade doesn't paint the account red.
+ */
+export function signTone(value: number, band = 0.0025) {
+  if (Math.abs(value) < band) return "text-muted";
+  return value > 0 ? "text-up" : "text-down";
+}
+
 export function Change({ value, className }: { value: number; className?: string }) {
   return (
     <span className={clsx("num whitespace-nowrap", value >= 0 ? "text-up" : "text-down", className)}>

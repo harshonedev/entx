@@ -84,14 +84,28 @@ export function Toasts() {
   );
 }
 
-export function LiveFeed({ refId, limit = 12, className }: { refId?: string; limit?: number; className?: string }) {
+export function LiveFeed({
+  refId,
+  refIds,
+  limit = 12,
+  className,
+  empty = "No activity yet — push an oracle update or place a trade.",
+}: {
+  refId?: string;
+  /** Show items for any of these ids (e.g. a prediction market plus its linked title). */
+  refIds?: string[];
+  limit?: number;
+  className?: string;
+  empty?: string;
+}) {
   const feed = useMarket((s) => s.feed);
-  const items = (refId ? feed.filter((f) => f.refId === refId) : feed).slice(0, limit);
+  const ids = refIds ?? (refId ? [refId] : null);
+  const items = (ids ? feed.filter((f) => f.refId && ids.includes(f.refId)) : feed).slice(0, limit);
   return (
     <div className={className}>
       {items.length === 0 ? (
         <div className="py-6 text-center text-xs text-faint">
-          No activity yet — push an oracle update or place a trade.
+          {empty}
         </div>
       ) : (
         <ul className="divide-y divide-line">
@@ -107,7 +121,7 @@ export function LiveFeed({ refId, limit = 12, className }: { refId?: string; lim
                 <div className={clsx("leading-snug", f.type === "oracle" ? "text-text" : "text-muted")}>
                   {f.href ? (
                     <a href={f.href} target="_blank" rel="noreferrer" className="cursor-pointer text-near hover:underline">{f.text} ↗</a>
-                  ) : f.refId && ASSET_BY_ID[f.refId] && !refId ? (
+                  ) : f.refId && ASSET_BY_ID[f.refId] && !ids ? (
                     <Link href={`/asset/${f.refId}`} className="cursor-pointer hover:text-accent">{f.text}</Link>
                   ) : (
                     f.text
