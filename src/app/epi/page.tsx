@@ -63,11 +63,11 @@ export default function EpiPage() {
 
       <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="panel overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full text-sm sm:min-w-[640px]">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-muted">
-                <th className="w-12 py-2.5 pl-4 font-medium">#</th>
-                <th className="min-w-[200px] py-2.5 pr-4 font-medium">Title</th>
+                <th className="w-10 py-2.5 pl-4 font-medium sm:w-12">#</th>
+                <th className="py-2.5 pr-4 font-medium sm:min-w-[200px]">Title</th>
                 <th className="py-2.5 pl-4 text-right font-medium">EPI</th>
                 <th className="py-2.5 pl-4 text-right font-medium">24h</th>
                 {KEYS.map((k) => (
@@ -76,7 +76,7 @@ export default function EpiPage() {
                   </th>
                 ))}
                 <th className="hidden py-2.5 pl-4 pr-2 text-right font-medium 2xl:table-cell">Confidence</th>
-                <th className="py-2.5 pl-4 pr-4 text-right font-medium">Trend</th>
+                <th className="hidden py-2.5 pl-4 pr-4 text-right font-medium sm:table-cell">Trend</th>
               </tr>
             </thead>
             <tbody>
@@ -86,10 +86,10 @@ export default function EpiPage() {
                 const ref = hist[Math.max(0, hist.length - 25)]?.value ?? m.epi;
                 return (
                   <tr key={a.id} className="border-t border-line hover:bg-white/[0.02]">
-                    <td className="num w-12 py-2.5 pl-4 text-muted">{i + 1}</td>
+                    <td className="num w-10 py-2.5 pl-4 text-muted sm:w-12">{i + 1}</td>
                     <td className="py-2.5 pr-4">
                       <Link href={`/asset/${a.id}`} className="cursor-pointer flex items-center gap-3 hover:text-accent">
-                        <Poster asset={a} size="sm" />
+                        <span className="hidden sm:block"><Poster asset={a} size="sm" /></span>
                         <div className="min-w-0">
                           <div className="line-clamp-2 font-medium leading-snug">{a.title}</div>
                           <div className="text-xs text-muted">{a.ticker}</div>
@@ -111,7 +111,7 @@ export default function EpiPage() {
                       </td>
                     ))}
                     <td className="num hidden py-2.5 pl-4 pr-2 text-right text-xs text-muted 2xl:table-cell">{a.confidence}%</td>
-                    <td className="py-2.5 pl-4 pr-4">
+                    <td className="hidden py-2.5 pl-4 pr-4 sm:table-cell">
                       <Sparkline points={hist.slice(-30).map((h) => h.value)} width={80} height={24} className="ml-auto" />
                     </td>
                   </tr>

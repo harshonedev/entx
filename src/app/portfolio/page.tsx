@@ -164,7 +164,7 @@ export default function PortfolioPage() {
                 No holdings yet. <Link href="/" className="cursor-pointer text-accent">Discover titles to trade →</Link>
               </Empty>
             ) : (
-              <table className="mt-2 w-full text-sm sm:min-w-[560px]">
+              <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[560px]">
                 <thead className="max-sm:hidden">
                   <tr className="text-left text-xs uppercase tracking-wider text-muted">
                     <th className="py-2 pl-4 font-medium">Asset</th>
@@ -307,7 +307,7 @@ export default function PortfolioPage() {
             {s.trades.length === 0 ? (
               <Empty>No trades yet.</Empty>
             ) : (
-              <table className="mt-2 w-full text-sm sm:min-w-[760px]">
+              <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[760px]">
                 <thead className="max-sm:hidden">
                   <tr className="text-left text-xs uppercase tracking-wider text-muted">
                     <th className="py-2 pl-4 font-medium">Time</th>

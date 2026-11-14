@@ -30,6 +30,9 @@ export default function OnchainPage() {
   const [oracles, setOracles] = useState<string[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Phones show a few rows per table (stacked cards are tall); the rest is one tap away.
+  const [allAssets, setAllAssets] = useState(false);
+  const [allPools, setAllPools] = useState(false);
   const local = useMarket((s) => s.markets);
 
   const load = useCallback(async () => {
@@ -103,7 +106,7 @@ export default function OnchainPage() {
             href={nearAccountUrl(NEAR_CONTRACT)}
             target="_blank"
             rel="noreferrer"
-            className="cursor-pointer num mt-1.5 inline-flex items-center gap-1.5 break-all text-sm font-semibold text-near hover:underline"
+            className="cursor-pointer num mt-1.5 inline-flex min-h-11 items-center gap-1.5 break-all text-sm font-semibold text-near hover:underline sm:min-h-0"
           >
             {NEAR_CONTRACT} <ExternalLink size={12} />
           </a>
@@ -119,7 +122,7 @@ export default function OnchainPage() {
                   href={nearAccountUrl(o)}
                   target="_blank"
                   rel="noreferrer"
-                  className="cursor-pointer num inline-flex items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-text/80 hover:text-near"
+                  className="cursor-pointer num inline-flex min-h-11 items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-text/80 hover:text-near sm:min-h-0"
                 >
                   {o}
                   {role && <span className="font-sans text-faint">· {role}</span>}
@@ -176,7 +179,7 @@ export default function OnchainPage() {
               simulation, which adds up every news event you fire, so the two can drift apart. Your latest oracle
               transaction is linked under &ldquo;Your last report&rdquo;.
             </p>
-            <table className="mt-2 w-full text-sm sm:min-w-[620px]">
+            <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[620px]">
               <thead className="max-sm:hidden">
                 <tr className="text-left text-xs uppercase tracking-wider text-muted">
                   <th className="py-2 pl-4 font-medium">Market</th>
@@ -196,8 +199,11 @@ export default function OnchainPage() {
                     </td>
                   </tr>
                 )}
-                {assets.map((m) => (
-                  <tr key={m.id} className="border-t border-line max-sm:block max-sm:py-2">
+                {assets.map((m, i) => (
+                  <tr
+                    key={m.id}
+                    className={clsx("border-t border-line max-sm:block max-sm:py-2", !allAssets && i >= MOBILE_ROWS && "max-sm:hidden")}
+                  >
                     <td className="py-2 pl-4 max-sm:block max-sm:px-4">
                       <Link href={`/asset/${m.id}`} className="cursor-pointer inline-flex min-h-11 items-center gap-1.5 hover:text-accent sm:min-h-0">
                         <span className="font-semibold">{m.ticker}</span>{" "}
@@ -227,6 +233,7 @@ export default function OnchainPage() {
                 ))}
               </tbody>
             </table>
+            <ShowAllRows count={assets.length} open={allAssets} onToggle={() => setAllAssets((v) => !v)} noun="markets" />
           </div>
 
           <div className="panel overflow-x-auto">
@@ -239,7 +246,7 @@ export default function OnchainPage() {
               touch these pools, and settling a market from Demo controls only settles the simulation: a pool here stays
               Open until the contract&apos;s resolver settles it on-chain.
             </p>
-            <table className="mt-2 w-full text-sm sm:min-w-[620px]">
+            <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[620px]">
               <thead className="max-sm:hidden">
                 <tr className="text-left text-xs uppercase tracking-wider text-muted">
                   <th className="py-2 pl-4 font-medium">Market</th>
@@ -256,10 +263,13 @@ export default function OnchainPage() {
                     </td>
                   </tr>
                 )}
-                {preds.map((m) => {
+                {preds.map((m, i) => {
                   const o = resolvedOutcome(m.status);
                   return (
-                    <tr key={m.id} className="border-t border-line max-sm:block max-sm:py-2">
+                    <tr
+                      key={m.id}
+                      className={clsx("border-t border-line max-sm:block max-sm:py-2", !allPools && i >= MOBILE_ROWS && "max-sm:hidden")}
+                    >
                       <td className="py-2 pl-4 text-xs max-sm:block max-sm:px-4 sm:max-w-[360px] sm:truncate">
                         <Link href={`/predictions/${m.id}`} className="cursor-pointer inline-flex min-h-11 items-center hover:text-accent sm:min-h-0">
                           {m.title}
@@ -275,6 +285,7 @@ export default function OnchainPage() {
                 })}
               </tbody>
             </table>
+            <ShowAllRows count={preds.length} open={allPools} onToggle={() => setAllPools((v) => !v)} noun="pools" />
           </div>
 
           <div className="panel overflow-x-auto">
@@ -298,7 +309,7 @@ export default function OnchainPage() {
                 </Link>
               </div>
             ) : (
-              <table className="mt-2 w-full text-sm sm:min-w-[680px]">
+              <table className="mt-2 w-full text-sm max-sm:block max-sm:[&>tbody]:block sm:min-w-[680px]">
                 <thead className="max-sm:hidden">
                   <tr className="text-left text-xs uppercase tracking-wider text-muted">
                     <th className="py-2 pl-4 font-medium">#</th>
@@ -386,7 +397,7 @@ function Kpi({
           href={href}
           target="_blank"
           rel="noreferrer"
-          className="cursor-pointer mt-1.5 inline-flex min-h-6 items-center gap-1 text-xs text-near hover:underline"
+          className="cursor-pointer mt-1.5 inline-flex min-h-11 items-center gap-1 text-xs text-near hover:underline sm:min-h-6"
         >
           View on NearBlocks <ExternalLink size={10} />
         </a>
@@ -394,7 +405,7 @@ function Kpi({
       {cta && (
         <Link
           href={cta.href}
-          className="cursor-pointer mt-1.5 inline-flex min-h-6 items-center gap-1 text-xs text-accent hover:underline"
+          className="cursor-pointer mt-1.5 inline-flex min-h-11 items-center gap-1 text-xs text-accent hover:underline sm:min-h-6"
         >
           {cta.label} <ArrowRight size={11} aria-hidden />
         </Link>
@@ -403,3 +414,18 @@ function Kpi({
   );
 }
 
+const MOBILE_ROWS = 4;
+
+/** Phones only: expand a stacked table past its first few rows. */
+function ShowAllRows({ count, open, onToggle, noun }: { count: number; open: boolean; onToggle: () => void; noun: string }) {
+  if (count <= MOBILE_ROWS) return null;
+  return (
+    <button
+      onClick={onToggle}
+      aria-expanded={open}
+      className="cursor-pointer flex h-11 w-full items-center justify-center border-t border-line text-[12.5px] text-muted hover:text-text sm:hidden"
+    >
+      {open ? "Show fewer" : `Show all ${count} ${noun}`}
+    </button>
+  );
+}

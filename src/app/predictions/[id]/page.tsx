@@ -294,7 +294,7 @@ function LinkedTitle({ p }: { p: PredictionSeed }) {
           </div>
           <Link
             href={`/asset/${asset.id}#trade`}
-            className="cursor-pointer inline-flex h-9 items-center rounded bg-panel-2 px-3 text-xs font-medium hover:bg-white/[0.06]"
+            className="cursor-pointer inline-flex h-11 items-center rounded bg-panel-2 px-3 text-xs font-medium hover:bg-white/[0.06] sm:h-9"
           >
             Trade {asset.ticker}
           </Link>

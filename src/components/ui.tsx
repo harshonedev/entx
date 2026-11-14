@@ -81,7 +81,7 @@ export function Sparkline({
  * "label · value" line. Pair with `max-sm:hidden` on <thead> and `max-sm:block` on <tr>.
  */
 export const STACK_CELL =
-  "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:px-4 max-sm:py-1 max-sm:text-right max-sm:before:text-xs max-sm:before:text-muted max-sm:before:content-[attr(data-label)]";
+  "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:px-4 max-sm:py-1 max-sm:text-right max-sm:before:shrink-0 max-sm:before:text-xs max-sm:before:text-muted max-sm:before:content-[attr(data-label)] max-sm:[&>*]:min-w-0 max-sm:[&>*]:break-words";
 
 /**
  * Labels a section's numbers as simulated. Keep one per section (page header or panel heading), not per number.
