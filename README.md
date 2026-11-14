@@ -12,8 +12,8 @@
 A multichain entertainment exchange. Movies and TV shows become markets priced by one live score,<br>
 the **Entertainment Popularity Index (EPI)**, with a NEAR contract for the registry, oracle, receipts and prediction pools.
 
-[![Tests](https://img.shields.io/badge/tests-554%20web%20%2B%2021%20contract%20passing-2ea44f)](#quick-start)
-[![Live demo](https://img.shields.io/badge/demo-demo.entx.space-ff7a1a?style=flat)](https://demo.entx.space)
+[![Tests](https://img.shields.io/badge/tests-550%20web%20%2B%2021%20contract%20passing-2ea44f)](#quick-start)
+[![Live demo](https://img.shields.io/badge/demo-demo.entx.space-d6261f?style=flat)](https://demo.entx.space)
 [![NEAR testnet](https://img.shields.io/badge/NEAR-testnet-00ec97?logo=near&logoColor=white)](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet)
 [![Solana devnet](https://img.shields.io/badge/Solana-devnet-9945ff?logo=solana&logoColor=white)](https://solana.entx.space)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -23,13 +23,13 @@ the **Entertainment Popularity Index (EPI)**, with a NEAR contract for the regis
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Rust](https://img.shields.io/badge/contract-Rust%20·%20near--sdk%205-dea584?logo=rust&logoColor=white)](contracts/near/src/lib.rs)
 [![Bun](https://img.shields.io/badge/Bun-1.3-f9f1e1?logo=bun&logoColor=black)](https://bun.sh)
-[![NEAR Hackathon 2026](https://img.shields.io/badge/NEAR%20Hackathon-2026-ff7a1a)](#hackathon)
+[![NEAR Hackathon 2026](https://img.shields.io/badge/NEAR%20Hackathon-2026-d6261f)](#hackathon)
 
 **[Try the demo](https://demo.entx.space)** · **[Live site](https://entx.space)** · **[Solana build](https://solana.entx.space)** · **[Contract on NearBlocks](https://testnet.nearblocks.io/address/entx-market-1794654167.testnet)**
 
 <br>
 
-<a href="https://demo.entx.space"><img src="docs/assets/screenshots/discover.jpg" alt="ENTX Discover page: market table with prices, 24h change, EPI and sparklines" width="900"></a>
+<a href="https://demo.entx.space"><img src="docs/assets/screenshots/discover.jpg" alt="ENTX market board in the Night Edition: ranked titles with rank numerals, prices, 24h change, EPI bars and sparklines, the oracle wire above" width="900"></a>
 
 </div>
 
@@ -40,6 +40,7 @@ the **Entertainment Popularity Index (EPI)**, with a NEAR contract for the regis
 - [What it is](#what-it-is)
 - [Try it](#try-it)
 - [Screenshots](#screenshots)
+- [Design](#design)
 - [Quick start](#quick-start)
 - [How it works](#how-it-works)
 - [NEAR contract](#near-contract)
@@ -80,6 +81,7 @@ YES/NO prediction markets shift.
 | **[entx.space](https://entx.space)** | Live · NEAR testnet | Real TMDB data and real on-chain NEAR prediction pools. No demo controls. Asset trading is labelled *preview*. |
 | **[solana.entx.space](https://solana.entx.space)** | Demo · Solana devnet | Same app on Solana, with a devnet memo receipt per trade. |
 
+Each site opens on a landing page at `/`; **Open the markets** goes to the app at `/markets`.
 The **Demo / Live** badge in the top bar, and **Settings → Environment**, switch between the sites.
 On-chain actions (staking, receipts) need a NEAR testnet wallet (Meteor, Intear, MyNearWallet) and testnet NEAR from
 the [faucet](https://near-faucet.io).
@@ -89,7 +91,7 @@ the [faucet](https://near-faucet.io).
 
 1. **Connect a wallet.** On NEAR sites, *Connect wallet* opens near-connect. On the Solana site it connects Phantom,
    Solflare or Backpack on devnet. Each site shows only its own chain.
-2. **Discover** → open the **Spotlight** title (the highest-EPI film in theaters, e.g. *Resident Evil*).
+2. **Discover** (`/markets`) → open the **Spotlight** title (the highest-EPI film in theaters, e.g. *Resident Evil*).
 3. **Buy 10 units.** The AMM fills the simulated trade, then the wallet signs a NEAR `record_trade` receipt (or a
    Solana devnet memo on the Solana site).
 4. **Demo → "Box office beats forecast".** The EPI recalculates (e.g. 83.8 → 90.7). The oracle service publishes
@@ -107,26 +109,50 @@ the [faucet](https://near-faucet.io).
 
 ## Screenshots
 
+Shown in the Night Edition (dark theme). Every screen also ships in the Day Edition; see [Design](#design).
+
 <table>
   <tr>
-    <td width="50%"><img src="docs/assets/screenshots/terminal.jpg" alt="Asset terminal: price chart with EPI fair value line and buy panel"><br><sub><b>Asset terminal</b>: live price, EPI fair value, AMM trade ticket</sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/prediction-detail.jpg" alt="Prediction market: chance of YES chart and bet ticket"><br><sub><b>Prediction market</b>: odds driven by the title's EPI</sub></td>
+    <td colspan="2"><img src="docs/assets/screenshots/landing.jpg" alt="Landing page: headline, Open the markets and Check the contract buttons, and a collage of the live board with a price ticket"><br><sub><b>Landing</b> (<code>/</code>): what ENTX is, the board in miniature, links for judges to verify on-chain</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/screenshots/terminal.jpg" alt="Asset page: candlestick chart with the EPI fair value line and the buy ticket"><br><sub><b>Asset terminal</b>: live price, EPI fair value, AMM trade ticket</sub></td>
+    <td width="50%"><img src="docs/assets/screenshots/prediction-detail.jpg" alt="Prediction market: chance of YES chart and the bet ticket"><br><sub><b>Prediction market</b>: odds driven by the title's EPI</sub></td>
   </tr>
   <tr>
     <td><img src="docs/assets/screenshots/epi.jpg" alt="EPI leaderboard with signal breakdown and methodology"><br><sub><b>EPI</b>: per-title score, inputs and methodology</sub></td>
-    <td><img src="docs/assets/screenshots/onchain.jpg" alt="On-chain page with NEAR contract stats and NEAR Intents quote"><br><sub><b>On-chain</b>: contract state, oracle reports, NEAR Intents quotes</sub></td>
+    <td><img src="docs/assets/screenshots/onchain.jpg" alt="On-chain page with NEAR contract stats, oracle EPI vs app EPI, and the NEAR Intents quote panel"><br><sub><b>On-chain</b>: contract state, oracle reports, NEAR Intents quotes</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/assets/screenshots/predictions.jpg" alt="Prediction markets list"><br><sub><b>Predictions</b>: markets generated from the catalogue</sub></td>
-    <td><img src="docs/assets/screenshots/portfolio.jpg" alt="Portfolio page"><br><sub><b>Portfolio</b>: P&amp;L, holdings, receipts, leaderboard</sub></td>
+    <td><img src="docs/assets/screenshots/predictions.jpg" alt="Prediction markets list with YES and NO prices"><br><sub><b>Predictions</b>: markets generated from the catalogue</sub></td>
+    <td><img src="docs/assets/screenshots/portfolio.jpg" alt="Portfolio page with holdings and the bot leaderboard"><br><sub><b>Portfolio</b>: P&amp;L, holdings, receipts, leaderboard</sub></td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="docs/assets/screenshots/mobile-discover.jpg" alt="ENTX Discover on a phone" width="260">
+  <img src="docs/assets/screenshots/mobile-discover.jpg" alt="ENTX market board on a phone" width="260">
   &nbsp;&nbsp;
-  <img src="docs/assets/screenshots/mobile-terminal.jpg" alt="ENTX asset terminal on a phone" width="260">
+  <img src="docs/assets/screenshots/mobile-terminal.jpg" alt="ENTX asset page on a phone" width="260">
 </p>
+
+## Design
+
+ENTX is set as a trade-press box office chart that never goes to press: ranked rows, big condensed rank numerals,
+tabular figures, and the oracle as a red-ruled news wire above the board. Barlow Condensed names things (titles,
+headings, the main action); Archivo with tabular figures states every number. Corners are square, panels are flat,
+and structure comes from ink rules rather than shadows.
+
+- **Day Edition:** ink on newsprint, with whiter panel stock and a white ticket where money is committed.
+- **Night Edition:** the same chart under lamp light. Ink and paper swap: warm carbon ground, cream rules, panels
+  stepping lighter toward the ticket, and red, gain and loss brightened to hold 4.5:1 contrast. No glow.
+- **Choosing:** follows the OS by default. Switch in **Settings → Edition** (Day / Night / System) in the app, or with
+  the sun/moon button on the landing page. The choice is saved per browser and applied before first paint.
+- Colour is spent on meaning only: red for the brand and the wire, green and a separate red for gain and loss, teal and
+  violet for NEAR and Solana.
+
+The full system (tokens, type scale, components, rules) is in [`DESIGN.md`](DESIGN.md). App tokens live in
+[`src/app/globals.css`](src/app/globals.css); the landing page's Night Edition in
+[`public/site/landing-dark.css`](public/site/landing-dark.css).
 
 ## Quick start
 
@@ -303,10 +329,13 @@ This is a testnet prototype.
 ```
 entx/
 ├── contracts/near/          NEAR contract (Rust) + unit tests
+├── DESIGN.md                design system (Day and Night editions)
 ├── docs/                    deploy guide, demo script, README assets
 ├── scripts/                 testnet deploy/register/resolve, TMDB seeder
 ├── src/
 │   ├── app/                 Next.js App Router pages + API routes
+│   │   ├── (site)/              landing page at /
+│   │   ├── (app)/               the trading app: /markets, /asset, /predictions, /epi, /portfolio, /onchain
 │   │   ├── api/oracle/          oracle service (server-derived EPI, FC-key signer)
 │   │   └── api/intents/quote/   NEAR Intents 1Click dry-run proxy
 │   ├── components/          UI (trade panel, charts, order book, wallets…)
