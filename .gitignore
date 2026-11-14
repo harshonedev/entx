@@ -44,3 +44,4 @@ next-env.d.ts
 
 # rust
 /contracts/near/target
+brag-output/
