@@ -39,10 +39,17 @@ export function clientIp(req: Request): string {
   if (process.env.VERCEL) return req.headers.get("x-real-ip") ?? "shared";
   // Behind Cloudflare's proxy every request arrives from an edge IP; Cloudflare sets the visitor's IP here.
   // Only safe while the origin accepts traffic from Cloudflare alone.
-  if (process.env.TRUST_PROXY === "cloudflare") return req.headers.get("cf-connecting-ip") ?? "shared";
+  // Requires the origin to be reachable only through Cloudflare (hidden IP / firewall to Cloudflare ranges).
+  if (process.env.TRUST_PROXY === "cloudflare") return ipOrShared(req.headers.get("cf-connecting-ip"));
   if (process.env.TRUST_PROXY !== "true") return "shared";
   const hops = req.headers.get("x-forwarded-for")?.split(",").map((h) => h.trim()).filter(Boolean);
-  return hops?.at(-1) ?? "shared";
+  return ipOrShared(hops?.at(-1));
+}
+
+/** Accepts only IPv4/IPv6-shaped values, so a junk header can't mint unlimited buckets. */
+function ipOrShared(value: string | null | undefined): string {
+  const v = value?.trim() ?? "";
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(v) || (/^[0-9a-f:]{2,39}$/i.test(v) && v.includes(":")) ? v : "shared";
 }
 
 /** Own-key lookup, so "__proto__" / "constructor" never resolve to inherited values. */

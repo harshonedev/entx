@@ -32,5 +32,6 @@ COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
 USER app
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1
-CMD ["node", "server.js"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD wget -qO- http://localhost:3000/ >/dev/null || exit 1
+# Docker/Coolify can set HOSTNAME to the container id at runtime, which makes Next bind to that name only. "::" listens on IPv4 and IPv6, so health checks on localhost (::1) reach it.
+CMD ["sh", "-c", "HOSTNAME=:: exec node server.js"]

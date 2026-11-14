@@ -22,6 +22,8 @@ describe("clientIp", () => {
     vi.stubEnv("VERCEL", "");
     vi.stubEnv("TRUST_PROXY", "cloudflare");
     expect(clientIp(r({ "cf-connecting-ip": "3.3.3.3", "x-forwarded-for": "3.3.3.3, 172.67.0.1" }))).toBe("3.3.3.3");
+    expect(clientIp(r({ "cf-connecting-ip": "2001:db8::1" }))).toBe("2001:db8::1");
+    expect(clientIp(r({ "cf-connecting-ip": "not-an-ip-" + "x".repeat(50) }))).toBe("shared");
   });
 });
 
