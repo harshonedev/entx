@@ -1,7 +1,8 @@
 import clsx from "clsx";
+import Image from "next/image";
 import type { AssetSeed } from "@/lib/assets";
 
-/** Generated key-art tile, so the demo needs no external poster images. */
+/** TMDB poster when available; otherwise a generated key-art tile. */
 export function Poster({
   asset,
   className,
@@ -24,6 +25,16 @@ export function Poster({
       style={{ background: c2 }}
       aria-hidden
     >
+      {asset.posterUrl ? (
+        <Image
+          src={asset.posterUrl}
+          alt=""
+          fill
+          sizes={size === "lg" ? "120px" : size === "md" ? "64px" : "32px"}
+          className="object-cover"
+        />
+      ) : (
+        <>
       <div className="absolute inset-x-0 top-0 h-[58%]" style={{ background: c1, opacity: 0.85 }} />
       <div className="absolute inset-x-0 top-[58%] h-px bg-black/30" />
       {size !== "sm" && (
@@ -40,6 +51,8 @@ export function Poster({
             <div className="mt-1 text-[10px] text-white/60">{asset.studio}</div>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

@@ -10,7 +10,9 @@
     "contract:test": "cd contracts/near && cargo test",
     "contract:build": "cd contracts/near && cargo near build non-reproducible-wasm",
     "near:deploy": "bash scripts/near-deploy.sh",
-    "near:resolve": "bash scripts/near-resolve.sh"
+    "near:resolve": "bash scripts/near-resolve.sh",
+    "seed:tmdb": "node scripts/seed-tmdb.ts",
+    "near:register": "bash scripts/near-register.sh"
   },
   "dependencies": {
     "@hot-labs/near-connect": "^0.12.0",

@@ -1,0 +1,820 @@
+{
+  "source": "TMDB",
+  "attribution": "This product uses the TMDB API but is not endorsed or certified by TMDB.",
+  "generatedAt": "2026-11-14T11:27:01.720Z",
+  "assets": [
+    {
+      "id": "the-odyssey",
+      "ticker": "ODYSS",
+      "title": "The Odyssey",
+      "kind": "movie",
+      "genre": "Adventure · Action",
+      "studio": "Universal Pictures",
+      "year": 2026,
+      "status": "Streaming",
+      "tagline": "Defy the gods.",
+      "colors": [
+        "#d97706",
+        "#1c1206"
+      ],
+      "basePrice": 16.43,
+      "epiParts": {
+        "boxOffice": 99,
+        "streaming": 86.2,
+        "social": 73.6,
+        "critics": 80
+      },
+      "confidence": 88,
+      "listedDaysAgo": 120,
+      "metric": {
+        "label": "Worldwide box office",
+        "value": 1804356298,
+        "unit": "usd"
+      },
+      "volatility": 0.009,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg",
+      "tmdbId": 1368337,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1368337",
+      "releaseDate": "2026-07-15",
+      "overview": "Odysseus, the legendary King of Ithaca, embarks on a long and perilous journey home following the Trojan War. Throughout his voyage, he is forced to confront the whims of gods, mythological monsters, and trials that stretch both his cunning and his humanity to the breaking point.",
+      "stats": {
+        "revenue": 1804356298,
+        "budget": 250000000,
+        "voteAverage": 8,
+        "voteCount": 4784,
+        "popularity": 465.3448
+      }
+    },
+    {
+      "id": "other-mommy",
+      "ticker": "OTHER",
+      "title": "Other Mommy",
+      "kind": "movie",
+      "genre": "Horror",
+      "studio": "Spin a Black Yarn",
+      "year": 2026,
+      "status": "In theaters",
+      "tagline": "Your mommy won't save you.",
+      "colors": [
+        "#dc2626",
+        "#160404"
+      ],
+      "basePrice": 9.75,
+      "epiParts": {
+        "boxOffice": 81.4,
+        "streaming": 70.4,
+        "social": 51.5,
+        "critics": 63
+      },
+      "confidence": 78,
+      "listedDaysAgo": 38,
+      "metric": {
+        "label": "Worldwide box office",
+        "value": 117092844,
+        "unit": "usd"
+      },
+      "volatility": 0.012,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/fGRNCssTRrhYZxNzykGGCoMsAVq.jpg",
+      "tmdbId": 1400837,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1400837",
+      "releaseDate": "2026-10-07",
+      "overview": "Young Bela forms a relationship with a sinister entity in her home that looks uncannily like her own mother, drawing her into a terrifying and increasingly dark world.",
+      "stats": {
+        "revenue": 117092844,
+        "budget": 18000000,
+        "voteAverage": 6.3,
+        "voteCount": 377,
+        "popularity": 282.4946
+      }
+    },
+    {
+      "id": "heart-of-the-beast",
+      "ticker": "HEART",
+      "title": "Heart of the Beast",
+      "kind": "movie",
+      "genre": "Adventure · Thriller",
+      "studio": "Paramount Pictures",
+      "year": 2026,
+      "status": "In theaters",
+      "tagline": "Survival depends on their bond.",
+      "colors": [
+        "#d97706",
+        "#1c1206"
+      ],
+      "basePrice": 13.16,
+      "epiParts": {
+        "boxOffice": 85.5,
+        "streaming": 90.1,
+        "social": 57.5,
+        "critics": 75.7
+      },
+      "confidence": 81,
+      "listedDaysAgo": 56,
+      "metric": {
+        "label": "Worldwide box office",
+        "value": 188966885,
+        "unit": "usd"
+      },
+      "volatility": 0.012,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/6sYemVUn79UPKz1ZsSG6kPU4RVy.jpg",
+      "tmdbId": 1263337,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1263337",
+      "releaseDate": "2026-09-19",
+      "overview": "After a harrowing plane crash, Special Forces officer James Belmont and his combat dog, Odin, find themselves stranded deep in the Alaskan wilderness. Together, they are forced into a brutal fight for survival against the elements.",
+      "stats": {
+        "revenue": 188966885,
+        "budget": 82000000,
+        "voteAverage": 7.574,
+        "voteCount": 750,
+        "popularity": 540.2402
+      }
+    },
+    {
+      "id": "avengers-doomsday",
+      "ticker": "AVNGR",
+      "title": "Avengers: Doomsday",
+      "kind": "movie",
+      "genre": "Science Fiction · Action",
+      "studio": "Marvel Studios",
+      "year": 2026,
+      "status": "Upcoming",
+      "tagline": "Meet your doom.",
+      "colors": [
+        "#2563eb",
+        "#050b1a"
+      ],
+      "basePrice": 3.19,
+      "epiParts": {
+        "boxOffice": 35,
+        "streaming": 62.6,
+        "social": 20,
+        "critics": 60
+      },
+      "confidence": 55,
+      "listedDaysAgo": 1,
+      "metric": {
+        "label": "TMDB votes",
+        "value": 0,
+        "unit": "views"
+      },
+      "volatility": 0.018,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/tTMmREfhVd51CCg7GN73wL8cIoT.jpg",
+      "tmdbId": 1003596,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1003596",
+      "releaseDate": "2026-12-16",
+      "overview": "Beloved heroes from three distinct universes are set on a deadly collision course and face an existential threat unlike anything they've ever encountered.",
+      "stats": {
+        "voteAverage": 0,
+        "voteCount": 0,
+        "popularity": 141.8632
+      }
+    },
+    {
+      "id": "resident-evil",
+      "ticker": "RSDNT",
+      "title": "Resident Evil",
+      "kind": "movie",
+      "genre": "Horror · Science Fiction",
+      "studio": "Constantin Film",
+      "year": 2026,
+      "status": "In theaters",
+      "tagline": "A new era of evil.",
+      "colors": [
+        "#dc2626",
+        "#160404"
+      ],
+      "basePrice": 15.3,
+      "epiParts": {
+        "boxOffice": 92.3,
+        "streaming": 94.1,
+        "social": 66.6,
+        "critics": 75.2
+      },
+      "confidence": 85,
+      "listedDaysAgo": 59,
+      "metric": {
+        "label": "Worldwide box office",
+        "value": 409816199,
+        "unit": "usd"
+      },
+      "volatility": 0.012,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/gAgWJhUSQWCgtKR8170nMkYlBda.jpg",
+      "tmdbId": 1423191,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1423191",
+      "releaseDate": "2026-09-16",
+      "overview": "Medical courier Bryan unwittingly finds himself fighting for survival as one fateful, horrifying night collapses around him in chaos.",
+      "stats": {
+        "revenue": 409816199,
+        "budget": 75000000,
+        "voteAverage": 7.524,
+        "voteCount": 2137,
+        "popularity": 550.7621
+      }
+    },
+    {
+      "id": "model-citizen",
+      "ticker": "MODEL",
+      "title": "Model Citizen",
+      "kind": "movie",
+      "genre": "Crime · Science Fiction",
+      "studio": "Red Sea Media",
+      "year": 2026,
+      "status": "In theaters",
+      "tagline": "Bury the past. Control the truth.",
+      "colors": [
+        "#64748b",
+        "#08090c"
+      ],
+      "basePrice": 2.71,
+      "epiParts": {
+        "boxOffice": 35,
+        "streaming": 38.9,
+        "social": 29.5,
+        "critics": 61.7
+      },
+      "confidence": 68,
+      "listedDaysAgo": 11,
+      "metric": {
+        "label": "TMDB votes",
+        "value": 30,
+        "unit": "views"
+      },
+      "volatility": 0.012,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/7SE0LBwgqiqZzkm9gKVbBAbcNQL.jpg",
+      "tmdbId": 1792170,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1792170",
+      "releaseDate": "2026-11-03",
+      "overview": "With his memories gone and his past a blur, ex-cop Steven Bay seeks treatment for his amnesia while working on an isolated farm. Instead, he's met with rising hostility, strange surveillance, and instincts he can’t fully control. When the pressure becomes unbearable, Bay begins a desperate hunt for the truth behind his fractured reality.",
+      "stats": {
+        "voteAverage": 6.167,
+        "voteCount": 30,
+        "popularity": 36.2867
+      }
+    },
+    {
+      "id": "godzilla-minus-zero",
+      "ticker": "GMZ",
+      "title": "Godzilla Minus Zero",
+      "kind": "movie",
+      "genre": "Science Fiction · Horror",
+      "studio": "TOHO",
+      "year": 2026,
+      "status": "In theaters",
+      "tagline": "There is no third time. Everything ends here.",
+      "colors": [
+        "#2563eb",
+        "#050b1a"
+      ],
+      "basePrice": 9.18,
+      "epiParts": {
+        "boxOffice": 77,
+        "streaming": 66.5,
+        "social": 45.5,
+        "critics": 77.5
+      },
+      "confidence": 75,
+      "listedDaysAgo": 11,
+      "metric": {
+        "label": "Worldwide box office",
+        "value": 70508999,
+        "unit": "usd"
+      },
+      "volatility": 0.012,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/hSmIJluOJmTWvJs4d7kHRxjc8s8.jpg",
+      "tmdbId": 1381071,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1381071",
+      "releaseDate": "2026-11-03",
+      "overview": "War reduced Japan to zero, and Godzilla plunged it into minus. Two years have passed since then, and the country has faced agonizing struggles to achieve recovery and finally reclaim its daily life. Just as humanity managed to cling to a hard-won peace, a new threat strikes, crushing hope in an instant. There is no third time. Everything ends here.",
+      "stats": {
+        "revenue": 70508999,
+        "budget": 15000000,
+        "voteAverage": 7.754,
+        "voteCount": 189,
+        "popularity": 173.6675
+      }
+    },
+    {
+      "id": "ebenezer",
+      "ticker": "EBNZR",
+      "title": "Ebenezer",
+      "kind": "movie",
+      "genre": "Fantasy · Comedy",
+      "studio": "Paramount Pictures",
+      "year": 2026,
+      "status": "In theaters",
+      "tagline": "Before he was Scrooge, he was…",
+      "colors": [
+        "#9333ea",
+        "#100518"
+      ],
+      "basePrice": 4.52,
+      "epiParts": {
+        "boxOffice": 43.5,
+        "streaming": 54.7,
+        "social": 32.9,
+        "critics": 79
+      },
+      "confidence": 70,
+      "listedDaysAgo": 3,
+      "metric": {
+        "label": "Worldwide box office",
+        "value": 1500000,
+        "unit": "usd"
+      },
+      "volatility": 0.012,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/6H2N59jJW1hZEzn2ZdrMvJw5vNI.jpg",
+      "tmdbId": 1567605,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1567605",
+      "releaseDate": "2026-11-11",
+      "overview": "An elderly miser embarks on a supernatural journey after visits from the ghost of his former business partner and the Spirits of Christmas Past, Present, and Yet to Come force him to confront his past and fight for a second chance at happiness.",
+      "stats": {
+        "revenue": 1500000,
+        "budget": 38000000,
+        "voteAverage": 7.898,
+        "voteCount": 44,
+        "popularity": 111.9037
+      }
+    },
+    {
+      "id": "spider-man-brand-new-day",
+      "ticker": "SMBND",
+      "title": "Spider-Man: Brand New Day",
+      "kind": "movie",
+      "genre": "Science Fiction · Action",
+      "studio": "Marvel Studios",
+      "year": 2026,
+      "status": "Streaming",
+      "tagline": "A brand new day starts now.",
+      "colors": [
+        "#2563eb",
+        "#050b1a"
+      ],
+      "basePrice": 16.22,
+      "epiParts": {
+        "boxOffice": 99,
+        "streaming": 78.3,
+        "social": 76.6,
+        "critics": 84.7
+      },
+      "confidence": 89,
+      "listedDaysAgo": 108,
+      "metric": {
+        "label": "Worldwide box office",
+        "value": 2523147515,
+        "unit": "usd"
+      },
+      "volatility": 0.009,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/bjiS5ipwxb9JFy3XRRN4OAilSeX.jpg",
+      "tmdbId": 969681,
+      "tmdbUrl": "https://www.themoviedb.org/movie/969681",
+      "releaseDate": "2026-07-29",
+      "overview": "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation might also be the only thing that can stop a shocking new threat to the city and those he loves - a powerful villain no one can even see.",
+      "stats": {
+        "revenue": 2523147515,
+        "budget": 225000000,
+        "voteAverage": 8.466,
+        "voteCount": 6793,
+        "popularity": 337.7781
+      }
+    },
+    {
+      "id": "the-hunger-games-sunrise-on-the-reaping",
+      "ticker": "HGSOR",
+      "title": "The Hunger Games: Sunrise on the Reaping",
+      "kind": "movie",
+      "genre": "Science Fiction · Action",
+      "studio": "Lionsgate",
+      "year": 2026,
+      "status": "Upcoming",
+      "tagline": "Welcome to the Second Quarter Quell.",
+      "colors": [
+        "#2563eb",
+        "#050b1a"
+      ],
+      "basePrice": 6.36,
+      "epiParts": {
+        "boxOffice": 78.9,
+        "streaming": 42.9,
+        "social": 20,
+        "critics": 90
+      },
+      "confidence": 59,
+      "listedDaysAgo": 1,
+      "metric": {
+        "label": "Production budget",
+        "value": 185000000,
+        "unit": "usd"
+      },
+      "volatility": 0.018,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/j1MNyNNgNQL6f27cb3m3uKaPKd6.jpg",
+      "tmdbId": 1300968,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1300968",
+      "releaseDate": "2026-11-18",
+      "overview": "Return to the world of Panem 24 years before the events of The Hunger Games, starting on the morning of the reaping of the 50th Hunger Games, also known as the Second Quarter Quell.",
+      "stats": {
+        "budget": 185000000,
+        "voteAverage": 9,
+        "voteCount": 3,
+        "popularity": 60.64
+      }
+    },
+    {
+      "id": "i-play-rocky",
+      "ticker": "IPR",
+      "title": "I Play Rocky",
+      "kind": "movie",
+      "genre": "Drama · History",
+      "studio": "Eden Rock Media",
+      "year": 2026,
+      "status": "In theaters",
+      "tagline": "The true underdog story.",
+      "colors": [
+        "#7c3aed",
+        "#0d0618"
+      ],
+      "basePrice": 2.87,
+      "epiParts": {
+        "boxOffice": 31.9,
+        "streaming": 35,
+        "social": 26.4,
+        "critics": 88.3
+      },
+      "confidence": 67,
+      "listedDaysAgo": 8,
+      "metric": {
+        "label": "Worldwide box office",
+        "value": 395108,
+        "unit": "usd"
+      },
+      "volatility": 0.012,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/xE5tY3lppZUyG7WKKThsuYHuAHr.jpg",
+      "tmdbId": 1286656,
+      "tmdbUrl": "https://www.themoviedb.org/movie/1286656",
+      "releaseDate": "2026-11-06",
+      "overview": "The electrifying true story about an unknown actor with an unshakable belief that he wasn't just meant to write Rocky—he was meant to be Rocky Balboa. Told \"no\" at every turn, Sylvester Stallone bets everything on himself, holding the line on playing the lead against seemingly impossible odds.",
+      "stats": {
+        "revenue": 395108,
+        "budget": 27000000,
+        "voteAverage": 8.833,
+        "voteCount": 21,
+        "popularity": 27.9079
+      }
+    },
+    {
+      "id": "visionquest",
+      "ticker": "VSNQS",
+      "title": "VisionQuest",
+      "kind": "show",
+      "genre": "Sci-Fi & Fantasy · Drama",
+      "studio": "Disney+",
+      "year": 2026,
+      "status": "Streaming",
+      "tagline": "With a bounty on his head, Vision must confront his nature and resist Ultron's influence to survive.",
+      "colors": [
+        "#2563eb",
+        "#050b1a"
+      ],
+      "basePrice": 8.75,
+      "epiParts": {
+        "boxOffice": 59.2,
+        "streaming": 74.4,
+        "social": 53.2,
+        "critics": 84
+      },
+      "confidence": 76,
+      "listedDaysAgo": 4,
+      "metric": {
+        "label": "Audience rating",
+        "value": 84,
+        "unit": "pct"
+      },
+      "volatility": 0.009,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/WGyAyBPncfuu8MZhLY9RtfZPM0.jpg",
+      "tmdbId": 213375,
+      "tmdbUrl": "https://www.themoviedb.org/tv/213375",
+      "releaseDate": "2026-10-13",
+      "overview": "With a bounty on his head, Vision must confront his nature and resist Ultron's influence to survive.",
+      "stats": {
+        "voteAverage": 8.4,
+        "voteCount": 458,
+        "popularity": 327.0585,
+        "seasons": 1
+      }
+    },
+    {
+      "id": "the-lord-of-the-rings-the-rings-of-power",
+      "ticker": "LRRP",
+      "title": "The Lord of the Rings: The Rings of Power",
+      "kind": "show",
+      "genre": "Action & Adventure · Sci-Fi & Fantasy",
+      "studio": "Prime Video",
+      "year": 2022,
+      "status": "Airing",
+      "tagline": "Evil has had many names.",
+      "colors": [
+        "#ea580c",
+        "#170a03"
+      ],
+      "basePrice": 14.1,
+      "epiParts": {
+        "boxOffice": 78.2,
+        "streaming": 98,
+        "social": 72.2,
+        "critics": 72
+      },
+      "confidence": 84,
+      "listedDaysAgo": 3,
+      "metric": {
+        "label": "Audience rating",
+        "value": 72,
+        "unit": "pct"
+      },
+      "volatility": 0.011,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/bMXWXKM9ydUmMTNvDnYo9QtCBRt.jpg",
+      "tmdbId": 84773,
+      "tmdbUrl": "https://www.themoviedb.org/tv/84773",
+      "releaseDate": "2022-09-01",
+      "overview": "Beginning in a time of relative peace, we follow an ensemble cast of characters as they confront the re-emergence of evil to Middle-earth. From the darkest depths of the Misty Mountains, to the majestic forests of Lindon, to the breathtaking island kingdom of Númenor, to the furthest reaches of the map, these kingdoms and characters will carve out legacies that live on long after they are gone.",
+      "stats": {
+        "voteAverage": 7.2,
+        "voteCount": 4062,
+        "popularity": 741.6876,
+        "seasons": 3
+      }
+    },
+    {
+      "id": "12-12-12",
+      "ticker": "121212",
+      "title": "12 12 12",
+      "kind": "show",
+      "genre": "Action & Adventure · Crime",
+      "studio": "Apple TV",
+      "year": 2026,
+      "status": "Airing",
+      "tagline": "Get in. Get out. Get away.",
+      "colors": [
+        "#ea580c",
+        "#170a03"
+      ],
+      "basePrice": 2.39,
+      "epiParts": {
+        "boxOffice": 28.9,
+        "streaming": 50.8,
+        "social": 22.9,
+        "critics": 49
+      },
+      "confidence": 62,
+      "listedDaysAgo": 2,
+      "metric": {
+        "label": "Audience rating",
+        "value": 49,
+        "unit": "pct"
+      },
+      "volatility": 0.011,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/bG4h6C6wRKmf3ryz8gdN6imXW4c.jpg",
+      "tmdbId": 254630,
+      "tmdbUrl": "https://www.themoviedb.org/tv/254630",
+      "releaseDate": "2026-11-12",
+      "overview": "A heist takes 12 months to plan, 12 hours to execute—and a thief not caught within 12 days won't be caught at all. Across three pulse-pounding timelines, an FBI agent and a career criminal face off in a deadly game of cat and mouse through Europe.",
+      "stats": {
+        "voteAverage": 4.9,
+        "voteCount": 14,
+        "popularity": 104.9911,
+        "seasons": 1
+      }
+    },
+    {
+      "id": "mobland",
+      "ticker": "MBLND",
+      "title": "MobLand",
+      "kind": "show",
+      "genre": "Crime · Drama",
+      "studio": "Paramount+",
+      "year": 2025,
+      "status": "Airing",
+      "tagline": "Chaos reigns.",
+      "colors": [
+        "#64748b",
+        "#08090c"
+      ],
+      "basePrice": 11.19,
+      "epiParts": {
+        "boxOffice": 67.8,
+        "streaming": 82.3,
+        "social": 61.8,
+        "critics": 86.5
+      },
+      "confidence": 80,
+      "listedDaysAgo": 8,
+      "metric": {
+        "label": "Audience rating",
+        "value": 87,
+        "unit": "pct"
+      },
+      "volatility": 0.011,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/5Xc7WpWsgflfgEMoBlf9TmWhfbH.jpg",
+      "tmdbId": 247718,
+      "tmdbUrl": "https://www.themoviedb.org/tv/247718",
+      "releaseDate": "2025-03-30",
+      "overview": "Two mob families clash in a war that threatens to topple empires and lives.",
+      "stats": {
+        "voteAverage": 8.652,
+        "voteCount": 1236,
+        "popularity": 434.5809,
+        "seasons": 2
+      }
+    },
+    {
+      "id": "dexter-resurrection",
+      "ticker": "DXTR",
+      "title": "Dexter: Resurrection",
+      "kind": "show",
+      "genre": "Crime · Drama",
+      "studio": "Paramount+ with Showtime",
+      "year": 2025,
+      "status": "Airing",
+      "tagline": "Back and sharper than ever.",
+      "colors": [
+        "#64748b",
+        "#08090c"
+      ],
+      "basePrice": 7.53,
+      "epiParts": {
+        "boxOffice": 63.5,
+        "streaming": 46.8,
+        "social": 57.5,
+        "critics": 85.5
+      },
+      "confidence": 78,
+      "listedDaysAgo": 6,
+      "metric": {
+        "label": "Audience rating",
+        "value": 85,
+        "unit": "pct"
+      },
+      "volatility": 0.011,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/o2Oyi3boT100bY5kCP4MBiTeetO.jpg",
+      "tmdbId": 259909,
+      "tmdbUrl": "https://www.themoviedb.org/tv/259909",
+      "releaseDate": "2025-07-13",
+      "overview": "Set 10 weeks after Dexter: New Blood, Dexter Morgan chases a missing Harrison to New York City, where Captain Angel Batista is hot on their trail from way down in Miami.",
+      "stats": {
+        "voteAverage": 8.549,
+        "voteCount": 754,
+        "popularity": 98.6915,
+        "seasons": 2
+      }
+    },
+    {
+      "id": "the-body",
+      "ticker": "BODY",
+      "title": "The Body",
+      "kind": "show",
+      "genre": "Mystery · Drama",
+      "studio": "Netflix",
+      "year": 2026,
+      "status": "Airing",
+      "tagline": "They pray hard and sin harder.",
+      "colors": [
+        "#0d9488",
+        "#031211"
+      ],
+      "basePrice": 3.67,
+      "epiParts": {
+        "boxOffice": 34.9,
+        "streaming": 58.6,
+        "social": 28.9,
+        "critics": 71
+      },
+      "confidence": 65,
+      "listedDaysAgo": 3,
+      "metric": {
+        "label": "Audience rating",
+        "value": 71,
+        "unit": "pct"
+      },
+      "volatility": 0.011,
+      "posterUrl": "https://image.tmdb.org/t/p/w342/195kCuy2RqGaEAZDDpGTx7gBUBZ.jpg",
+      "tmdbId": 291507,
+      "tmdbUrl": "https://www.themoviedb.org/tv/291507",
+      "releaseDate": "2026-11-11",
+      "overview": "On Halloween night, an all-girls dance squad tumbles into Catholic guilt, unholy desires and ghostly visions when an initiation goes to hell.",
+      "stats": {
+        "voteAverage": 7.1,
+        "voteCount": 28,
+        "popularity": 112.3114,
+        "seasons": 1
+      }
+    }
+  ],
+  "predictions": [
+    {
+      "question": "Will Spider-Man: Brand New Day reach $3B worldwide?",
+      "category": "Box office",
+      "assetId": "spider-man-brand-new-day",
+      "sensitivity": 1,
+      "yesProb": 0.39,
+      "closesInDays": 60,
+      "rules": "Resolves YES if TMDB-reported worldwide revenue reaches $3B before close (currently $2.52B).",
+      "id": "spider-man-brand-new-day-box-office-0",
+      "liquidity": 18000,
+      "volume": 24000
+    },
+    {
+      "question": "Will The Odyssey reach $2.25B worldwide?",
+      "category": "Box office",
+      "assetId": "the-odyssey",
+      "sensitivity": 1,
+      "yesProb": 0.32,
+      "closesInDays": 60,
+      "rules": "Resolves YES if TMDB-reported worldwide revenue reaches $2.25B before close (currently $1.80B).",
+      "id": "the-odyssey-box-office-1",
+      "liquidity": 11000,
+      "volume": 28500
+    },
+    {
+      "question": "Will Avengers: Doomsday open above $250M worldwide?",
+      "category": "Box office",
+      "assetId": "avengers-doomsday",
+      "sensitivity": 1,
+      "yesProb": 0.6,
+      "closesInDays": 36,
+      "rules": "Resolves YES if the reported global opening-weekend gross (release 2026-12-16) exceeds $250M.",
+      "id": "avengers-doomsday-box-office-2",
+      "liquidity": 18000,
+      "volume": 114000
+    },
+    {
+      "question": "Will Spider-Man: Brand New Day earn a Best Picture nomination?",
+      "category": "Awards",
+      "assetId": "spider-man-brand-new-day",
+      "sensitivity": 1,
+      "yesProb": 0.12,
+      "closesInDays": 70,
+      "rules": "Resolves YES if the film is nominated for Best Picture at the next Academy Awards.",
+      "id": "spider-man-brand-new-day-awards-3",
+      "liquidity": 17000,
+      "volume": 73500
+    },
+    {
+      "question": "Will The Lord of the Rings: The Rings of Power be renewed for Season 4?",
+      "category": "Renewal",
+      "assetId": "the-lord-of-the-rings-the-rings-of-power",
+      "sensitivity": 1,
+      "yesProb": 0.43,
+      "closesInDays": 45,
+      "rules": "Resolves YES on an official renewal announcement by the network/streamer before close.",
+      "id": "the-lord-of-the-rings-the-rings-of-power-renewal",
+      "liquidity": 16000,
+      "volume": 141000
+    },
+    {
+      "question": "Will 12 12 12 be renewed for Season 2?",
+      "category": "Renewal",
+      "assetId": "12-12-12",
+      "sensitivity": 1,
+      "yesProb": 0.25,
+      "closesInDays": 45,
+      "rules": "Resolves YES on an official renewal announcement by the network/streamer before close.",
+      "id": "12-12-12-renewal-5",
+      "liquidity": 16000,
+      "volume": 15000
+    },
+    {
+      "question": "Will The Lord of the Rings: The Rings of Power still be the #1 trending show on TMDB in 2 weeks?",
+      "category": "Popularity",
+      "assetId": "the-lord-of-the-rings-the-rings-of-power",
+      "sensitivity": 1,
+      "yesProb": 0.45,
+      "closesInDays": 14,
+      "rules": "Resolves YES if it ranks #1 on TMDB's weekly TV trending list at close.",
+      "id": "the-lord-of-the-rings-the-rings-of-power-popular",
+      "liquidity": 13000,
+      "volume": 55500
+    },
+    {
+      "question": "Will Resident Evil reach an EPI of 90 this month?",
+      "category": "Popularity",
+      "assetId": "resident-evil",
+      "sensitivity": 1,
+      "yesProb": 0.3,
+      "closesInDays": 21,
+      "rules": "Resolves YES if the ENTX Popularity Index for RSDNT prints ≥ 90.0 on-chain.",
+      "id": "resident-evil-popularity-7",
+      "liquidity": 13000,
+      "volume": 181500
+    },
+    {
+      "question": "Will Heart of the Beast drop more than 50% in its next weekend?",
+      "category": "Box office",
+      "assetId": "heart-of-the-beast",
+      "sensitivity": -1,
+      "yesProb": 0.42,
+      "closesInDays": 6,
+      "rules": "Resolves YES if weekend-over-weekend domestic gross falls by more than 50%.",
+      "id": "heart-of-the-beast-box-office-8",
+      "liquidity": 8000,
+      "volume": 141000
+    }
+  ]
+}

@@ -6,8 +6,9 @@ performance and sentiment. Popularity comes from one score, the **Entertainment 
 **NEAR Intents** quotes show how users could fund from any chain. **Solana** devnet stores a second, linked receipt
 for each trade.
 
-> **Honesty note.** Spot prices, AMM trades, balances and titles are **simulated** off-chain, and the UI labels
-> them that way. These parts are **real on-chain**: the NEAR contract and its state, oracle EPI reports,
+> **Honesty note.** The **titles, posters, release info and EPI inputs are real**, seeded from TMDB (box
+> office, popularity, vote counts, ratings). **Spot prices, AMM trades, balances and oracle events are simulated**
+> off-chain, and the UI labels them that way. These parts are **real on-chain**: the NEAR contract and its state, oracle EPI reports,
 > trade receipts, YES/NO staking with testnet NEAR plus settlement and claims, and the Solana memo receipts.
 > NEAR Intents quotes are **live mainnet prices requested with `dry: true`**. No deposit address is created
 > and no funds move, because Intents has no testnet.
@@ -30,7 +31,7 @@ Check the contract state from any terminal (needs [near-cli-rs](https://near.cli
 
 ```bash
 near contract call-function as-read-only entx-market-1794654167.testnet get_stats json-args '{}' network-config testnet now
-near contract call-function as-read-only entx-market-1794654167.testnet get_epi_reports json-args '{"market_id":"dune-drift"}' network-config testnet now
+near contract call-function as-read-only entx-market-1794654167.testnet get_epi_reports json-args '{"market_id":"resident-evil"}' network-config testnet now
 near contract call-function as-read-only entx-market-1794654167.testnet get_oracles json-args '{}' network-config testnet now
 near contract call-function as-read-only entx-market-1794654167.testnet get_recent_receipts json-args '{"limit":10}' network-config testnet now
 ```
@@ -61,12 +62,33 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releas
 
 bun run contract:test   # 11 unit tests: registry, receipts, storage deposits/refunds, oracle trust, report ring,
                      # parimutuel payout, permissions, input sanitising
-bun run near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers 19 markets,
+bun run near:deploy     # creates faucet-funded contract + oracle accounts, builds, deploys, registers all catalogue markets,
                      # allow-lists the oracle, gives it a report_epi-only key, writes .env.local
 bun run dev
 ```
 
-To resolve a prediction market on-chain (owner/oracle only), run `bun run near:resolve drift-opening-250 true`.
+To resolve a prediction market on-chain (owner/oracle only), run `bun run near:resolve resident-evil-popularity-7 true`.
+
+### Refresh the real catalogue (optional, needs a TMDB key)
+
+The committed `src/data/catalog.json` was seeded from TMDB, so no key is needed to run the app. To pull the
+current trending titles instead:
+
+```bash
+echo 'TMDB_TOKEN=<v4 read access token>' >> .env.local   # or TMDB_API_KEY=<v3 key>
+bun run seed:tmdb       # trending movies + upcoming tentpoles + trending shows → src/data/catalog.json
+bun run near:register   # registers the new markets on the contract (idempotent)
+```
+
+| EPI input (0–100) | Derived from (TMDB) |
+| --- | --- |
+| Box office / audience | movies: log-scaled worldwide revenue (budget for unreleased); shows: log-scaled vote count |
+| Streaming demand | popularity, rank-normalised within the catalogue |
+| Social buzz | log-scaled vote count |
+| Audience rating | vote average × 10 |
+
+Prediction markets are generated from the catalogue: box-office milestones, opening weekends, awards, renewals,
+trending rank, an EPI target and a weekend-drop market.
 
 ---
 
@@ -74,11 +96,11 @@ To resolve a prediction market on-chain (owner/oracle only), run `bun run near:r
 
 1. **Connect wallets.** Use *Connect NEAR* for a testnet wallet (Meteor, Intear, MyNearWallet, or NEAR CLI via
    near-connect). *Select Wallet* is optional and connects Phantom, Solflare or Backpack on Solana devnet.
-2. **Discover** → open **DRIFT** (*Dune Drift: Part Three*).
+2. **Discover** → open the **Spotlight** title (the highest-EPI film in theaters, e.g. *Resident Evil*).
 3. **Buy 10 units.** The AMM fills the simulated trade. The wallet then signs:
    - a Solana devnet memo receipt, then
    - a NEAR `record_trade` call whose `chain_ref` stores the Solana signature, so the two chains are linked.
-4. **Entertainment oracle → "Box office beats forecast".** The EPI recalculates (84.3 → 90.6). The browser sends
+4. **Entertainment oracle → "Box office beats forecast".** The EPI recalculates (e.g. 83.8 → 90.7). The browser sends
    only the event name. The **oracle service** reads the on-chain EPI, applies the event's weighted impact and signs
    `report_epi` with a key that can call nothing else. A toast and the activity feed link to NearBlocks.
    Simulated traders then reprice the market, the chart rips and the linked prediction odds move.
@@ -163,7 +185,10 @@ All state changes emit NEP-297 `EVENT_JSON` logs (`standard: "entx"`).
 ```
 contracts/near/src/lib.rs        NEAR contract + unit tests
 src/lib/engine.ts                AMM, CPMM, candle generation
-src/lib/assets.ts                seed titles, EPI formula, oracle events
+src/data/catalog.json            real TMDB catalogue (assets + generated prediction markets)
+scripts/seed-tmdb.ts             TMDB importer: metrics → EPI inputs, market generation
+src/lib/epi.ts                   EPI formula (shared by app + seeder)
+src/lib/assets.ts                catalogue types, simulated oracle events
 src/store/market.ts              simulation tick, trades, oracle (+ publish to NEAR), settlement
 src/lib/near.tsx                 near-connect provider, record_trade receipts
 src/lib/near-config.ts           RPC view helper, contract types
@@ -197,7 +222,13 @@ the oracle service, the Intents integration and the Solana receipts.
   executed for real (`dry: false` → deposit address → `/v0/status`).
 - Multi-source oracle quorum (box office, streaming charts, social APIs) with signed attestations.
 - Let the analyst act as an agent under a limited function-call key and user-set risk limits.
-- TMDB metadata for real titles.
+- Scheduled TMDB re-seeding feeding the on-chain oracle, so EPI updates come from real metric changes rather
+  than demo buttons.
+
+## Attribution
+
+This product uses the TMDB API but is not endorsed or certified by TMDB. Title metadata and posters © their
+respective owners via [TMDB](https://www.themoviedb.org).
 
 ## License
 

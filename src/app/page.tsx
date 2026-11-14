@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowRight, Radio, Zap } from "lucide-react";
-import { ASSETS, ASSET_BY_ID } from "@/lib/assets";
+import { ASSETS } from "@/lib/assets";
 import { change24h, priceOf, useMarket } from "@/store/market";
 import { compactUsd, usd } from "@/lib/format";
 import { AssetTable } from "@/components/asset-table";
@@ -41,7 +41,10 @@ export default function Discover() {
   const volume = ASSETS.reduce((t, a) => t + markets[a.id].volume24h, 0);
   const avgEpi = ASSETS.reduce((t, a) => t + markets[a.id].epi, 0) / ASSETS.length;
 
-  const spot = ASSET_BY_ID["dune-drift"];
+  // Spotlight: highest-EPI title currently in theaters (falls back to the overall leader).
+  const spot =
+    [...ASSETS].filter((a) => a.status === "In theaters").sort((a, b) => markets[b.id].epi - markets[a.id].epi)[0] ??
+    [...ASSETS].sort((a, b) => markets[b.id].epi - markets[a.id].epi)[0];
   const sm = markets[spot.id];
 
   return (
