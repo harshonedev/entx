@@ -65,7 +65,8 @@ export function DemoControls() {
         )}
       >
         <FlaskConical size={14} />
-        <span className="hidden sm:inline">Demo</span>
+        {/* lg–xl the five nav links need the room; the flask + aria-label carry it there. */}
+        <span className="hidden sm:inline lg:hidden xl:inline">Demo</span>
       </button>
 
       {open && (

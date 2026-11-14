@@ -278,7 +278,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
                   href={href}
                   aria-current={active ? "page" : undefined}
                   className={clsx(
-                    "cursor-pointer flex h-full items-center border-b-[3px] px-3.5 pt-[3px] text-[13.5px] font-medium transition-colors xl:px-4",
+                    "cursor-pointer flex h-full items-center whitespace-nowrap border-b-[3px] px-3.5 pt-[3px] text-[13.5px] font-medium transition-colors xl:px-4",
                     active ? "border-accent text-bar-ink" : "border-transparent text-bar-ink/65 hover:text-bar-ink",
                   )}
                 >
@@ -376,12 +376,15 @@ function AssetSearch() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
+  // Phones only: the field lives behind a search button and opens as a full-width bar over the header.
+  const [expanded, setExpanded] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        setExpanded(true);
         input.current?.focus();
         setOpen(true);
       }
@@ -389,6 +392,11 @@ function AssetSearch() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // The field is display:none on phones until expanded, so focus once it has rendered.
+  useEffect(() => {
+    if (expanded) input.current?.focus();
+  }, [expanded]);
 
   const term = q.trim().toLowerCase();
   // Every word must appear somewhere, so "dune box" finds "Will Dune … box office …".
@@ -424,47 +432,68 @@ function AssetSearch() {
   const offsets = groups.map((_, g) => groups.slice(0, g).reduce((n, x) => n + x.items.length, 0));
   return (
     <div className="relative">
-      {/* Phones: an icon-wide field that opens up on focus. sm+: always-open field. The 2px accent ring on the
-          wrapper is the focus indicator (the bare input sits inside it, so it never needs its own outline). */}
-      <div className="flex h-9 w-11 items-center gap-2 overflow-hidden border border-bar-ink/20 bg-bar-field px-[14px] text-bar-ink/60 focus-within:w-44 focus-within:border-accent focus-within:text-bar-ink motion-safe:transition-[width] motion-safe:duration-200 sm:w-56 sm:px-3 sm:focus-within:w-56 xl:w-64 xl:focus-within:w-64 pointer-coarse:h-11">
-        <Search size={14} className="shrink-0" aria-hidden onClick={() => input.current?.focus()} />
-        <input
-          ref={input}
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setHi(0);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown") {
-              e.preventDefault();
-              setHi((h) => Math.min(h + 1, results.length - 1));
-            } else if (e.key === "ArrowUp") {
-              e.preventDefault();
-              setHi((h) => Math.max(h - 1, 0));
-            } else if (e.key === "Enter" && results[hi]) {
-              go(results[hi].href);
-            } else if (e.key === "Escape") {
-              input.current?.blur();
-            }
-          }}
-          name="q"
-          placeholder="Search titles, markets…"
+      {/* Phones: a search button; tapping it lays a full-width field over the header row. sm+: always-open field.
+          The accent border on the wrapper is the focus indicator (the bare input never needs its own outline). */}
+      {!expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
           aria-label="Search titles and markets"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={open}
-          aria-controls="asset-search-list"
-          aria-activedescendant={open && results[hi] ? `search-opt-${results[hi].id}` : undefined}
-          className="w-full min-w-0 bg-transparent text-[12.5px] text-bar-ink outline-none placeholder:text-bar-ink/55"
-        />
-        <kbd className="hidden border border-bar-ink/20 px-1.5 py-0.5 text-[11px] text-bar-ink/60 sm:inline">⌘K</kbd>
+          className="cursor-pointer grid h-9 w-9 place-items-center border border-bar-ink/20 bg-bar-field text-bar-ink/75 transition-colors hover:text-bar-ink sm:hidden pointer-coarse:h-11 pointer-coarse:w-11"
+        >
+          <Search size={15} aria-hidden />
+        </button>
+      )}
+      <div
+        className={
+          expanded
+            ? "max-sm:fixed max-sm:inset-x-0 max-sm:top-0 max-sm:z-50 max-sm:flex max-sm:h-[52px] max-sm:items-center max-sm:bg-bar max-sm:px-2"
+            : "hidden sm:block"
+        }
+      >
+        <div className="flex h-9 w-full items-center gap-2 border border-bar-ink/20 bg-bar-field px-3 text-bar-ink/60 focus-within:border-accent focus-within:text-bar-ink sm:w-56 lg:w-44 xl:w-64 pointer-coarse:h-11">
+          <Search size={14} className="shrink-0" aria-hidden onClick={() => input.current?.focus()} />
+          <input
+            ref={input}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setHi(0);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => {
+              setOpen(false);
+              setExpanded(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setHi((h) => Math.min(h + 1, results.length - 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setHi((h) => Math.max(h - 1, 0));
+              } else if (e.key === "Enter" && results[hi]) {
+                go(results[hi].href);
+              } else if (e.key === "Escape") {
+                input.current?.blur();
+              }
+            }}
+            name="q"
+            placeholder="Search titles, markets…"
+            aria-label="Search titles and markets"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={open}
+            aria-controls="asset-search-list"
+            aria-activedescendant={open && results[hi] ? `search-opt-${results[hi].id}` : undefined}
+            className="w-full min-w-0 bg-transparent text-[12.5px] text-bar-ink outline-none placeholder:text-bar-ink/55"
+          />
+          <kbd className="hidden border border-bar-ink/20 px-1.5 py-0.5 text-[11px] text-bar-ink/60 sm:inline lg:hidden xl:inline">⌘K</kbd>
+        </div>
       </div>
       {open && results.length > 0 && (
-        <div className="absolute right-0 top-11 z-50 max-h-[min(32rem,calc(100dvh-80px))] w-[min(22rem,calc(100vw-32px))] overflow-y-auto overscroll-contain border-2 border-ink bg-panel p-0.5 text-text shadow-lift">
+        <div className="absolute right-0 top-11 z-50 max-h-[min(32rem,calc(100dvh-80px))] w-[min(22rem,calc(100vw-32px))] overflow-y-auto max-sm:fixed max-sm:inset-x-2 max-sm:top-[52px] max-sm:w-auto overscroll-contain border-2 border-ink bg-panel p-0.5 text-text shadow-lift">
           {noMatch && (
             <p id="asset-search-empty" role="status" className="px-2 pb-1 pt-2 text-[12px] text-muted">
               Nothing matches &ldquo;<span className="text-text">{q.trim()}</span>&rdquo;. Most traded titles:
