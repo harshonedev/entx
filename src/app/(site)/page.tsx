@@ -37,7 +37,6 @@ const one = (n: number) => n.toFixed(1);
 const lead = ranked[0]; // the board's open item
 const heart = byId("heart-of-the-beast"); // the EPI section's poster
 const evil = byId("resident-evil");
-const navCards = [byId("godzilla-minus-zero"), byId("ebenezer"), byId("other-mommy"), byId("visionquest")];
 
 const pOdyssey = predictions.find((p) => p.assetId === "the-odyssey")!;
 
@@ -152,6 +151,23 @@ const hub = {
 
 export default function Landing() {
   const board = ranked.slice(0, 8);
+  // the menu's thumbnails are small pieces of what each entry opens, never unrelated posters
+  const menu = [
+    { href: "#top", name: "The board", line: `${titleCount} titles ranked by EPI`, thumb: (
+      <div className="mt-board">{ranked.slice(0, 3).map((a, i) => (
+        <div key={a.id}><b>{i + 1}</b><span>{a.ticker}</span><em>{money(a.basePrice)}</em></div>
+      ))}</div>
+    ) },
+    { href: "#markets", name: "Price charts", line: `${titleCount} titles that trade like stocks`, thumb: (
+      <div className="mt-chart"><span>{lead.ticker} <em className={leadS.up ? "up" : "down"}>{pctText(leadS.pct)}</em></span><Chart s={series(lead, 120, 40)} w={120} h={40} spark /></div>
+    ) },
+    { href: "#predictions", name: "Predictions", line: `${predictionCount} YES/NO markets on what happens next`, thumb: (
+      <div className="mt-odds"><span>{cents(pLead.yesProb)} YES</span><i><u style={{ width: `${Math.round(pLead.yesProb * 100)}%` }} /></i><small>Pays $1 if right</small></div>
+    ) },
+    { href: "#onchain", name: "On-chain proof", line: "Registry, oracle, receipts and pools on NEAR", thumb: (
+      <div className="mt-chain"><img src="/assets/icons/near.svg" alt="" width="28" height="28" /><span>record_trade</span><small>NEAR testnet</small></div>
+    ) },
+  ];
   return (
     <>
       <header className="nav nav--tone">
@@ -166,16 +182,11 @@ export default function Landing() {
               </a>
               <div className="nav__menu">
                 <div className="wrap grid">
-                  {[
-                    ["#top", "The board", `${titleCount} titles ranked by EPI`, navCards[0]],
-                    ["#markets", "Price charts", `${titleCount} titles that trade like stocks`, navCards[1]],
-                    ["#predictions", "Predictions", `${predictionCount} YES/NO markets on what happens next`, navCards[2]],
-                    ["#onchain", "On-chain proof", "Registry, oracle, receipts and pools on NEAR", navCards[3]],
-                  ].map(([href, name, line, a]) => (
-                    <a key={name as string} className="menu-card menu-card--poster span-3" href={href as string}>
-                      <div className="panel"><img className="frame__img" src={poster(a as Asset, "w342")} alt={`${(a as Asset).title} poster`} loading="lazy" data-source="client" data-subject="TMDB poster" /></div>
-                      <span className="t-card">{name as string}</span>
-                      <span className="t-small muted">{line as string}</span>
+                  {menu.map(({ href, name, line, thumb }) => (
+                    <a key={name} className="menu-card menu-card--thumb span-3" href={href}>
+                      <div className="panel mt" aria-hidden="true">{thumb}</div>
+                      <span className="t-card">{name}</span>
+                      <span className="t-small muted">{line}</span>
                     </a>
                   ))}
                 </div>

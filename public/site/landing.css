@@ -496,3 +496,18 @@ html[data-theme="dark"] .pd-row__odds .yes { color: var(--on-status); }
 .mk-row__q b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 [data-m-loop] .ch:not(.ch--spark) .ch__line { stroke-dasharray: none; animation: ch-area-x var(--m-cycle) linear infinite; }
 .mk-row { min-height: 98px; padding-block: 8px; }
+
+/* the menu's thumbnails: a small piece of each place it opens, on the paper stock */
+.menu-card--thumb { display: grid; grid-template-columns: 132px minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: var(--s-4); row-gap: var(--s-2); align-items: start; }
+.menu-card--thumb > .panel.mt { grid-row: 1 / span 2; width: 132px; height: 96px; margin: 0; padding: 10px; border: 1px solid var(--ink); background: var(--stock); color: var(--ink); display: grid; align-content: center; overflow: hidden; font: 600 12px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: .04em; }
+.menu-card--thumb > .t-card { align-self: end; padding-top: var(--s-2); }
+.mt-board { display: grid; gap: 4px; }
+.mt-board > div { display: grid; grid-template-columns: 14px 1fr auto; gap: 6px; border-bottom: 1px solid var(--hair); padding-bottom: 3px; }
+.mt-board em { font-style: normal; }
+.mt-chart { display: grid; gap: 4px; } .mt-chart em { font-style: normal; } .mt-chart .ch { height: 40px; }
+.mt-odds { display: grid; gap: 6px; } .mt-odds > span { font-size: 18px; color: var(--gain); }
+.mt-odds i { display: block; height: 8px; border: 1px solid var(--ink); } .mt-odds u { display: block; height: 100%; background: var(--gain); }
+.mt-odds small, .mt-chain small { color: var(--muted); font-size: 12px; text-transform: none; letter-spacing: 0; font-family: var(--font-text); }
+.mt-chain { display: grid; gap: 4px; justify-items: start; } .mt-chain img { width: 28px; height: 28px; }
+.menu-card--thumb > .panel.mt { aspect-ratio: auto; height: 96px; min-height: 0; }
+.mt-chain img { width: 30px; height: 30px; padding: 4px; background: #fff; border: 1px solid var(--ink); }
