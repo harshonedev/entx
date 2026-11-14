@@ -42,7 +42,7 @@ export function ProbabilityChart({ p, height = 340 }: { p: PredictionSeed; heigh
   const series = useRef<ISeriesApi<"Line"> | null>(null);
   const modelSeries = useRef<ISeriesApi<"Line"> | null>(null);
   const markersApi = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
-  const colors = useRef({ up: "#34c77b", down: "#ef5350", text: "#f2f2f2" });
+  const colors = useRef({ up: "#1d7446", down: "#c4221b", text: "#141414" });
   const lastLen = useRef(0);
   const history = useProbHistory(p.id);
   const feed = useMarket((s) => s.feed);
@@ -89,7 +89,7 @@ export function ProbabilityChart({ p, height = 340 }: { p: PredictionSeed; heigh
       },
       grid: {
         vertLines: { visible: false },
-        horzLines: { color: "rgba(255,255,255,0.04)" },
+        horzLines: { color: "rgba(20,20,20,0.07)" },
       },
       // Thin margins, and no axis label outside 0–100%, so a settled market never shows "110%".
       rightPriceScale: { borderColor: token("--line"), scaleMargins: { top: 0.06, bottom: 0.06 } },

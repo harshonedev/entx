@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // the tasteskill kit, vendored as plain files for the landing page
+    "public/assets/**",
   ]),
 ]);
 

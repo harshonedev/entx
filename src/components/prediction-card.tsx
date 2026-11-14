@@ -95,19 +95,19 @@ export function PredictionCard({ p, compact = false }: { p: PredictionSeed; comp
           </Link>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-xs text-muted">
-            <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-medium text-text/80">{p.category}</span>
+          <Link
+            href={`/predictions/${p.id}`}
+            className="cursor-pointer block text-[15px] font-semibold leading-snug hover:text-accent"
+          >
+            {p.question}
+          </Link>
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted">
+            <span className="border border-line-2 px-1.5 font-medium text-text">{p.category}</span>
             {asset && <span className="font-semibold">{asset.ticker}</span>}
             <span className="ml-auto inline-flex items-center gap-1">
               <Clock size={11} /> {st.resolved ? "Closed" : `${p.closesInDays}d left`}
             </span>
           </div>
-          <Link
-            href={`/predictions/${p.id}`}
-            className="cursor-pointer mt-1.5 block text-[15px] font-semibold leading-snug hover:text-accent"
-          >
-            {p.question}
-          </Link>
         </div>
       </div>
 
@@ -367,7 +367,7 @@ function BetTicket({
   return (
     <>
       {modal && (
-        <div aria-hidden="true" className="fixed inset-0 z-50 bg-black/70 motion-safe:animate-[fade-in_200ms_ease-out]" onClick={() => onClose(true)} />
+        <div aria-hidden="true" className="fixed inset-0 z-50 bg-ink/60 motion-safe:animate-[fade-in_200ms_ease-out]" onClick={() => onClose(true)} />
       )}
       <div
         ref={panel}
@@ -376,7 +376,7 @@ function BetTicket({
         aria-labelledby={titleId}
         onKeyDown={onKeyDown}
         className={clsx(
-          "z-50 border-line-2 bg-panel-2 shadow-[0_12px_32px_rgba(0,0,0,0.45)]",
+          "z-50 border-line-2 bg-panel-2 shadow-[0_8px_24px_rgba(20,20,20,0.18)]",
           // Phones: bottom sheet clear of the home indicator.
           "fixed inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t border-t px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))]",
           // md+: popover anchored under the Yes/No buttons, painted over the card below it.

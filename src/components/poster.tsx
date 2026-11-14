@@ -16,7 +16,7 @@ export function Poster({
   return (
     <div
       className={clsx(
-        "relative shrink-0 overflow-hidden rounded-sm border border-white/10",
+        "relative shrink-0 overflow-hidden rounded-sm border border-ink/15",
         size === "sm" && "h-11 w-8",
         size === "md" && "h-24 w-16",
         size === "lg" && "h-44 w-30",

@@ -41,7 +41,7 @@ export function JumpLink({ targetId, children }: { targetId: string; children: R
   return (
     <a
       href={`#${targetId}`}
-      className="cursor-pointer inline-flex h-11 shrink-0 items-center gap-1.5 rounded border border-line-2 bg-panel-2 px-4 text-sm font-semibold text-text transition-colors hover:bg-white/[0.06]"
+      className="cursor-pointer inline-flex h-11 shrink-0 items-center gap-1.5 rounded border border-line-2 bg-panel-2 px-4 text-sm font-semibold text-text transition-colors hover:bg-ink/[0.07]"
     >
       {children}
       <ArrowDown size={14} aria-hidden className="text-muted" />

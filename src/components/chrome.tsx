@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useRef, useState, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { X } from "lucide-react";
@@ -17,6 +18,8 @@ export function TickerTape() {
   const markets = useMarket((s) => s.markets);
   const [active, setActive] = useState(0);
   const links = useRef<(HTMLAnchorElement | null)[]>([]);
+  // The board on /markets already lists every price; the strip would only repeat it there.
+  const onBoard = usePathname() === "/markets";
 
   const onKeyDown = (e: KeyboardEvent<HTMLUListElement>) => {
     const last = ASSETS.length - 1;
@@ -32,8 +35,10 @@ export function TickerTape() {
     links.current[next]?.focus();
   };
 
+  if (onBoard) return null;
+
   return (
-    <nav aria-label="Market prices" aria-describedby="ticker-hint" className="border-b border-line bg-bg">
+    <nav aria-label="Market prices" aria-describedby="ticker-hint" className="w-full border-b border-line bg-panel">
       <span id="ticker-hint" className="sr-only">
         Use the left and right arrow keys to move between titles.
       </span>
@@ -58,10 +63,10 @@ export function TickerTape() {
                 onFocus={() => setActive(i)}
                 title={a.title}
                 // Inset ring: the strip's overflow clip would cut an outside outline.
-                className="cursor-pointer relative flex h-10 items-center gap-2 border-r border-line px-5 text-[12px] transition-colors hover:bg-panel focus-visible:outline-offset-[-2px]"
+                className="cursor-pointer relative flex h-9 items-center gap-2 whitespace-nowrap border-r border-line px-4 text-[12px] transition-colors hover:bg-panel-2 focus-visible:outline-offset-[-2px]"
               >
-                <span className="font-medium">{a.ticker}</span>
-                <span className="sr-only max-w-[16ch] truncate text-faint sm:not-sr-only sm:inline-block">{a.title}</span>
+                <span className="cond text-[14px] font-bold tracking-[0.04em]">{a.ticker}</span>
+                <span className="sr-only max-w-[16ch] truncate whitespace-nowrap text-muted sm:not-sr-only sm:inline-block">{a.title}</span>
                 <Flash value={price} className="num text-muted">
                   {usd(price)}
                 </Flash>
@@ -106,7 +111,7 @@ export function Toasts() {
         );
         const external = t.href?.startsWith("http");
         return (
-          <div key={t.id} className="toast-in pointer-events-auto relative rounded border border-line-2 bg-panel-2 p-3 pr-8">
+          <div key={t.id} className="toast-in pointer-events-auto relative border-2 border-ink bg-panel p-3 pr-8 shadow-[0_8px_24px_rgba(20,20,20,0.18)]">
             {t.href ? (
               external ? (
                 <a href={t.href} target="_blank" rel="noreferrer" className="cursor-pointer block">{body}</a>

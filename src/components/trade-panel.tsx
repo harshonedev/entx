@@ -123,20 +123,20 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
   };
 
   return (
-    <div className="panel p-4">
-      <div className="grid grid-cols-2 gap-1.5">
+    <div className="panel ticket p-4">
+      <div className="grid grid-cols-2">
         {(["buy", "sell"] as const).map((s) => (
           <button
             key={s}
             onClick={() => setSide(s)}
             aria-pressed={side === s}
             className={clsx(
-              "cursor-pointer h-11 rounded text-[13px] font-medium transition-colors",
+              "cond cursor-pointer h-11 border text-[17px] font-bold uppercase tracking-[0.08em] transition-colors",
               side === s
                 ? s === "buy"
-                  ? "bg-up/[0.12] text-up"
-                  : "bg-down/[0.12] text-down"
-                : "bg-panel-2 text-muted hover:text-text",
+                  ? "border-up bg-up text-white"
+                  : "border-down bg-down text-white"
+                : "border-ink text-text hover:bg-panel-2",
             )}
           >
             {s === "buy" ? "Buy" : "Sell"}
@@ -226,7 +226,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
         or its revenue.
       </p>
 
-      <dl className="mt-4 space-y-1.5 text-xs">
+      <dl className="kv-dotted mt-4 text-xs">
         <Row k="Market price" v={usd(price)} />
         <Row k="Avg price per unit (incl. fee)" v={qty > 0 && !tooBig ? usd(avg) : "—"} />
         <Row
@@ -266,14 +266,14 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
             <button
               onClick={() => setConfirming(false)}
               aria-keyshortcuts="Escape"
-              className="cursor-pointer h-11 rounded bg-panel-2 text-[13px] font-medium hover:bg-white/[0.06]"
+              className="cursor-pointer h-11 rounded bg-panel-2 text-[13px] font-medium hover:bg-ink/[0.07]"
             >
               Cancel
             </button>
             <button
               ref={confirmBtn}
               onClick={confirm}
-              className="cursor-pointer h-11 rounded bg-up text-[13px] font-semibold text-black hover:brightness-110"
+              className="btn-primary cursor-pointer h-11 text-[16px]"
             >
               Confirm buy
             </button>
@@ -293,8 +293,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
           disabled={invalid}
           onClick={submit}
           className={clsx(
-            "cursor-pointer mt-4 h-12 w-full rounded text-[13.5px] font-semibold disabled:cursor-not-allowed disabled:bg-panel-2 disabled:font-medium disabled:text-muted",
-            side === "buy" ? "bg-up text-black hover:brightness-110" : "bg-down text-black hover:brightness-110",
+            "btn-primary cursor-pointer mt-4 h-12 w-full text-[18px] disabled:cursor-not-allowed disabled:bg-panel-2 disabled:font-sans disabled:text-[13px] disabled:normal-case disabled:tracking-normal disabled:text-muted",
           )}
         >
           {reason ?? `${side === "buy" ? "Buy" : "Sell"} ${num(qty, qty % 1 ? 2 : 0)} ${asset.ticker} · ${usd(total)}`}
@@ -323,7 +322,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 rounded bg-panel-2 p-3 text-xs">
+      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-ink pt-3 text-xs">
         <div>
           <div className="text-faint">Available</div>
           <Flash value={cash} className="num mt-0.5 block font-semibold">{usd(cash)}</Flash>
@@ -352,7 +351,7 @@ export function TradePanel({ asset }: { asset: AssetSeed }) {
 
 function Row({ k, v, hint, strong, tone }: { k: string; v: string; hint?: string; strong?: boolean; tone?: "warn" }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div>
       <dt className="text-muted">
         {k}
         {hint && <span className="block text-xs text-faint">{hint}</span>}

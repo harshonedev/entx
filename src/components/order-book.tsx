@@ -51,7 +51,7 @@ export function OrderBook({ assetId }: { assetId: string }) {
   // Collapsed by default: the pool's depth is smooth by construction, so it's reference, not signal.
   return (
     <details className="panel group overflow-hidden">
-      <summary className="cursor-pointer flex list-none items-center justify-between px-4 py-3 hover:bg-white/[0.02]">
+      <summary className="cursor-pointer flex list-none items-center justify-between px-4 py-3 hover:bg-ink/[0.035]">
         <h2 className="h-panel">Market depth</h2>
         <span className="text-xs text-muted">
           <span className="group-open:hidden">Show</span>
@@ -72,7 +72,7 @@ export function OrderBook({ assetId }: { assetId: string }) {
         <tbody>
           {asks.map((r, i) => <Row key={`a${i}`} r={r} side="ask" />)}
           <tr>
-            <td colSpan={3} className="num border-y border-line bg-white/[0.02] px-3 py-1.5 text-sm font-semibold">
+            <td colSpan={3} className="num border-y border-line bg-ink/[0.035] px-3 py-1.5 text-sm font-semibold">
               {usd(p0)} <span className="text-xs font-normal text-muted">current price</span>
             </td>
           </tr>

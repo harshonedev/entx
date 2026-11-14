@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { releaseInfo } from "@/lib/release";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { AssetSeed } from "@/lib/assets";
 import { change24h, priceOf, useMarket, type MarketState } from "@/store/market";
@@ -59,15 +60,15 @@ export function AssetTable({
     return (
       <th
         aria-sort={active ? (sort.dir === "desc" ? "descending" : "ascending") : "none"}
-        className={clsx("py-0 font-medium", align === "right" ? "pl-4 text-right" : "pl-6")}
+        className={clsx("py-0", align === "right" ? "pl-4 text-right" : "pl-6")}
       >
         <button
           type="button"
           data-static
           onClick={() => setSort(nextSort(sort, k))}
           className={clsx(
-            "cursor-pointer inline-flex h-8 items-center gap-1 rounded-sm uppercase tracking-wider hover:text-text",
-            active && "text-text",
+            "cursor-pointer inline-flex h-8 items-center gap-1 uppercase hover:text-accent",
+            active && "text-accent",
           )}
         >
           {align === "right" && icon}
@@ -92,7 +93,7 @@ export function AssetTable({
             const [key, dir] = e.target.value.split(":") as [SortKey, Dir];
             setSort(e.target.value ? { key, dir } : null);
           }}
-          className="cursor-pointer h-11 rounded-sm border border-line-2 bg-panel-2 px-2 text-[13px] text-text"
+          className="cursor-pointer h-11 border border-ink bg-panel px-2 text-[13px] text-text"
         >
           <option value="">Default</option>
           {(Object.keys(SORT_LABEL) as SortKey[]).flatMap((k) => [
@@ -106,15 +107,16 @@ export function AssetTable({
         </select>
       </div>
       <ul className="sm:hidden">
-        {rows.map((a) => {
+        {rows.map((a, rank) => {
           const m = markets[a.id];
           const price = priceOf(m);
           return (
             <li key={a.id} className="border-t border-line">
-              <Link href={`/asset/${a.id}`} className="cursor-pointer flex items-center gap-3 px-4 py-2.5 active:bg-white/[0.03]">
+              <Link href={`/asset/${a.id}`} className="cursor-pointer flex items-center gap-3 px-4 py-2.5 active:bg-ink/[0.04]">
+                <span className="cond w-6 shrink-0 text-center text-[24px] font-bold leading-none">{rank + 1}</span>
                 <Poster asset={a} size="sm" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{a.title}</div>
+                  <div className="cond truncate text-[17px] font-bold uppercase leading-tight tracking-[0.02em]">{a.title}</div>
                   <div className="truncate text-xs text-muted">
                     {a.ticker} · EPI <span className="num">{m.epi.toFixed(1)}</span>
                   </div>
@@ -133,18 +135,20 @@ export function AssetTable({
     <div className="hidden overflow-x-auto sm:block">
       <table className="w-full min-w-[640px] text-sm">
         <thead>
-          <tr className="text-left text-xs uppercase tracking-wider text-muted">
-            <th className="py-2 pl-4 font-medium">Asset</th>
+          <tr className="th-chart text-left">
+            <th className="w-12 py-2 pl-4 text-center" title="Position in this list">Rank</th>
+            <th className="py-2 pl-3">Title</th>
+            <th className="hidden py-2 pl-4 text-right xl:table-cell" title="Weeks since release or premiere">Wks</th>
             {sortTh("price", "Price", "right")}
             {sortTh("change", "24h", "right")}
             {sortTh("epi", "EPI", "left")}
             {sortTh("volume", "Volume", "right")}
-            {showMetric && <th className="hidden py-2 pl-6 font-medium lg:table-cell">Signal</th>}
-            <th className="py-2 pr-4 text-right font-medium" title="Price over the last 12 minutes; the 24h column covers the full day">Last 12 min</th>
+            {showMetric && <th className="hidden py-2 pl-6 lg:table-cell">Signal</th>}
+            <th className="py-2 pr-4 text-right" title="Price over the last 12 minutes; the 24h column covers the full day">Last 12 min</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((a) => {
+          {rows.map((a, rank) => {
             const m = markets[a.id];
             const price = priceOf(m);
             const closes = (candles[a.id] ?? []).slice(-48).map((c) => c.close);
@@ -152,19 +156,21 @@ export function AssetTable({
               <tr
                 key={a.id}
                 onClick={() => router.push(`/asset/${a.id}`)}
-                className="cursor-pointer border-t border-line transition-colors hover:bg-white/[0.025]"
+                className="cursor-pointer border-t border-line transition-colors hover:bg-ink/[0.04]"
               >
-                <td className="py-2.5 pl-4">
+                <td className="cond w-12 py-2.5 pl-4 text-center text-[28px] font-bold leading-none">{rank + 1}</td>
+                <td className="py-2.5 pl-3">
                   <Link href={`/asset/${a.id}`} className="cursor-pointer flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                     <Poster asset={a} size="sm" />
                     <div className="min-w-0">
-                      <div className="truncate font-medium">{a.title}</div>
+                      <div className="cond truncate text-[19px] font-bold uppercase leading-[1.05] tracking-[0.02em]">{a.title}</div>
                       <div className="text-xs text-muted">
-                        <span className="font-semibold text-text/80">{a.ticker}</span> · {a.kind === "movie" ? "Movie" : "Show"} · {a.status}
+                        <span className="font-semibold text-text">{a.ticker}</span> · {a.kind === "movie" ? "Movie" : "Show"} · {a.status}
                       </div>
                     </div>
                   </Link>
                 </td>
+                <td className="num hidden py-2.5 pl-4 text-right text-muted xl:table-cell">{weeksOut(a)}</td>
                 <td className="num py-2.5 text-right font-medium">
                   <Flash value={price}>{usd(price)}</Flash>
                 </td>
@@ -195,4 +201,10 @@ export function AssetTable({
     </div>
     </>
   );
+}
+
+/** Weeks since release or premiere (1 in the first week), or an en dash before release. */
+function weeksOut(a: AssetSeed) {
+  const r = releaseInfo(a);
+  return r.days < 0 ? "–" : String(Math.floor(r.days / 7) + 1);
 }

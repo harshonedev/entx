@@ -60,12 +60,12 @@ export function DemoControls() {
         aria-controls="demo-controls"
         aria-label="Demo controls"
         className={clsx(
-          "cursor-pointer flex h-9 items-center gap-2 rounded px-3 text-[12.5px] font-medium transition-colors pointer-coarse:h-11",
-          open ? "bg-panel-2 text-text" : "bg-panel text-muted hover:text-text",
+          "cursor-pointer flex h-9 min-w-9 items-center justify-center gap-2 border px-2.5 text-[12.5px] sm:px-3 font-medium transition-colors pointer-coarse:h-11",
+          open ? "border-bg bg-bg text-ink" : "border-bg/25 text-bg/75 hover:border-bg/60 hover:text-bg",
         )}
       >
         <FlaskConical size={14} />
-        <span>Demo</span>
+        <span className="hidden sm:inline">Demo</span>
       </button>
 
       {open && (
@@ -75,7 +75,7 @@ export function DemoControls() {
           tabIndex={-1}
           role="dialog"
           aria-label="Demo controls"
-          className="fixed right-4 top-[76px] z-50 max-h-[calc(100vh-92px)] w-[min(360px,calc(100vw-32px))] overflow-y-auto rounded border border-line-2 bg-panel-2 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.5)] outline-none"
+          className="fixed right-4 top-[60px] z-50 max-h-[calc(100vh-76px)] w-[min(360px,calc(100vw-32px))] overflow-y-auto border-2 border-ink bg-panel p-4 shadow-[0_8px_24px_rgba(20,20,20,0.18)] outline-none"
         >
           <div className="flex items-center gap-2">
             <h2 className="h-panel">Demo controls</h2>
