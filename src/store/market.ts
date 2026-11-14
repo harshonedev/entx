@@ -569,7 +569,7 @@ export const useMarket = create<Store>()(
       },
     }),
     {
-      name: "entx-demo-v1",
+      name: "entx-tmdb-v2", // bumped when the catalogue changes so stale ids never load
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) => ({

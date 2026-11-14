@@ -15,6 +15,10 @@ import {
 } from "@/lib/near-config";
 import { MEMO_PROGRAM_ID } from "@/lib/solana";
 import { useMarket } from "@/store/market";
+import { ASSET_BY_ID } from "@/lib/assets";
+import { PREDICTIONS } from "@/lib/predictions";
+
+const LIVE_IDS = new Set([...Object.keys(ASSET_BY_ID), ...PREDICTIONS.map((p) => p.id)]);
 import { explorerTx, timeAgo } from "@/lib/format";
 import { IntentsPanel } from "@/components/intents-panel";
 
@@ -57,8 +61,11 @@ export default function OnchainPage() {
     };
   }, [load]);
 
-  const assets = markets.filter((m) => m.kind === "Asset");
-  const preds = markets.filter((m) => m.kind === "Prediction");
+  // The registry is append-only; markets from earlier catalogues stay on-chain but aren't traded anymore.
+  const live = markets.filter((m) => LIVE_IDS.has(m.id));
+  const legacy = markets.length - live.length;
+  const assets = live.filter((m) => m.kind === "Asset");
+  const preds = live.filter((m) => m.kind === "Prediction");
 
   return (
     <div className="space-y-5">
@@ -99,7 +106,10 @@ export default function OnchainPage() {
             ))}
           </div>
         </div>
-        <Kpi label="Markets registered" value={stats?.markets} />
+        <Kpi
+          label="Markets registered"
+          value={stats ? `${live.length}${legacy ? ` (+${legacy} legacy)` : ""}` : undefined}
+        />
         <Kpi label="Trade receipts" value={stats?.receipts} />
         <Kpi label="EPI reports · staked" value={stats ? `${stats.epi_reports} · ${yoctoToNear(stats.total_staked, 2)} Ⓝ` : undefined} />
       </section>
