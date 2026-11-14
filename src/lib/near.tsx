@@ -92,6 +92,11 @@ export function NearProvider({ children }: { children: ReactNode }) {
       if (status && typeof status === "object" && "Failure" in (status as object)) {
         throw new Error(JSON.stringify((status as { Failure: unknown }).Failure).slice(0, 160));
       }
+      // claim returns on_claim's result: `false` means the payout transfer failed and the stake was restored.
+      if (method === "claim" && status && typeof status === "object" && "SuccessValue" in (status as object)) {
+        const v = (status as { SuccessValue?: string }).SuccessValue;
+        if (v && atob(v) === "false") throw new Error("Payout transfer failed; your stake is unclaimed, try again");
+      }
       const hash = out?.transaction?.hash ?? out?.transaction_outcome?.id;
       // Some wallet executors resolve without signing (e.g. their approval window never opened).
       // No hash means nothing reached the chain, so never report it as recorded.

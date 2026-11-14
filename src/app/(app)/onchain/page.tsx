@@ -160,13 +160,13 @@ export default function OnchainPage() {
         <Kpi
           label="EPI reports"
           value={stats?.epi_reports}
-          sub="report_epi calls by oracles"
+          sub="report_epi calls by trusted oracles"
           href={oracles[0] ? nearAccountUrl(oracles.find((o) => o !== stats?.owner) ?? oracles[0]) : undefined}
         />
         <Kpi
           label="Trade receipts"
           value={stats?.receipts}
-          sub="record_trade calls, all traders"
+          sub="record_trade calls, self-reported by traders"
           href={stats?.receipts ? nearAccountUrl(NEAR_CONTRACT) : undefined}
           cta={stats?.receipts === 0 ? { href: `/asset/${spot.id}`, label: "Make the first trade" } : undefined}
         />
@@ -197,7 +197,7 @@ export default function OnchainPage() {
                   <th className="py-2 text-right font-medium">App EPI</th>
                   <th className="hidden py-2 pl-4 text-right font-medium sm:table-cell">Oracle updates</th>
                   <th className="hidden py-2 pl-4 text-right font-medium sm:table-cell">Receipts</th>
-                  <th className="hidden py-2 text-right font-medium sm:table-cell">Order size</th>
+                  <th className="hidden py-2 text-right font-medium sm:table-cell" title="Sum of receipts traders filed themselves; not settled volume">Reported size</th>
                   <th className="py-2 pr-4 text-right font-medium">Your last report</th>
                 </tr>
               </thead>
