@@ -232,8 +232,11 @@ function appendCandle(list: Candle[], price: number): Candle[] {
   const bucket = Math.floor(now / CANDLE_SECONDS) * CANDLE_SECONDS;
   const last = list[list.length - 1];
   if (last && last.time === bucket) {
+    // A live tick turns the bucket into a recorded candle.
+    const { modelled: _modelled, ...rest } = last;
+    void _modelled;
     const updated = {
-      ...last,
+      ...rest,
       close: price,
       high: Math.max(last.high, price),
       low: Math.min(last.low, price),
@@ -291,6 +294,43 @@ async function publishToNear(assetId: string, eventId: string) {
   }
 }
 
+const CANDLE_KEY = "entx:candles:v1";
+const CANDLE_SAVE_MS = 10_000;
+let candleSavedAt = 0;
+let candleSaverStarted = false;
+
+function loadCandles(): Record<string, Candle[]> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(CANDLE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, Candle[]>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Saves candle history (throttled): kept out of the main store blob so each tick doesn't re-serialise it. */
+function saveCandles(candles: Record<string, Candle[]>, force = false) {
+  if (typeof window === "undefined" || !Object.keys(candles).length) return;
+  const now = Date.now();
+  if (!force && now - candleSavedAt < CANDLE_SAVE_MS) return;
+  candleSavedAt = now;
+  try {
+    window.localStorage.setItem(CANDLE_KEY, JSON.stringify(candles));
+  } catch {
+    /* storage full or blocked: history still works for this session */
+  }
+}
+
+function clearCandles() {
+  candleSavedAt = 0;
+  try {
+    window.localStorage.removeItem(CANDLE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** YES price at which each market's odds were last logged to the feed (session only). */
 const oddsMark = new Map<string, number>();
 /** Odds moves at least this large get a feed line, so a visible move always has a visible cause. */
@@ -310,11 +350,20 @@ export const useMarket = create<Store>()(
       ensureHistory: () => {
         const { markets, candles } = get();
         if (Object.keys(candles).length) return;
+        // Recorded candles survive reloads, so the past never redraws. A title with nothing recorded yet
+        // gets a generated lead-in, flagged `modelled` so charts can draw it as such.
+        const saved = loadCandles();
         const next: Record<string, Candle[]> = {};
         for (const a of ASSETS) {
-          next[a.id] = generateHistory(a.id, poolPrice(markets[a.id].pool), a.volatility);
+          next[a.id] = saved[a.id]?.length
+            ? saved[a.id]
+            : generateHistory(a.id, poolPrice(markets[a.id].pool), a.volatility);
         }
         set({ candles: next });
+        if (typeof window !== "undefined" && !candleSaverStarted) {
+          candleSaverStarted = true;
+          window.addEventListener("pagehide", () => saveCandles(get().candles, true));
+        }
       },
 
       tick: () => {
@@ -386,6 +435,7 @@ export const useMarket = create<Store>()(
         }
 
         set({ markets, candles, predictions, feed });
+        saveCandles(candles);
       },
 
       // Successful fills don't toast: every ticket shows an inline FillReceipt instead. Failures still toast.
@@ -651,6 +701,7 @@ export const useMarket = create<Store>()(
       dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
       reset: () => {
+        clearCandles();
         set({ ...initialState(), candles: {} });
         get().ensureHistory();
       },

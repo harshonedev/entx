@@ -10,6 +10,8 @@ export interface Candle {
   high: number;
   low: number;
   close: number;
+  /** Generated lead-in history (before this browser started recording), not prices anyone traded at. */
+  modelled?: true;
 }
 
 export interface Pool {
@@ -144,6 +146,7 @@ export function generateHistory(
       close,
       high: Math.max(open, close) + wick * rnd() * 0.6,
       low: Math.min(open, close) - wick * rnd() * 0.6,
+      modelled: true,
     });
     prev = close;
   }

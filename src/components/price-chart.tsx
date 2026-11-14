@@ -33,6 +33,8 @@ function aggregate(list: Candle[], step: number): Candle[] {
       last.high = Math.max(last.high, k.high);
       last.low = Math.min(last.low, k.low);
       last.close = k.close;
+      // A bucket with any recorded candle counts as recorded.
+      if (!k.modelled) delete last.modelled;
     } else out.push({ ...k, time: t });
   }
   return out;
@@ -135,7 +137,13 @@ export function PriceChart({
   useEffect(() => {
     const s = series.current;
     if (!s || !candles?.length) return;
-    const data = candles.map((k) => ({ ...k, time: k.time as UTCTimestamp }));
+    // Generated lead-in draws muted, so only recorded candles carry the up/down colours.
+    const muted = getComputedStyle(document.documentElement).getPropertyValue("--line-2").trim() || "#3a3a3a";
+    const data = candles.map(({ modelled, ...k }) => ({
+      ...k,
+      time: k.time as UTCTimestamp,
+      ...(modelled ? { color: muted, wickColor: muted, borderColor: muted } : {}),
+    }));
     if (lastLen.current === 0 || Math.abs(candles.length - lastLen.current) > 1) {
       s.setData(data);
       chart.current?.timeScale().fitContent();
@@ -165,8 +173,14 @@ export function PriceChart({
             size: 0.6,
           },
     );
+    // Mark where recorded history starts, when a generated lead-in precedes it.
+    const firstReal = candles?.find((k) => !k.modelled);
+    if (firstReal && candles?.[0]?.modelled) {
+      markers.push({ time: firstReal.time as UTCTimestamp, position: "belowBar", shape: "square", color: text, text: "Recorded", size: 0.5 });
+      markers.sort((a, b) => (a.time as number) - (b.time as number));
+    }
     markersApi.current?.setMarkers(markers);
-  }, [events]);
+  }, [events, candles]);
 
   return (
     <div
