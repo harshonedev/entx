@@ -21,7 +21,8 @@ ARG NEXT_PUBLIC_NEAR_CONTRACT
 ARG NEXT_PUBLIC_NEAR_RPC
 ARG NEXT_PUBLIC_SOLANA_RPC
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN bun run build
+# public/ may be empty (and so absent from git); the run stage copies it unconditionally.
+RUN mkdir -p public && bun run build
 
 FROM node:24-alpine AS run
 WORKDIR /app

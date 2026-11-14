@@ -5,5 +5,6 @@ contracts/near/target
 .git
 .env*
 !.env.example
-*.png
+# Stray root screenshots only; src/app icons and OG image must reach the build.
+/*.png
 tsconfig.tsbuildinfo
