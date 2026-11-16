@@ -19,7 +19,8 @@ const server = createServer(async (req, res) => {
   res.writeHead(r.status, { "content-type": r.headers.get("content-type") ?? "text/plain" });
   res.end(await r.text());
 });
-server.listen(config.healthPort, "0.0.0.0", () => log("engine started", { port: config.healthPort, sacnilk: config.sacnilkEnabled }));
+// "::" accepts IPv4 and IPv6, so health checks on localhost (::1 on Alpine) reach it.
+server.listen(config.healthPort, "::", () => log("engine started", { port: config.healthPort, sacnilk: config.sacnilkEnabled }));
 
 let stopping = false;
 async function shutdown(signal: string) {
