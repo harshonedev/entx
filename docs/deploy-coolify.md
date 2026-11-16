@@ -105,14 +105,15 @@ bun data-engine/cli.ts run wiki.pageviews --from 2023-11-01 --to 2026-11-16
 
 A job already running (scheduled or manual) is skipped with status `skipped_locked`.
 
-### Database viewer (dev)
+### Browsing the dev database (desktop app over SSH)
 
-`entx-db-viewer` (pgweb `sosedoff/pgweb:0.16.2`, app `fr9nlvhrrqowefv2brigrh9y`) at
-`https://fr9nlvhrrqowefv2brigrh9y.harshone.space`, in the dev environment.
+Postgres stays private. Connect a desktop client (TablePlus, Postico 2, DBeaver) with its built-in SSH tunnel:
 
-- Login: HTTP basic auth, user `entx`, password in Coolify → `entx-db-viewer` → Environment Variables →
-  `PGWEB_AUTH_PASS`. (Old unprefixed `AUTH_USER`/`AUTH_PASS` keys are unused; delete them.)
-- Connects as the read-only `viewer` role (`PGWEB_DATABASE_URL`). The data engine creates/updates that role on start
-  when `VIEWER_DB_PASSWORD` is set on `entx-data-engine`; both values must match. Writes fail with
-  "cannot execute INSERT in a read-only transaction".
-- Postgres itself stays private; only pgweb is exposed.
+| Field | Value |
+|-------|-------|
+| SSH host / user / key | the VPS (`137.23.39.153`), your SSH user and key |
+| DB host | container IP: `docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' farak8puayc4krazopgcbbrd` on the VPS (changes if the container is recreated) |
+| Port / database | `5432` / `entx` |
+| User / password | `viewer` / value of `VIEWER_DB_PASSWORD` on `entx-data-engine` in Coolify (read-only role, created by the engine on start) |
+
+`snapshots.payload` is gzip; use `bun data-engine/cli.ts inspect` (Coolify terminal) to read payloads as text.
