@@ -5,7 +5,10 @@ Run from the repo root:  python3 data-engine/docs/diagrams.py
 Reuses the drawing kit and DESIGN.md colours from scripts/readme-diagrams.py. Edit this file, never the SVGs.
 """
 import importlib.util
+import sys
 from pathlib import Path
+
+sys.dont_write_bytecode = True  # importing the root kit must not leave scripts/__pycache__ behind
 
 ROOT = Path(__file__).resolve().parents[2]
 _spec = importlib.util.spec_from_file_location("kit", ROOT / "scripts" / "readme-diagrams.py")
