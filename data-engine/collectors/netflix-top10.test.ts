@@ -65,6 +65,16 @@ describe("netflix top 10", () => {
       expect(r).toMatchObject({ snapshots: 0, skipped: 2, degraded: false });
     });
 
+    it("one file that throws does not stop the other", async () => {
+      const { fetch: base } = serve({ [NETFLIX_FILES.global]: global, [NETFLIX_FILES.countries]: countries });
+      const fetch: PoliteFetch = async (url, init) => {
+        if (url === NETFLIX_FILES.countries) throw new Error("timeout");
+        return base(url, init);
+      };
+      const r = await netflixTop10.run(ctxFor(db, fetch));
+      expect(r).toMatchObject({ snapshots: 1, skipped: 1, degraded: true });
+    });
+
     it("header missing week column marks degraded", async () => {
       const { fetch } = serve({ [NETFLIX_FILES.global]: "rank\ttitle\n1\tx\n", [NETFLIX_FILES.countries]: countries });
       const r = await netflixTop10.run(ctxFor(db, fetch));

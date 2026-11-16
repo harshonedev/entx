@@ -89,6 +89,7 @@ App `entx-data-engine`:
 | `TMDB_TOKEN` | TMDB v4 read token (paste in Coolify, never in chat or git) |
 | `SACNILK_ENABLED` | `true` for dev. Licence required before go-live |
 | `ENGINE_HEALTH_PORT` | Optional, default `8080` |
+| `VIEWER_DB_PASSWORD` | Optional. Creates/updates the read-only `viewer` role (letters, digits, `_ - . ~`) |
 
 The worker migrates the database on start, marks runs left `running` by a dead container as `abandoned`, then runs
 collectors on the schedule in `data-engine/jobs/schedule.ts` (UTC).

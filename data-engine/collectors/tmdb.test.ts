@@ -109,6 +109,22 @@ describe("tmdb collectors", () => {
     expect(t).toEqual({ origin_language: "te", release_date: "2026-10-15" });
   });
 
+  it("a title whose request keeps throwing is skipped and the job continues", async () => {
+    await db.query(
+      "insert into tracked_titles (tmdb_kind, tmdb_id, role) values ('movie', 1389379, 'watch'), ('movie', 555, 'watch'), ('tv', 213375, 'market')",
+    );
+    const { fetch: base } = fakeTmdb({
+      "/3/movie/1389379": { status: 200, body: fixture("movie-1389379.json") },
+      "/3/tv/213375": { status: 200, body: fixture("tv-213375.json") },
+    });
+    const fetch: PoliteFetch = async (url, init) => {
+      if (url.includes("/movie/555")) throw new TypeError("The socket connection was closed unexpectedly");
+      return base(url, init);
+    };
+    const r = await tmdbDetails.run(ctxFor(db, fetch));
+    expect(r).toMatchObject({ snapshots: 2, skipped: 1, degraded: true });
+  });
+
   it("404 title is skipped and job continues", async () => {
     await db.query(
       "insert into tracked_titles (tmdb_kind, tmdb_id, role) values ('movie', 1389379, 'watch'), ('movie', 999999999, 'watch'), ('tv', 213375, 'market')",

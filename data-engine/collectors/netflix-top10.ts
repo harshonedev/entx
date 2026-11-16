@@ -1,6 +1,6 @@
 import type { HostPolicy } from "../http/polite-fetch";
 import { sha256 } from "../evidence/snapshots";
-import { snapshotFrom, type Collector, type JobResult } from "./types";
+import { itemGuard, snapshotFrom, type Collector, type JobResult } from "./types";
 
 /** Official Netflix Top 10 downloads (verified 2026-11-16). Countries file has ranks only, no views. */
 export const NETFLIX_FILES = {
@@ -37,8 +37,10 @@ export const netflixTop10: Collector = {
   async run(ctx) {
     const out: JobResult = { snapshots: 0, skipped: 0, degraded: false };
     const problems: string[] = [];
+    const guard = itemGuard(out);
     for (const url of [NETFLIX_FILES.global, NETFLIX_FILES.countries]) {
-      const res = await ctx.fetch(url);
+      const res = await guard(url, () => ctx.fetch(url));
+      if (!res) continue;
       if (res.status !== 200) {
         out.skipped++;
         problems.push(`${url}: HTTP ${res.status}`);
@@ -59,7 +61,7 @@ export const netflixTop10: Collector = {
     }
     if (problems.length) {
       out.degraded = true;
-      out.detail = { reason: problems.join("; ") };
+      out.detail = { ...out.detail, reason: problems.join("; ") };
     }
     return out;
   },

@@ -77,6 +77,15 @@ describe("wikidata", () => {
       expect(links).toContainEqual({ provider: "wikidata", external_id: "Q60424165" });
     });
 
+    it("a batch whose query throws is skipped, not failed", async () => {
+      const fetch: PoliteFetch = async () => {
+        throw new Error("timeout");
+      };
+      const r = await wikidata.run(ctxFor(db, fetch));
+      expect(r).toMatchObject({ snapshots: 0, degraded: true });
+      expect(r.skipped).toBeGreaterThan(0);
+    });
+
     it("title with no item is counted skipped, not failed", async () => {
       const { fetch } = fake();
       const r = await wikidata.run(ctxFor(db, fetch));

@@ -1,6 +1,6 @@
 import { parse } from "node-html-parser";
 import type { HostPolicy } from "../http/polite-fetch";
-import { snapshotFrom, type Collector, type JobResult } from "./types";
+import { itemGuard, snapshotFrom, type Collector, type JobResult } from "./types";
 
 // Scraped with the user's go-ahead (2026-11-16) for development; a licence is required before go-live
 // (spec §3). Switched off unless SACNILK_ENABLED=true. robots.txt allows /movie/ and listing pages.
@@ -40,10 +40,12 @@ export const sacnilk: Collector = {
     const out: JobResult = { snapshots: 0, skipped: 0, degraded: false };
     const now = ctx.now();
     let found = 0;
+    const guard = itemGuard(out);
 
     for (const path of LISTINGS) {
       const url = `${SACNILK_BASE}${path}`;
-      const res = await ctx.fetch(url, { headers: { accept: "text/html" } });
+      const res = await guard(path, () => ctx.fetch(url, { headers: { accept: "text/html" } }));
+      if (!res) continue;
       if (res.status !== 200) {
         out.skipped++;
         out.degraded = true;
@@ -63,7 +65,7 @@ export const sacnilk: Collector = {
     if (found === 0) {
       // Challenge page, redesign or empty listing: keep the evidence, flag the run.
       out.degraded = true;
-      out.detail = { reason: "no movie links" };
+      out.detail = { ...out.detail, reason: "no movie links" };
     }
 
     const items = await ctx.db.query<{ item_key: string }>(
@@ -74,7 +76,8 @@ export const sacnilk: Collector = {
     );
     for (const { item_key } of items) {
       const url = `${SACNILK_BASE}${item_key}`;
-      const res = await ctx.fetch(url, { headers: { accept: "text/html" } });
+      const res = await guard(item_key, () => ctx.fetch(url, { headers: { accept: "text/html" } }));
+      if (!res) continue;
       if (res.status !== 200) {
         out.skipped++;
         if (res.status !== 404) out.degraded = true;

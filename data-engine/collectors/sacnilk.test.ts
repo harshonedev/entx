@@ -91,6 +91,18 @@ describe("sacnilk", () => {
       expect(r.snapshots).toBe(urls.length);
     });
 
+    it("a film page that throws is skipped and the rest are fetched", async () => {
+      const base = site({ "/": home, "/latest-boxoffice-collection": latest });
+      const fetch: PoliteFetch = async (url, init) => {
+        if (url.endsWith("/movie/Jailer_2_2026")) throw new Error("robots.txt disallows it");
+        return base.fetch(url, init);
+      };
+      const r = await sacnilk.run(ctxFor(db, fetch));
+      expect(r.degraded).toBe(true);
+      expect(r.skipped).toBe(1);
+      expect(r.snapshots).toBeGreaterThan(10);
+    });
+
     it("backfill also fetches items first seen inside the range", async () => {
       await db.query(
         `insert into discovered_items (provider, item_key, first_seen_at, last_seen_at) values

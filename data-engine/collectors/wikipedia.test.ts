@@ -63,16 +63,58 @@ describe("wikipedia collectors", () => {
   });
   afterEach(() => db.close());
 
-  it("pageviews collects last 3 days by default and backfill range when given", async () => {
+  it("pageviews: new articles get 60 days, known ones resume after their last snapshot (≥ 3-day overlap)", async () => {
+    // New Film (enwiki) was last collected through 2026-11-05; the other two links have never been collected.
+    await recordSnapshot(db, {
+      provider: "wikimedia_pageviews",
+      job: "wiki.pageviews",
+      requestedUrl: pageviewsUrl("enwiki", "New Film", new Date("2026-10-20"), new Date("2026-11-05")),
+      sourceUrl: "x",
+      fetchedAt: new Date("2026-11-06T04:00:00Z"),
+      observedAt: new Date("2026-11-05T00:00:00Z"),
+      httpStatus: 200,
+      contentType: "application/json",
+      body: new Uint8Array([1]),
+      collectorVersion: "1",
+    });
     const a = fake();
     const r = await wikiPageviews.run(ctxFor(db, a.fetch));
     expect(a.urls).toHaveLength(3); // one per wiki:* link; wikidata link ignored
-    expect(a.urls.every((u) => u.endsWith("/daily/20261113/20261115"))).toBe(true);
+    expect(a.urls.find((u) => u.includes("/en.wikipedia.org/all-access/user/New_Film/"))).toMatch(/\/daily\/20261106\/20261115$/);
+    expect(a.urls.find((u) => u.includes("Old_Film"))).toMatch(/\/daily\/20260917\/20261115$/);
     expect(r.snapshots).toBe(3);
+
+    // Collected yesterday: still re-fetch the last 3 days for late-arriving data.
+    const y = fake();
+    await recordSnapshot(db, {
+      provider: "wikimedia_pageviews",
+      job: "wiki.pageviews",
+      requestedUrl: pageviewsUrl("enwiki", "Old Film", new Date("2026-09-17"), new Date("2026-11-15")),
+      sourceUrl: "x",
+      fetchedAt: new Date("2026-11-16T04:00:00Z"),
+      observedAt: new Date("2026-11-15T00:00:00Z"),
+      httpStatus: 200,
+      contentType: "application/json",
+      body: new Uint8Array([1]),
+      collectorVersion: "1",
+    });
+    await wikiPageviews.run(ctxFor(db, y.fetch));
+    expect(y.urls.find((u) => u.includes("Old_Film"))).toMatch(/\/daily\/20261113\/20261115$/);
 
     const b = fake();
     await wikiPageviews.run(ctxFor(db, b.fetch, { from: new Date("2015-01-01"), to: new Date("2016-12-31") }));
     expect(b.urls.every((u) => u.endsWith("/daily/20150701/20161231"))).toBe(true);
+  });
+
+  it("a pageviews request that throws is skipped and the others still run", async () => {
+    const urls: string[] = [];
+    const fetch: PoliteFetch = async (url) => {
+      urls.push(url);
+      if (url.includes("New_Film")) throw new Error("timeout");
+      return { status: 200, url, contentType: "application/json", body: new TextEncoder().encode("{}"), fetchedAt: NOW };
+    };
+    const r = await wikiPageviews.run(ctxFor(db, fetch));
+    expect(r).toMatchObject({ snapshots: 2, skipped: 1, degraded: true });
   });
 
   it("pageviews 404 (no data yet) is skipped, not degraded", async () => {

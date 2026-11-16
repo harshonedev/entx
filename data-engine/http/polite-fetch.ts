@@ -28,6 +28,10 @@ export class RobotsDisallowedError extends Error {
 }
 
 const RETRY_AFTER_CAP_MS = 120_000;
+/** Rate limits and transient server errors. */
+const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
+const ROBOTS_TTL_MS = 24 * 3_600_000;
+const ROBOTS_FAIL_TTL_MS = 5 * 60_000;
 
 /**
  * fetch that behaves like a good citizen: our User-Agent everywhere, robots.txt honoured, one request at a
@@ -48,7 +52,8 @@ export function createPoliteFetch(opts: {
   const doFetch = opts.fetchImpl ?? fetch;
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const now = opts.now ?? Date.now;
-  const robots = new Map<string, Promise<(path: string) => boolean>>();
+  type Verdict = { allowed: (path: string) => boolean; ttlMs: number };
+  const robots = new Map<string, { at: number; verdict: Promise<Verdict> }>();
   const queues = new Map<string, Promise<unknown>>();
   const lastAt = new Map<string, number>();
 
@@ -75,8 +80,10 @@ export function createPoliteFetch(opts: {
     return next;
   };
 
-  const raw = (url: string, init?: Parameters<PoliteFetch>[1]) =>
+  const raw = (url: string, init?: Parameters<PoliteFetch>[1], fresh = false) =>
     doFetch(url, {
+      // After a dropped connection, don't hand the retry another pooled socket that may be dead too.
+      ...(fresh ? { keepalive: false } : {}),
       signal: AbortSignal.timeout(policyFor(new URL(url).host).timeoutMs ?? timeoutMs),
       method: init?.method ?? "GET",
       body: init?.body,
@@ -84,23 +91,23 @@ export function createPoliteFetch(opts: {
       redirect: "follow",
     });
 
-  const robotsFor = (origin: string, host: string) => {
-    let p = robots.get(origin);
-    if (!p) {
-      p = slot(host, async () => {
-        try {
-          const res = await raw(`${origin}/robots.txt`);
-          if (res.status >= 500) return () => false; // unknown rules: stay out this run
-          if (!res.ok) return () => true; // no robots.txt: everything allowed
-          const parsed = parseRobots(await res.text(), opts.userAgent);
-          return (path: string) => parsed.isAllowed(path);
-        } catch {
-          return () => false;
-        }
-      });
-      robots.set(origin, p);
-    }
-    return p;
+  /** robots.txt verdict per origin: re-fetched after 24 h (RFC 9309); a failed fetch blocks the host for 5 min only. */
+  const robotsFor = async (origin: string, host: string) => {
+    const cached = robots.get(origin);
+    if (cached && now() - cached.at < (await cached.verdict).ttlMs) return (await cached.verdict).allowed;
+    const verdict = slot(host, async (): Promise<Verdict> => {
+      try {
+        const res = await raw(`${origin}/robots.txt`);
+        if (res.status >= 500) return { allowed: () => false, ttlMs: ROBOTS_FAIL_TTL_MS }; // rules unknown: stay out
+        if (!res.ok) return { allowed: () => true, ttlMs: ROBOTS_TTL_MS }; // no robots.txt: everything allowed
+        const parsed = parseRobots(await res.text(), opts.userAgent);
+        return { allowed: (path) => parsed.isAllowed(path), ttlMs: ROBOTS_TTL_MS };
+      } catch {
+        return { allowed: () => false, ttlMs: ROBOTS_FAIL_TTL_MS };
+      }
+    });
+    robots.set(origin, { at: now(), verdict });
+    return (await verdict).allowed;
   };
 
   return async (url, init) => {
@@ -111,13 +118,14 @@ export function createPoliteFetch(opts: {
     }
     const maxRetries = policyFor(u.host).maxRetries ?? 3;
 
+    let fresh = false;
     for (let attempt = 0; ; attempt++) {
       let got: { res: Response; body: Uint8Array | null };
       try {
         // Download inside the host slot so the whole transfer (headers + body) is spaced and timed out together.
         got = await slot(u.host, async () => {
-          const res = await raw(url, init);
-          if ((res.status === 429 || res.status === 503) && attempt < maxRetries) {
+          const res = await raw(url, init, fresh);
+          if (RETRY_STATUS.has(res.status) && attempt < maxRetries) {
             await res.body?.cancel();
             return { res, body: null };
           }
@@ -126,6 +134,7 @@ export function createPoliteFetch(opts: {
       } catch (e) {
         // Dropped connection, reset, timeout, stalled body: retry with backoff like a 503.
         if (attempt >= maxRetries) throw e;
+        fresh = true;
         await sleep(2 ** (attempt + 1) * 1000);
         continue;
       }

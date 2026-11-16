@@ -9,7 +9,7 @@ immutable, hashed snapshot in Postgres. It is the first stage of the [EPI rebuil
 evidence first, trust later, score last.
 
 [![Phase](https://img.shields.io/badge/phase-1%20evidence-d6261f)](#roadmap)
-[![Tests](https://img.shields.io/badge/tests-68%20passing-2ea44f)](#develop)
+[![Tests](https://img.shields.io/badge/tests-82%20passing-2ea44f)](#develop)
 [![Bun](https://img.shields.io/badge/Bun-1.3-f9f1e1?logo=bun&logoColor=black)](https://bun.sh)
 [![Postgres](https://img.shields.io/badge/Postgres-17-336791?logo=postgresql&logoColor=white)](#data-model)
 
@@ -67,12 +67,14 @@ not the SVGs.
 
 - sends `ENGINE_USER_AGENT`, which must name a contact (Wikimedia blocks generic agents);
 - spaces requests per host, one at a time;
-- reads robots.txt for scraped hosts and never requests a disallowed path;
-- retries 429, 503, dropped connections and timeouts up to 3 times, honouring `Retry-After` (capped at 120 s);
+- reads robots.txt for scraped hosts (re-read every 24 h; a failed read blocks the host for 5 min) and never requests a disallowed path;
+- retries 429, 500, 502, 503, 504, dropped connections and timeouts up to 3 times on a fresh connection, honouring `Retry-After` (capped at 120 s);
 - aborts any request, headers and body, after 60 s (5 min for the 33 MB Netflix file).
 
-**A run is `degraded`, not `ok`,** when it stored what it could but something was off: a 404, a listing page with no
-film links (a Cloudflare challenge or a redesign), or a file without the expected header. The evidence is still kept.
+**A run is `degraded`, not `ok`,** when it stored what it could but something was off: a 404, an item that still
+failed after retries, a listing page with no film links (a Cloudflare challenge or a redesign), or a file without the
+expected header. The evidence is still kept and errors are listed in `job_runs.detail`. Ten failures in a row mean the
+source is down, and the run stops as `failed`.
 
 ## Sources
 
@@ -102,7 +104,7 @@ Times are UTC ([`jobs/schedule.ts`](jobs/schedule.ts)). Discovery runs before th
 | `tmdb.universe` | daily 02:15 | Seeds market titles from `src/data/catalog.json`, adds Indian releases (−120 d … +90 d) and shows (last year) |
 | `tmdb.details` | daily 02:30 | Details for every tracked title; writes IMDb and Wikidata links |
 | `wikidata.items` | Mondays 03:00 | Batches of 50 TMDB ids → Wikidata item and Wikipedia sitelinks |
-| `wiki.pageviews` | daily 04:00 | Last 3 complete days of views for every linked article |
+| `wiki.pageviews` | daily 04:00 | Views for every linked article since its last collected day (new articles: 60 days; always the last 3 days again) |
 | `wiki.articles` | daily 04:30 | Article HTML: daily within 60 days of release, weekly otherwise |
 | `sacnilk.daily` | daily 06:00 | Listing pages, then every film seen on a listing in the last 21 days |
 | `netflix.top10` | Tuesdays 18:00 | Both TSV files; skipped when unchanged since the last run |
@@ -182,7 +184,7 @@ redeploys on every push to it. Setup, env values, the database viewer and backfi
 ## Develop
 
 ```bash
-bunx vitest run data-engine/   # 68 tests, in-memory Postgres (PGlite), recorded fixtures, no network
+bunx vitest run data-engine/   # 82 tests, in-memory Postgres (PGlite), recorded fixtures, no network
 bunx tsc --noEmit
 python3 data-engine/docs/diagrams.py   # regenerate the README diagrams
 ```

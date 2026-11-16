@@ -1,5 +1,6 @@
+import type { Db } from "../db/client";
 import type { HostPolicy } from "../http/polite-fetch";
-import { snapshotFrom, type Collector, type JobResult } from "./types";
+import { itemGuard, snapshotFrom, type Collector, type JobResult } from "./types";
 
 /** Both are documented Wikimedia APIs (UA with contact required). */
 export const WIKIPEDIA_POLICY: Record<string, HostPolicy> = {
@@ -35,6 +36,23 @@ async function wikiLinks(ctx: Parameters<Collector["run"]>[0]): Promise<Link[]> 
   );
 }
 
+/**
+ * Scheduled window start for one article: the day after its last collected day, so gaps (new titles linked days
+ * later, worker outages) are filled; at least the last 3 days for late-arriving data; at most 60 days back.
+ */
+async function resumeFrom(db: Db, site: string, article: string, today: Date): Promise<Date> {
+  const prefix = pageviewsUrl(site, article, today, today).replace(/\/daily\/.*$/, "/daily/");
+  const [last] = await db.query<{ observed_at: Date | null }>(
+    `select max(observed_at) as observed_at from snapshots
+     where provider = 'wikimedia_pageviews' and http_status = 200 and left(requested_url, length($1)) = $1`,
+    [prefix],
+  );
+  const floor = today.getTime() - 60 * DAY;
+  const lateData = today.getTime() - 3 * DAY;
+  const next = last?.observed_at ? new Date(last.observed_at).getTime() + DAY : floor;
+  return new Date(Math.max(floor, Math.min(next, lateData)));
+}
+
 export const wikiPageviews: Collector = {
   job: "wiki.pageviews",
   provider: "wikimedia_pageviews",
@@ -42,12 +60,15 @@ export const wikiPageviews: Collector = {
   async run(ctx) {
     const out: JobResult = { snapshots: 0, skipped: 0, degraded: false };
     const today = startOfDay(ctx.now());
-    // Scheduled: the last 3 complete days (late-arriving data). Backfill: the requested range.
-    const from = ctx.range ? new Date(Math.max(ctx.range.from.getTime(), PAGEVIEWS_START.getTime())) : new Date(today.getTime() - 3 * DAY);
-    const to = ctx.range ? ctx.range.to : new Date(today.getTime() - DAY);
+    const yesterday = new Date(today.getTime() - DAY);
+    const guard = itemGuard(out);
     for (const l of await wikiLinks(ctx)) {
+      const { from, to } = ctx.range
+        ? { from: new Date(Math.max(ctx.range.from.getTime(), PAGEVIEWS_START.getTime())), to: ctx.range.to }
+        : { from: await resumeFrom(ctx.db, l.site, l.article, today), to: yesterday };
       const url = pageviewsUrl(l.site, l.article, from, to);
-      const res = await ctx.fetch(url, { headers: { accept: "application/json" } });
+      const res = await guard(`${l.site}:${l.article}`, () => ctx.fetch(url, { headers: { accept: "application/json" } }));
+      if (!res) continue;
       if (res.status === 404) {
         out.skipped++; // article has no views in range yet
         continue;
@@ -71,6 +92,7 @@ export const wikiArticles: Collector = {
   async run(ctx) {
     const out: JobResult = { snapshots: 0, skipped: 0, degraded: false };
     const now = ctx.now().getTime();
+    const guard = itemGuard(out);
     for (const l of await wikiLinks(ctx)) {
       const url = articleUrl(l.site, l.article);
       const recent = l.release_date !== null && Math.abs(now - Date.parse(l.release_date)) <= 60 * DAY;
@@ -80,7 +102,8 @@ export const wikiArticles: Collector = {
         [url],
       );
       if (last && now - new Date(last.fetched_at).getTime() < maxAge) continue;
-      const res = await ctx.fetch(url, { headers: { accept: "text/html" } });
+      const res = await guard(`${l.site}:${l.article}`, () => ctx.fetch(url, { headers: { accept: "text/html" } }));
+      if (!res) continue;
       if (res.status !== 200) {
         out.skipped++;
         if (res.status !== 404) out.degraded = true;

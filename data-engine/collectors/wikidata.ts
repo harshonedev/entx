@@ -1,5 +1,5 @@
 import type { HostPolicy } from "../http/polite-fetch";
-import { snapshotFrom, type Collector, type JobResult } from "./types";
+import { itemGuard, snapshotFrom, type Collector, type JobResult } from "./types";
 
 export const WIKIDATA_SPARQL = "https://query.wikidata.org/sparql";
 /** Documented query API: one query at a time, ≥1 s apart, back off on 429 (60 s processing per 60 s per client). */
@@ -66,6 +66,7 @@ export const wikidata: Collector = {
       "select id::text as id, tmdb_kind, tmdb_id from tracked_titles where role = any($1) order by id",
       [roles],
     );
+    const guard = itemGuard(out);
     for (let i = 0; i < titles.length; i += BATCH) {
       const batch = titles.slice(i, i + BATCH);
       const url = `${WIKIDATA_SPARQL}?${new URLSearchParams({
@@ -74,15 +75,20 @@ export const wikidata: Collector = {
           batch.filter((t) => t.tmdb_kind === "tv").map((t) => t.tmdb_id),
         ),
       })}`;
-      const res = await ctx.fetch(url, { headers: { accept: "application/sparql-results+json" } });
-      if (res.status !== 200) {
-        out.skipped += batch.length;
+      const got = await guard(`batch ${i / BATCH + 1}`, async () => {
+        const res = await ctx.fetch(url, { headers: { accept: "application/sparql-results+json" } });
+        if (res.status !== 200) return null;
+        const items = parseBindings(JSON.parse(new TextDecoder().decode(res.body)));
+        return { items, snapshotId: (await snapshotFrom(ctx, this, url, res)).toString() };
+      });
+      if (!got) {
+        out.skipped += batch.length - (got === undefined ? 1 : 0); // a throw already counted one
         out.degraded = true;
         continue;
       }
-      const snapshotId = (await snapshotFrom(ctx, this, url, res)).toString();
+      const { snapshotId } = got;
       out.snapshots++;
-      const found = new Map(parseBindings(JSON.parse(new TextDecoder().decode(res.body))).map((it) => [`${it.tmdbKind}:${it.tmdbId}`, it]));
+      const found = new Map(got.items.map((it) => [`${it.tmdbKind}:${it.tmdbId}`, it]));
       for (const t of batch) {
         const it = found.get(`${t.tmdb_kind}:${t.tmdb_id}`);
         if (!it) {

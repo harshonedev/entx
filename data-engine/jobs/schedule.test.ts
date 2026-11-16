@@ -3,7 +3,7 @@ import { Cron } from "croner";
 import { describe, expect, it } from "vitest";
 import type { Db } from "../db/client";
 import { healthHandler } from "../health";
-import { HOST_POLICIES, SCHEDULE } from "./schedule";
+import { HOST_POLICIES, SCHEDULE, trackInFlight } from "./schedule";
 
 describe("schedule", () => {
   it("every collector appears in SCHEDULE exactly once", () => {
@@ -41,5 +41,15 @@ describe("health", () => {
     );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, jobs: { "tmdb.details": { status: "ok", finishedAt: "2026-11-16T02:31:00.000Z" } } });
+  });
+});
+
+describe("trackInFlight", () => {
+  it("a rejecting job leaves no unhandled rejection and is removed from the set", async () => {
+    const set = new Set<Promise<unknown>>();
+    const p = trackInFlight(set, Promise.reject(new Error("db blip")));
+    await expect(p).rejects.toThrow("db blip");
+    await new Promise((r) => setTimeout(r, 10));
+    expect(set.size).toBe(0);
   });
 });

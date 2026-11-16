@@ -44,3 +44,31 @@ export async function snapshotFrom(
   });
   return id;
 }
+
+const MAX_CONSECUTIVE_FAILURES = 10;
+const MAX_ERRORS_KEPT = 20;
+
+/**
+ * Run each item of a collector in isolation: an item that throws (network error after retries, timeout, robots,
+ * unparseable body) is skipped, counted and noted in `out.detail.errors`, and the run carries on as degraded.
+ * Ten failures in a row mean the source is down, so the run stops there.
+ */
+export function itemGuard(out: JobResult) {
+  let consecutive = 0;
+  return async <T>(label: string, fn: () => Promise<T>): Promise<T | undefined> => {
+    try {
+      const value = await fn();
+      consecutive = 0;
+      return value;
+    } catch (e) {
+      consecutive++;
+      const message = e instanceof Error ? e.message : String(e);
+      out.skipped++;
+      out.degraded = true;
+      const errors = ((out.detail ??= {}).errors ??= []) as string[];
+      if (errors.length < MAX_ERRORS_KEPT) errors.push(`${label}: ${message}`);
+      if (consecutive >= MAX_CONSECUTIVE_FAILURES) throw new Error(`${consecutive} consecutive failures, last: ${label}: ${message}`);
+      return undefined;
+    }
+  };
+}

@@ -145,6 +145,27 @@ describe("politeFetch", () => {
     await expect(pf("https://a.test/x")).rejects.toThrow("connection refused");
   });
 
+  it("retries transient 500, 502 and 504", async () => {
+    for (const status of [500, 502, 504]) {
+      const { pf } = harness(null, { "https://a.test/x": [{ status }, { status: 200, body: "ok" }] });
+      expect((await pf("https://a.test/x")).status).toBe(200);
+    }
+  });
+
+  it("a retry after a network error asks for a fresh connection", async () => {
+    const seen: (boolean | undefined)[] = [];
+    let n = 0;
+    const impl = (async (input: string | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/robots.txt")) return new Response("", { status: 404 });
+      seen.push(init?.keepalive);
+      if (n++ === 0) throw new TypeError("The socket connection was closed unexpectedly");
+      return new Response("ok", { status: 200 });
+    }) as typeof fetch;
+    const pf = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: impl, sleep: async () => {} });
+    await pf("https://a.test/x");
+    expect(seen).toEqual([undefined, false]);
+  });
+
   it("gives up after 3 retries", async () => {
     const { pf, calls } = harness(null, { "https://a.test/x": [{ status: 503 }] });
     const res = await pf("https://a.test/x");
@@ -181,6 +202,46 @@ describe("politeFetch", () => {
       String(input).endsWith("/robots.txt") ? new Response("", { status: 503 }) : server.impl(input, init)) as typeof fetch;
     const pf = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: impl, sleep: async () => {} });
     await expect(pf("https://a.test/x")).rejects.toBeInstanceOf(RobotsDisallowedError);
+  });
+});
+
+describe("robots cache", () => {
+  function robotsServer(answers: Response[]) {
+    let robotsCalls = 0;
+    const impl = (async (input: string | URL) => {
+      if (String(input).endsWith("/robots.txt")) {
+        robotsCalls++;
+        return answers.length > 1 ? answers.shift()! : answers[0];
+      }
+      return new Response("ok", { status: 200 });
+    }) as typeof fetch;
+    return { impl, calls: () => robotsCalls };
+  }
+
+  it("a failed robots.txt fetch is retried after 5 minutes, not cached forever", async () => {
+    let clock = 0;
+    const server = robotsServer([new Response("", { status: 503 }), new Response("User-agent: *\nAllow: /", { status: 200 })]);
+    const pf = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: server.impl, sleep: async () => {}, now: () => clock });
+    await expect(pf("https://s.test/movie/x")).rejects.toBeInstanceOf(RobotsDisallowedError);
+    clock += 4 * 60_000;
+    await expect(pf("https://s.test/movie/x")).rejects.toBeInstanceOf(RobotsDisallowedError);
+    expect(server.calls()).toBe(1);
+    clock += 2 * 60_000;
+    expect((await pf("https://s.test/movie/x")).status).toBe(200);
+    expect(server.calls()).toBe(2);
+  });
+
+  it("a good robots.txt is re-fetched after 24 hours", async () => {
+    let clock = 0;
+    const server = robotsServer([new Response("User-agent: *\nAllow: /", { status: 200 }), new Response("User-agent: *\nDisallow: /movie/", { status: 200 })]);
+    const pf = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: server.impl, sleep: async () => {}, now: () => clock });
+    expect((await pf("https://s.test/movie/x")).status).toBe(200);
+    clock += 23 * 3_600_000;
+    expect((await pf("https://s.test/movie/x")).status).toBe(200);
+    expect(server.calls()).toBe(1);
+    clock += 2 * 3_600_000;
+    await expect(pf("https://s.test/movie/x")).rejects.toBeInstanceOf(RobotsDisallowedError);
+    expect(server.calls()).toBe(2);
   });
 });
 

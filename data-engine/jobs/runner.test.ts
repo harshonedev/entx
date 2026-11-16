@@ -60,6 +60,22 @@ describe("runJob", () => {
     expect(await first).toBe("ok");
   });
 
+  it("abandonStale leaves a run whose job lock is still held", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const live = runJob(db, collector(async () => { await gate; return { snapshots: 1, skipped: 0, degraded: false }; }, "live.job"), ctx);
+    await new Promise((r) => setTimeout(r, 10));
+    await db.query("insert into job_runs (job, status) values ('dead.job', 'running')");
+    expect(await abandonStale(db)).toBe(1);
+    const rows = await db.query<{ job: string; status: string }>("select job, status from job_runs order by job");
+    expect(rows).toEqual([
+      { job: "dead.job", status: "abandoned" },
+      { job: "live.job", status: "running" },
+    ]);
+    release();
+    await live;
+  });
+
   it("abandonStale marks running rows abandoned", async () => {
     await db.query("insert into job_runs (job, status) values ('x', 'running'), ('y', 'ok')");
     expect(await abandonStale(db)).toBe(1);

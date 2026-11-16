@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { Db } from "../db/client";
 import type { HostPolicy, PoliteFetch } from "../http/polite-fetch";
-import { snapshotFrom, type Collector, type CollectorContext, type JobResult } from "./types";
+import { itemGuard, snapshotFrom, type Collector, type CollectorContext, type JobResult } from "./types";
 
 export const TMDB_BASE = "https://api.themoviedb.org/3";
 /** Documented API (bearer token); ~4 req/s keeps well under TMDB's limits. */
@@ -60,9 +60,13 @@ async function discover(
   maxPages: number,
   role: Role,
   out: JobResult,
+  guard: ReturnType<typeof itemGuard>,
 ) {
   for (let page = 1; page <= maxPages; page++) {
-    const r = await getJson(ctx, c, ctx.fetch, `/discover/${kind}`, { ...params, page });
+    const r = await guard(`discover/${kind} ${params.with_original_language ?? ""} p${page}`, () =>
+      getJson(ctx, c, ctx.fetch, `/discover/${kind}`, { ...params, page }),
+    );
+    if (!r) return;
     if (r.status !== 200) {
       out.skipped++;
       out.degraded = true;
@@ -94,6 +98,7 @@ export const tmdbUniverse: Collector = {
   version: VERSION,
   async run(ctx) {
     const out: JobResult = { snapshots: 0, skipped: 0, degraded: false };
+    const guard = itemGuard(out);
     for (const a of catalogAssets())
       await upsertTitle(ctx.db, a.kind === "show" ? "tv" : "movie", a.tmdbId, "market", null, a.releaseDate ?? null);
 
@@ -112,6 +117,7 @@ export const tmdbUniverse: Collector = {
         3,
         "watch",
         out,
+        guard,
       );
       await discover(
         ctx,
@@ -121,6 +127,7 @@ export const tmdbUniverse: Collector = {
         1,
         "watch",
         out,
+        guard,
       );
     }
 
@@ -139,6 +146,7 @@ export const tmdbUniverse: Collector = {
             5,
             "cohort",
             out,
+            guard,
           );
     }
     return out;
@@ -164,9 +172,11 @@ export const tmdbDetails: Collector = {
       [roles],
     );
     const missing: string[] = [];
+    const guard = itemGuard(out);
     for (const t of titles) {
       const params = t.tmdb_kind === "movie" ? { append_to_response: "release_dates,external_ids" } : { append_to_response: "external_ids" };
-      const r = await getJson(ctx, this, ctx.fetch, `/${t.tmdb_kind}/${t.tmdb_id}`, params);
+      const r = await guard(`${t.tmdb_kind}/${t.tmdb_id}`, () => getJson(ctx, this, ctx.fetch, `/${t.tmdb_kind}/${t.tmdb_id}`, params));
+      if (!r) continue;
       if (r.status !== 200) {
         out.skipped++;
         missing.push(`${t.tmdb_kind}/${t.tmdb_id}:${r.status}`);
@@ -192,7 +202,7 @@ export const tmdbDetails: Collector = {
     }
     if (missing.length) {
       out.degraded = true;
-      out.detail = { missing: missing.slice(0, 50), missingCount: missing.length };
+      out.detail = { ...out.detail, missing: missing.slice(0, 50), missingCount: missing.length };
     }
     return out;
   },

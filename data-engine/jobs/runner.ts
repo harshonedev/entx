@@ -41,8 +41,22 @@ export async function runJob(db: Db, collector: Collector, ctx: CollectorContext
   return "skipped_locked";
 }
 
-/** Mark runs left `running` by a dead process as abandoned. Call once at worker startup. */
+/**
+ * Mark runs left `running` by a dead process as abandoned. A run whose job lock is still held belongs to a live
+ * process (rolling deploy, a CLI backfill) and is left alone. Call once at worker startup.
+ */
 export async function abandonStale(db: Db): Promise<number> {
-  const rows = await db.query("update job_runs set status = 'abandoned', finished_at = now() where status = 'running' returning id");
-  return rows.length;
+  const jobs = await db.query<{ job: string }>("select distinct job from job_runs where status = 'running'");
+  let abandoned = 0;
+  for (const { job } of jobs) {
+    const n = await db.withSessionLock(lockKey(job), async () => {
+      const rows = await db.query(
+        "update job_runs set status = 'abandoned', finished_at = now() where status = 'running' and job = $1 returning id",
+        [job],
+      );
+      return rows.length;
+    });
+    abandoned += n ?? 0;
+  }
+  return abandoned;
 }

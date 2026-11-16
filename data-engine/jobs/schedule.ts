@@ -34,22 +34,31 @@ export const SCHEDULE: { collector: Collector | "retention"; cron: string }[] = 
   { collector: netflixTop10, cron: "0 18 * * 2" },
 ];
 
+/** Keep `p` in `set` while it runs. The bookkeeping promise never rejects, so a failing job can't crash the worker. */
+export function trackInFlight<T>(set: Set<Promise<unknown>>, p: Promise<T>): Promise<T> {
+  set.add(p);
+  p.finally(() => set.delete(p)).catch(() => {});
+  return p;
+}
+
 /** Start every scheduled job. `protect` skips a tick while the previous run of that job is still going. */
 export function startScheduler(deps: { db: Db; ctx: CollectorContext }): { stop(): void; running(): Promise<unknown>[] } {
   const inFlight = new Set<Promise<unknown>>();
-  const track = (p: Promise<unknown>) => {
-    inFlight.add(p);
-    p.finally(() => inFlight.delete(p));
-    return p;
-  };
   const crons = SCHEDULE.map(
     (s) =>
       new Cron(s.cron, { timezone: "UTC", protect: true, name: s.collector === "retention" ? "retention" : s.collector.job }, async () => {
-        await track(
-          s.collector === "retention"
-            ? expirePayloads(deps.db, deps.ctx.now()).then((n) => deps.ctx.log("retention", { expired: n }))
-            : runJob(deps.db, s.collector, deps.ctx).then((status) => deps.ctx.log(`${(s.collector as Collector).job} ${status}`)),
-        );
+        const name = s.collector === "retention" ? "retention" : s.collector.job;
+        try {
+          await trackInFlight(
+            inFlight,
+            s.collector === "retention"
+              ? expirePayloads(deps.db, deps.ctx.now()).then((n) => deps.ctx.log("retention", { expired: n }))
+              : runJob(deps.db, s.collector, deps.ctx).then((status) => deps.ctx.log(`${name} ${status}`)),
+          );
+        } catch (e) {
+          // Database unreachable while starting or recording the run: log it, keep the worker alive for the next tick.
+          deps.ctx.log(`${name} crashed`, { error: e instanceof Error ? e.message : String(e) });
+        }
       }),
   );
   return { stop: () => crons.forEach((c) => c.stop()), running: () => [...inFlight] };
