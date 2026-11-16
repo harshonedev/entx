@@ -117,3 +117,11 @@ Postgres stays private. Connect a desktop client (TablePlus, Postico 2, DBeaver)
 | User / password | `viewer` / value of `VIEWER_DB_PASSWORD` on `entx-data-engine` in Coolify (read-only role, created by the engine on start) |
 
 `snapshots.payload` is gzip; use `bun data-engine/cli.ts inspect` (Coolify terminal) to read payloads as text.
+
+### Database viewer (dev, web)
+
+`entx-db-viewer` (pgweb `sosedoff/pgweb:0.16.2`, app `fr9nlvhrrqowefv2brigrh9y`) at
+`https://fr9nlvhrrqowefv2brigrh9y.harshone.space`. Basic auth user `entx`, password in Coolify →
+`entx-db-viewer` → `PGWEB_AUTH_PASS` (old unprefixed `AUTH_USER`/`AUTH_PASS` keys are unused; delete them).
+Connects as the read-only `viewer` role, so writes fail.
+
