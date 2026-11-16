@@ -41,7 +41,10 @@ export function createPoliteFetch(opts: {
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
+  /** Abort a request (headers and body) that takes longer than this. Default 60 s. */
+  timeoutMs?: number;
 }): PoliteFetch {
+  const timeoutMs = opts.timeoutMs ?? 60_000;
   const doFetch = opts.fetchImpl ?? fetch;
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const now = opts.now ?? Date.now;
@@ -78,6 +81,7 @@ export function createPoliteFetch(opts: {
       body: init?.body,
       headers: { ...init?.headers, "user-agent": opts.userAgent },
       redirect: "follow",
+      signal: AbortSignal.timeout(timeoutMs),
     });
 
   const robotsFor = (origin: string, host: string) => {
@@ -108,29 +112,31 @@ export function createPoliteFetch(opts: {
     const maxRetries = policyFor(u.host).maxRetries ?? 3;
 
     for (let attempt = 0; ; attempt++) {
-      let res: Response;
+      let got: { res: Response; body: Uint8Array | null };
       try {
-        res = await slot(u.host, () => raw(url, init));
+        // Download inside the host slot so the whole transfer (headers + body) is spaced and timed out together.
+        got = await slot(u.host, async () => {
+          const res = await raw(url, init);
+          if ((res.status === 429 || res.status === 503) && attempt < maxRetries) {
+            await res.body?.cancel();
+            return { res, body: null };
+          }
+          return { res, body: new Uint8Array(await res.arrayBuffer()) };
+        });
       } catch (e) {
-        // Dropped connection, reset, DNS blip: retry with backoff like a 503.
+        // Dropped connection, reset, timeout, stalled body: retry with backoff like a 503.
         if (attempt >= maxRetries) throw e;
         await sleep(2 ** (attempt + 1) * 1000);
         continue;
       }
-      if ((res.status === 429 || res.status === 503) && attempt < maxRetries) {
+      const { res, body } = got;
+      if (body === null) {
         const ra = Number(res.headers.get("retry-after"));
         const wait = Number.isFinite(ra) && ra > 0 ? ra * 1000 : 2 ** (attempt + 1) * 1000;
-        await res.body?.cancel();
         await sleep(Math.min(wait, RETRY_AFTER_CAP_MS));
         continue;
       }
-      return {
-        status: res.status,
-        url: res.url || url,
-        contentType: res.headers.get("content-type"),
-        body: new Uint8Array(await res.arrayBuffer()),
-        fetchedAt: new Date(),
-      };
+      return { status: res.status, url: res.url || url, contentType: res.headers.get("content-type"), body, fetchedAt: new Date() };
     }
   };
 }

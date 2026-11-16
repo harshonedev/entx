@@ -78,6 +78,41 @@ describe("politeFetch", () => {
     expect(waits).toContain(2000);
   });
 
+  it("aborts a hung request after timeoutMs and retries it", async () => {
+    let calls = 0;
+    const impl = (async (input: string | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/robots.txt")) return new Response("", { status: 404 });
+      if (++calls === 1)
+        return new Promise<Response>((_, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal!.reason)));
+      return new Response("late but fine", { status: 200 });
+    }) as typeof fetch;
+    const pf = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: impl, sleep: async () => {}, timeoutMs: 20 });
+    const res = await pf("https://a.test/x");
+    expect(res.status).toBe(200);
+    expect(calls).toBe(2);
+  });
+
+  it("retries when the body stalls mid-download", async () => {
+    let calls = 0;
+    const impl = (async (input: string | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/robots.txt")) return new Response("", { status: 404 });
+      if (++calls === 1) {
+        const stalled = new ReadableStream({
+          start(c) {
+            c.enqueue(new TextEncoder().encode("partial"));
+            init?.signal?.addEventListener("abort", () => c.error(init.signal!.reason));
+          },
+        });
+        return new Response(stalled, { status: 200 });
+      }
+      return new Response("whole", { status: 200 });
+    }) as typeof fetch;
+    const pf = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: impl, sleep: async () => {}, timeoutMs: 20 });
+    const res = await pf("https://a.test/x");
+    expect(new TextDecoder().decode(res.body)).toBe("whole");
+    expect(calls).toBe(2);
+  });
+
   it("rethrows a network error after 3 retries", async () => {
     const impl = (async (input: string | URL) => {
       if (String(input).endsWith("/robots.txt")) return new Response("", { status: 404 });
