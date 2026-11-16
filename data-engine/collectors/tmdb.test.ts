@@ -44,7 +44,7 @@ const ctxFor = (db: Db, fetch: PoliteFetch, range?: CollectorContext["range"]): 
   now: () => new Date("2026-11-16T00:00:00Z"),
   log: () => {},
   range,
-  config: { databaseUrl: "", userAgent: "entx-data-engine/0 (x)", tmdbToken: "tok", sacnilkEnabled: false, healthPort: 8080 },
+  config: { databaseUrl: "", userAgent: "entx-data-engine/0 (x)", tmdbToken: "tok", sacnilkEnabled: false, healthPort: 8080, viewerDbPassword: null },
 });
 
 describe("tmdb collectors", () => {

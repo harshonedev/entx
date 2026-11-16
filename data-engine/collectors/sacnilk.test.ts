@@ -18,7 +18,7 @@ const ctxFor = (db: Db, fetch: PoliteFetch, enabled = true, range?: CollectorCon
   now: () => NOW,
   log: () => {},
   range,
-  config: { databaseUrl: "", userAgent: "entx-data-engine/0 (x)", tmdbToken: "", sacnilkEnabled: enabled, healthPort: 8080 },
+  config: { databaseUrl: "", userAgent: "entx-data-engine/0 (x)", tmdbToken: "", sacnilkEnabled: enabled, healthPort: 8080, viewerDbPassword: null },
 });
 
 function site(pages: Record<string, string>) {

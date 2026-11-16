@@ -4,6 +4,8 @@ export type EngineConfig = {
   tmdbToken: string;
   sacnilkEnabled: boolean;
   healthPort: number;
+  /** When set, the worker creates/updates the read-only `viewer` role for the database UI. */
+  viewerDbPassword: string | null;
 };
 
 // Wikimedia blocks generic agents; ours must name the client and a contact, e.g. "entx-data-engine/0.1 (https://entx.space)".
@@ -26,5 +28,6 @@ export function loadConfig(env: Record<string, string | undefined>): EngineConfi
     tmdbToken: need("TMDB_TOKEN"),
     sacnilkEnabled: env.SACNILK_ENABLED === "true",
     healthPort: port,
+    viewerDbPassword: env.VIEWER_DB_PASSWORD?.trim() || null,
   };
 }

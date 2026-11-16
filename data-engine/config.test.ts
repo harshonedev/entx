@@ -16,7 +16,12 @@ describe("loadConfig", () => {
       tmdbToken: "t",
       sacnilkEnabled: false,
       healthPort: 8080,
+      viewerDbPassword: null,
     });
+  });
+
+  it("reads optional VIEWER_DB_PASSWORD", () => {
+    expect(loadConfig({ ...base, VIEWER_DB_PASSWORD: "abc" }).viewerDbPassword).toBe("abc");
   });
 
   it("rejects missing ENGINE_USER_AGENT", () => {

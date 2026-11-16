@@ -1,6 +1,7 @@
 // entx-data-engine worker: migrate, recover, schedule collectors, serve /health.
 import { createServer } from "node:http";
 import { migrate } from "./db/migrate";
+import { ensureViewerRole } from "./db/viewer";
 import { healthHandler } from "./health";
 import { abandonStale } from "./jobs/runner";
 import { startScheduler } from "./jobs/schedule";
@@ -10,6 +11,10 @@ const { config, db, ctx } = createRuntime(process.env);
 
 const applied = await migrate(db);
 if (applied.length) log("migrated", { applied });
+if (config.viewerDbPassword) {
+  await ensureViewerRole(db, config.viewerDbPassword);
+  log("viewer role ready");
+}
 const abandoned = await abandonStale(db);
 if (abandoned) log("abandoned stale runs", { abandoned });
 
