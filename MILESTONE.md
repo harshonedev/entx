@@ -66,13 +66,16 @@ One Docker image, deployed per host on Coolify with different env:
 
 ---
 
-## M1 — Real data pipeline  `P1`
+## M1 — EPI data engine  `P1`
 
-- [ ] Postgres on Coolify; schema for titles, EPI snapshots, sources
-- [ ] Scheduled job: TMDB popularity, ratings, revenue; box-office and trend sources
-- [ ] EPI computed server-side from stored snapshots; history endpoint
-- [ ] Oracle job publishes `report_epi` to NEAR on a schedule (no click-triggered publishing in live)
-- [ ] Charts in live mode read real EPI history
+Spec: `docs/superpowers/specs/2026-11-16-epi-data-engine-design.md`. Branch `feat/epi-data-engine`. Dev environment on Coolify (`dev`: Postgres `entx-dev-db`, `entx-engine`).
+
+- [ ] Phase 1: evidence collection — collectors (TMDB, Wikidata, Wikipedia, Netflix Top 10, Sacnilk), immutable snapshots, scheduler, worker (plan: `docs/superpowers/plans/2026-11-16-epi-engine-phase1-evidence.md`)
+- [ ] Phase 2: canonical titles, resolver, canonical metrics, FX
+- [ ] Phase 3: Trust Engine (tiers, freshness, agreement, independence, consensus states)
+- [ ] Phase 4: three EPI models (theatrical, streaming film, series), versioned reports, read-only EPI API
+- [ ] Phase 5: backtesting, tuned first methodology
+- [ ] Phase 6: full switch of live mode (EPI, price anchor, odds, scheduled oracle from a separate live contract/oracle), provenance drawer
 - [ ] Exit gate: testing · security audit · deploy check
 
 ## M2 — Shared live market  `P1`
@@ -113,7 +116,11 @@ One Docker image, deployed per host on Coolify with different env:
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| Demo host publishes simulated news to the same NEAR contract live reads, so live's oracle history mixes in demo events. Give live its own contract or oracle account | P1 | Fold into M1 |
+| NEAR attestation of EPI report hashes + evidence (spec phase 7). Blocked on the go-live licence list | P1 | After M1 |
+| Go-live licence: Sacnilk (Indian box office, currently scraped for dev) | P0 | Before go-live |
+| Go-live licence: TMDB commercial agreement (non-commercial terms, 6-month cache limit) | P0 | Before go-live |
+| Go-live licence: IMDb Data on AWS Data Exchange (Box Office Mojo grosses; scraping Mojo is forbidden) | P0 | Before go-live |
+| Demo host publishes simulated news to the same NEAR contract live reads, so live's oracle history mixes in demo events. Give live its own contract or oracle account | P1 | M1 phase 6 |
 | Live asset trading still per-browser simulation ("preview") | P1 | M2 |
 | Put entx.space behind Cloudflare too, then firewall 80/443 to Cloudflare ranges and use `TRUST_PROXY=cloudflare` (per-visitor limits for proxied traffic) | P2 | M5 |
 | Coolify API token was pasted in chat: rotate it | P0 | After M0 deploy |
@@ -133,6 +140,7 @@ One Docker image, deployed per host on Coolify with different env:
 
 ## Changelog
 
+- 2026-11-16: M1 replaced by the EPI data engine (spec + phase 1 plan). User decisions: separate engine worker, Indian cinema core, three EPI models, Sacnilk scraped for dev with licence before go-live, Mojo skipped, full switch of live mode. Coolify `dev` environment + Postgres created. Go-live licence list added to backlog.
 - 2026-11-15: Post-M0 security review. Fixed: oracle bearer check is constant-time, oracle 502s no longer echo RPC errors, contract caps receipt size, counts only trusted EPI reports, restores a claim whose transfer fails, uuid override. Logged 3 accepted risks. Contract redeploy waits for the judging freeze to end.
 - 2026-11-14: Submitted to NEAR Hackathon 2026 (tracks: Unstoppable DeFi, Open Innovation). M0 done. Freeze main during judging (Nov 16–18); keep all hosts up until at least Nov 25.
 - 2026-11-14: Wallet-flow test found two bugs: app toasted "Receipt recorded" when the wallet sent nothing (#13), and Meteor Web silently no-ops signing on a session stored by an older near-connect executor (now disconnects and asks to reconnect). Contract now shows 1 receipt, 0.1 Ⓝ staked.
