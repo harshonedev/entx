@@ -70,7 +70,7 @@ One Docker image, deployed per host on Coolify with different env:
 
 Spec: `docs/superpowers/specs/2026-11-16-epi-data-engine-design.md`. Branch `feat/epi-data-engine`. Dev environment on Coolify (`dev`: Postgres `entx-dev-db`, `entx-data-engine`, later `entx-trust-engine`), built from the GitHub `dev` branch.
 
-- [ ] Phase 1: evidence collection — collectors (TMDB, Wikidata, Wikipedia, Netflix Top 10, Sacnilk), immutable snapshots, scheduler, worker (plan: `docs/superpowers/plans/2026-11-16-epi-engine-phase1-evidence.md`)
+- [x] Phase 1: evidence collection — collectors (TMDB, Wikidata, Wikipedia, Netflix Top 10, Sacnilk), immutable snapshots, scheduler, worker (plan: `docs/superpowers/plans/2026-11-16-epi-engine-phase1-evidence.md`)
 - [ ] Phase 2: canonical titles, resolver, canonical metrics, FX
 - [ ] Phase 3: Trust Engine (tiers, freshness, agreement, independence, consensus states)
 - [ ] Phase 4: three EPI models (theatrical, streaming film, series), versioned reports, read-only EPI API
@@ -141,6 +141,7 @@ Spec: `docs/superpowers/specs/2026-11-16-epi-data-engine-design.md`. Branch `fea
 
 ## Changelog
 
+- 2026-11-16: M1 phase 1 done: data engine live on Coolify dev (`entx-data-engine`, GitHub `dev` branch), final review fixes applied (82 engine tests, 653 total). 3-year backfill started. Deferred minors logged in the plan ledger.
 - 2026-11-16: M1 replaced by the EPI data engine (spec + phase 1 plan). User decisions: separate engine worker, Indian cinema core, three EPI models, Sacnilk scraped for dev with licence before go-live, Mojo skipped, full switch of live mode. Coolify `dev` environment + Postgres created. Go-live licence list added to backlog.
 - 2026-11-15: Post-M0 security review. Fixed: oracle bearer check is constant-time, oracle 502s no longer echo RPC errors, contract caps receipt size, counts only trusted EPI reports, restores a claim whose transfer fails, uuid override. Logged 3 accepted risks. Contract redeploy waits for the judging freeze to end.
 - 2026-11-14: Submitted to NEAR Hackathon 2026 (tracks: Unstoppable DeFi, Open Innovation). M0 done. Freeze main during judging (Nov 16–18); keep all hosts up until at least Nov 25.
