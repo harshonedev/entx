@@ -17,13 +17,13 @@ describe("schedule", () => {
     for (const s of SCHEDULE) expect(() => new Cron(s.cron, { paused: true, timezone: "UTC" }).stop()).not.toThrow();
   });
 
-  it("host policies cover every collector host, APIs flagged, scraped sites not", () => {
+  it("host policies cover every collector host, APIs and published datasets flagged, scraped sites not", () => {
     expect(HOST_POLICIES["api.themoviedb.org"].api).toBe(true);
     expect(HOST_POLICIES["query.wikidata.org"].api).toBe(true);
     expect(HOST_POLICIES["wikimedia.org"].api).toBe(true);
     expect(HOST_POLICIES["*.wikipedia.org"].api).toBe(true);
     expect(HOST_POLICIES["www.sacnilk.com"]).toEqual({ minIntervalMs: 5000 });
-    expect(HOST_POLICIES["www.netflix.com"].api).toBeUndefined();
+    expect(HOST_POLICIES["www.netflix.com"]).toEqual({ minIntervalMs: 2000, api: true }); // published dataset (user decision 2026-11-16)
   });
 });
 

@@ -8,8 +8,12 @@ export const NETFLIX_FILES = {
   countries: "https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv",
 } as const;
 
-/** Scraped website (robots.txt allows /tudum): honours robots, gentle spacing. */
-export const NETFLIX_POLICY: Record<string, HostPolicy> = { "www.netflix.com": { minIntervalMs: 2000 } };
+/**
+ * Published dataset: Netflix offers these two files as public downloads on the Top 10 page. netflix.com's robots.txt
+ * disallows all non-search bots, but we fetch two known files once a week (a download, not a crawl), so robots is not
+ * consulted here (user decision 2026-11-16). Never add other netflix.com paths to this collector.
+ */
+export const NETFLIX_POLICY: Record<string, HostPolicy> = { "www.netflix.com": { minIntervalMs: 2000, api: true } };
 
 const VERSION = "1";
 

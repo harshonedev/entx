@@ -2,8 +2,8 @@ import { parseRobots } from "./robots";
 
 /**
  * `api: true` marks a documented machine API with its own usage policy (TMDB API, Wikidata Query Service, Wikimedia
- * REST). Their robots.txt files exclude crawlers from those paths, but the APIs exist for automated clients, so robots
- * is not consulted there. Scraped websites never set it.
+ * REST) or a file the owner publishes for download (Netflix Top 10). Their robots.txt files exclude crawlers, but these
+ * endpoints exist for programmatic use, so robots is not consulted there. Scraped websites never set it.
  */
 export type HostPolicy = { minIntervalMs: number; maxRetries?: number; api?: boolean };
 
