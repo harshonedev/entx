@@ -5,7 +5,7 @@ import type { Db } from "../db/client";
 export type JobRunStatus = "ok" | "degraded" | "failed" | "skipped_locked";
 
 /** Stable signed 64-bit advisory-lock key for a job name. */
-export const lockKey = (job: string) => createHash("sha256").update(`entx-engine:${job}`).digest().readBigInt64BE(0);
+export const lockKey = (job: string) => createHash("sha256").update(`entx-data-engine:${job}`).digest().readBigInt64BE(0);
 
 /**
  * Run one collector under its advisory lock and record the run in job_runs. A second run of the same job while

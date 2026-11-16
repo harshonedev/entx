@@ -4,7 +4,7 @@ import { loadConfig } from "./config";
 
 const base = {
   DATABASE_URL: "postgres://engine@db/entx",
-  ENGINE_USER_AGENT: "entx-engine/0.1 (https://entx.space)",
+  ENGINE_USER_AGENT: "entx-data-engine/0.1 (https://entx.space)",
   TMDB_TOKEN: "t",
 };
 

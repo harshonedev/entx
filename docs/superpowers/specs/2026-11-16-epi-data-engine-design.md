@@ -64,7 +64,7 @@ Where the engine runs:
 
 - **A. Inside the Next app** (route handlers triggered by a Coolify scheduled task). One image, least setup; but
   ingestion, retries and scraping run in the web process and couple to UI code.
-- **B. Separate worker in this repo** — **chosen by the user.** `engine/` runs as its own Coolify app, writes to
+- **B. Separate worker in this repo** — **chosen by the user.** `data-engine/` runs as its own Coolify app, writes to
   shared Postgres; the Next app only reads finished reports. Isolates ingestion from the site, shares EPI types and
   math, one repo.
 - **C. Separate repo/service.** Cleanest isolation, duplicates types/CI for no gain at this size. Rejected.
@@ -75,39 +75,47 @@ The suggested Supabase Storage was dropped: new vendor, and Postgres is already 
 
 ## 5. Architecture
 
-Five engines, one pipeline. Each stage reads the previous stage's tables and is idempotent.
+Five stages, split across **two services** (user decision 2026-11-16). Each stage reads the previous stage's
+tables and is idempotent.
+
+- **`entx-data-engine`** collects and normalises: Collectors → immutable snapshots; Normalizer → titles,
+  external ids, observations. It is the only writer of evidence.
+- **`entx-trust-engine`** verifies and scores: Trust Engine → observation confidence and consensus; EPI Engine →
+  versioned reports. It reads evidence through a **read-only** database role, so a bug or compromise in verification
+  can never alter what was collected, and its judgement stays independent of the collector.
 
 ```
-Collectors ──► snapshots (immutable evidence)
-                  │
-Normalizer ──► titles + external_ids + observations (canonical metrics)
-                  │
-Trust Engine ─► observation confidence + metric_consensus (accepted / under_review / quarantined)
-                  │
-EPI Engine ───► epi_reports (versioned, reproducible)
-                  │
-App (live mode) reads epi_reports via a read-only API      Attestation (later phase) → NEAR
+entx-data-engine                         entx-trust-engine (read-only on evidence)
+  Collectors ──► snapshots                 Trust Engine ─► observation confidence + metric_consensus
+  Normalizer ──► titles, external_ids,     EPI Engine ───► epi_reports (versioned, reproducible)
+                 observations   ─────────►
+                                            App (live mode) reads epi_reports via a read-only API
+                                            Attestation (later phase) → NEAR
 ```
 
 ### 5.1 Repo layout *(my call)*
 
 ```
-engine/
-  collectors/   tmdb.ts wikidata.ts pageviews.ts wikipedia-infobox.ts netflix-top10.ts sacnilk.ts
+data-engine/
+  collectors/   tmdb.ts wikidata.ts wikipedia.ts netflix-top10.ts sacnilk.ts
   normalize/    resolver.ts metrics.ts currency.ts
-  trust/        tiers.ts freshness.ts agreement.ts independence.ts confidence.ts
-  epi/          models.ts theatrical.ts streaming.ts series.ts report.ts
-  db/           migrations/*.sql  client.ts
-  jobs/         scheduler.ts  (cron table, job locks)
+  db/           migrations/*.sql (owns the evidence schema)  client.ts
+  jobs/         schedule.ts runner.ts (cron table, advisory locks)
   fixtures/     recorded payloads for tests
   main.ts       long-running worker entry
-src/lib/epi/    shared types (EpiReport, metric names, statuses) used by engine and app
+trust-engine/
+  trust/        tiers.ts freshness.ts agreement.ts independence.ts confidence.ts
+  epi/          models.ts theatrical.ts streaming.ts series.ts report.ts
+  db/           migrations for its own tables (consensus, epi_reports) only
+  main.ts       long-running worker entry
+src/lib/epi/    shared types (EpiReport, metric names, statuses) used by both engines and the app
 ```
 
 Engine logic (trust, scoring) is pure functions over plain data so it can be unit-tested with fixtures and rerun
-for backtests. Deployed as a fourth Coolify app `entx-engine` from the same repo with its own Dockerfile
-(`Dockerfile.engine`), long-running, with an in-process scheduler and a Postgres advisory lock per job so a
-restarted or duplicated container never double-runs a job.
+for backtests. Each engine is its own Coolify app from the same repo with its own Dockerfile
+(`Dockerfile.data-engine`, `Dockerfile.trust-engine`), long-running, with an in-process scheduler and a Postgres
+advisory lock per job so a restarted or duplicated container never double-runs a job. Database roles: `engine`
+(data engine, writes evidence), `trust` (reads evidence, writes its own tables), `app_ro` (Next app, reads reports).
 
 ## 6. Collectors and evidence
 
@@ -169,7 +177,7 @@ collectors have a **backfill mode**: pageviews history (available back to 2015),
 to 2021), Wikidata/TMDB revenue, and Sacnilk past-title pages at the same 1 req / 5 s limit (~17k pages/day, so a
 few days of background crawl). Cohort titles feed reference sets only; they never get live reports.
 
-**Match review** *(my call)*: `pending_matches` is worked through a CLI (`bun engine/cli.ts matches list|accept|
+**Match review** *(my call)*: `pending_matches` is worked through a CLI (`bun data-engine/cli.ts matches list|accept|
 reject`), not an admin UI. No new auth surface.
 
 ## 7. Normalizer
@@ -303,9 +311,10 @@ definitions, so any past report can be recomputed from stored observations with 
 testnet. Publishing report hashes and evidence (phase 7) waits for licences. *(My call; flag if score-only
 publishing should also wait.)*
 
-**Environments** (user decision 2026-11-16): a new Coolify **dev** environment in the ENTX project holds Postgres,
-`entx-engine` (built from the feature branch) and, from phase 4, a live-mode preview app from the same branch.
-Production hosts are untouched until the milestone merges.
+**Environments** (user decision 2026-11-16): a Coolify **dev** environment in the ENTX project holds Postgres,
+`entx-data-engine`, `entx-trust-engine` (from phase 3) and, from phase 4, a live-mode preview app. All dev apps
+build from the GitHub **`dev`** branch; feature branches merge into `dev`, and `dev` merges into `main` only at the
+milestone exit gate. Production hosts are untouched until then.
 
 Before phase 5 freezes the first tuned version, reports carry a pre-release methodology (`epi-0.x`), are served
 only by the internal API, and make no reproducibility promise; nothing public shows them. *(My call.)*

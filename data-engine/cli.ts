@@ -1,6 +1,6 @@
-// bun engine/cli.ts migrate
-// bun engine/cli.ts run <job> [--from YYYY-MM-DD --to YYYY-MM-DD]
-// bun engine/cli.ts jobs
+// bun data-engine/cli.ts migrate
+// bun data-engine/cli.ts run <job> [--from YYYY-MM-DD --to YYYY-MM-DD]
+// bun data-engine/cli.ts jobs
 import { migrate } from "./db/migrate";
 import { COLLECTORS } from "./jobs/schedule";
 import { runJob } from "./jobs/runner";

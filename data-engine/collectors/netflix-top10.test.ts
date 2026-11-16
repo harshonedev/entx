@@ -16,7 +16,7 @@ const ctxFor = (db: Db, fetch: PoliteFetch): CollectorContext => ({
   fetch,
   now: () => new Date("2026-11-17T18:00:00Z"),
   log: () => {},
-  config: { databaseUrl: "", userAgent: "entx-engine/0 (x)", tmdbToken: "", sacnilkEnabled: false, healthPort: 8080 },
+  config: { databaseUrl: "", userAgent: "entx-data-engine/0 (x)", tmdbToken: "", sacnilkEnabled: false, healthPort: 8080 },
 });
 
 const serve = (files: Record<string, string>): { fetch: PoliteFetch; urls: string[] } => {

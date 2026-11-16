@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createPoliteFetch, RobotsDisallowedError } from "./polite-fetch";
 import { parseRobots } from "./robots";
 
-const UA = "entx-engine/0.1 (https://entx.space)";
+const UA = "entx-data-engine/0.1 (https://entx.space)";
 
 type Reply = { status: number; body?: string; headers?: Record<string, string> };
 
@@ -135,7 +135,7 @@ describe("parseRobots", () => {
   });
 
   it("uses the group for our agent token over *", () => {
-    const r = parseRobots("User-agent: *\nDisallow: /\n\nUser-agent: entx-engine\nAllow: /", UA);
+    const r = parseRobots("User-agent: *\nDisallow: /\n\nUser-agent: entx-data-engine\nAllow: /", UA);
     expect(r.isAllowed("/anything")).toBe(true);
   });
 

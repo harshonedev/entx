@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# entx-engine: EPI data engine worker (collectors + scheduler + /health). Separate from the Next app image.
-# Coolify: build pack Dockerfile, file Dockerfile.engine, no domain, health check /health on 8080.
+# entx-data-engine: EPI data engine worker (collectors + scheduler + /health). Separate from the Next app image.
+# Coolify: build pack Dockerfile, file Dockerfile.data-engine, no domain, health check /health on 8080.
 
 FROM oven/bun:1.3 AS deps
 WORKDIR /app
@@ -12,11 +12,11 @@ WORKDIR /app
 ENV NODE_ENV=production ENGINE_HEALTH_PORT=8080
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
-COPY engine ./engine
+COPY data-engine ./data-engine
 COPY src/data/catalog.json ./src/data/catalog.json
-RUN rm -rf engine/fixtures && find engine -name '*.test.ts' -delete
+RUN rm -rf data-engine/fixtures && find data-engine -name '*.test.ts' -delete
 USER bun
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
   CMD bun -e "fetch('http://127.0.0.1:8080/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
-CMD ["bun", "engine/main.ts"]
+CMD ["bun", "data-engine/main.ts"]

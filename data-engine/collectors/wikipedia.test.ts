@@ -16,7 +16,7 @@ const ctxFor = (db: Db, fetch: PoliteFetch, range?: CollectorContext["range"]): 
   now: () => NOW,
   log: () => {},
   range,
-  config: { databaseUrl: "", userAgent: "entx-engine/0 (x)", tmdbToken: "", sacnilkEnabled: false, healthPort: 8080 },
+  config: { databaseUrl: "", userAgent: "entx-data-engine/0 (x)", tmdbToken: "", sacnilkEnabled: false, healthPort: 8080 },
 });
 
 function fake(status = 200) {

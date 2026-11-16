@@ -1,4 +1,4 @@
-// entx-engine worker: migrate, recover, schedule collectors, serve /health.
+// entx-data-engine worker: migrate, recover, schedule collectors, serve /health.
 import { createServer } from "node:http";
 import { migrate } from "./db/migrate";
 import { healthHandler } from "./health";

@@ -68,7 +68,7 @@ One Docker image, deployed per host on Coolify with different env:
 
 ## M1 — EPI data engine  `P1`
 
-Spec: `docs/superpowers/specs/2026-11-16-epi-data-engine-design.md`. Branch `feat/epi-data-engine`. Dev environment on Coolify (`dev`: Postgres `entx-dev-db`, `entx-engine`).
+Spec: `docs/superpowers/specs/2026-11-16-epi-data-engine-design.md`. Branch `feat/epi-data-engine`. Dev environment on Coolify (`dev`: Postgres `entx-dev-db`, `entx-data-engine`, later `entx-trust-engine`), built from the GitHub `dev` branch.
 
 - [ ] Phase 1: evidence collection — collectors (TMDB, Wikidata, Wikipedia, Netflix Top 10, Sacnilk), immutable snapshots, scheduler, worker (plan: `docs/superpowers/plans/2026-11-16-epi-engine-phase1-evidence.md`)
 - [ ] Phase 2: canonical titles, resolver, canonical metrics, FX
