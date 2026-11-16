@@ -1,6 +1,11 @@
 import { parseRobots } from "./robots";
 
-export type HostPolicy = { minIntervalMs: number; maxRetries?: number };
+/**
+ * `api: true` marks a documented machine API with its own usage policy (TMDB API, Wikidata Query Service, Wikimedia
+ * REST). Their robots.txt files exclude crawlers from those paths, but the APIs exist for automated clients, so robots
+ * is not consulted there. Scraped websites never set it.
+ */
+export type HostPolicy = { minIntervalMs: number; maxRetries?: number; api?: boolean };
 
 export type FetchedResponse = {
   status: number;
@@ -96,8 +101,10 @@ export function createPoliteFetch(opts: {
 
   return async (url, init) => {
     const u = new URL(url);
-    const allowed = await robotsFor(u.origin, u.host);
-    if (!allowed(u.pathname + u.search)) throw new RobotsDisallowedError(url);
+    if (!policyFor(u.host).api) {
+      const allowed = await robotsFor(u.origin, u.host);
+      if (!allowed(u.pathname + u.search)) throw new RobotsDisallowedError(url);
+    }
     const maxRetries = policyFor(u.host).maxRetries ?? 3;
 
     for (let attempt = 0; ; attempt++) {

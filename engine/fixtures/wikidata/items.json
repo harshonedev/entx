@@ -1,0 +1,360 @@
+{
+  "head" : {
+    "vars" : [ "item", "tmdbMovie", "tmdbTv", "imdb", "boxOffice", "boxOfficeUnit", "boxOfficeTime", "boxOfficeRef", "site", "title" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q131547207"
+      },
+      "title" : {
+        "xml:lang" : "bn",
+        "type" : "literal",
+        "value" : "দ্য ওডিসি (২০২৬-এর চলচ্চিত্র)"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "bnwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt33764258"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "1368337"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q131547207"
+      },
+      "title" : {
+        "xml:lang" : "ta",
+        "type" : "literal",
+        "value" : "தி ஒடிசி"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "tawiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt33764258"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "1368337"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q140419781"
+      },
+      "title" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Ranabaali"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "enwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt32324552"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "1389379"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q140419781"
+      },
+      "title" : {
+        "xml:lang" : "te",
+        "type" : "literal",
+        "value" : "రణబాలి"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "tewiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt32324552"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "1389379"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q60424165"
+      },
+      "title" : {
+        "xml:lang" : "bn",
+        "type" : "literal",
+        "value" : "আরআরআর"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "bnwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt8178634"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "579974"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q60424165"
+      },
+      "title" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "RRR"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "enwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt8178634"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "579974"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q60424165"
+      },
+      "title" : {
+        "xml:lang" : "hi",
+        "type" : "literal",
+        "value" : "रौद्रम् रणम् रुधिरम्"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "hiwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt8178634"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "579974"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q60424165"
+      },
+      "title" : {
+        "xml:lang" : "kn",
+        "type" : "literal",
+        "value" : "ಆರ್ ಆರ್ ಆರ್ (ಚಲನಚಿತ್ರ)"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "knwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt8178634"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "579974"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q60424165"
+      },
+      "title" : {
+        "xml:lang" : "ml",
+        "type" : "literal",
+        "value" : "രൗദ്രം രണം രുധിരം"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "mlwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt8178634"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "579974"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q60424165"
+      },
+      "title" : {
+        "xml:lang" : "mr",
+        "type" : "literal",
+        "value" : "आरआरआर (चित्रपट)"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "mrwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt8178634"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "579974"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q60424165"
+      },
+      "title" : {
+        "xml:lang" : "ta",
+        "type" : "literal",
+        "value" : "இரத்தம் ரணம் ரௌத்திரம்"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "tawiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt8178634"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "579974"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q60424165"
+      },
+      "title" : {
+        "xml:lang" : "te",
+        "type" : "literal",
+        "value" : "రౌద్రం రణం రుధిరం"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "tewiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt8178634"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "579974"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q126092795"
+      },
+      "title" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "VisionQuest"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "enwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt23112594"
+      },
+      "tmdbTv" : {
+        "type" : "literal",
+        "value" : "213375"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q131547207"
+      },
+      "title" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "The Odyssey (2026 film)"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "enwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt33764258"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "1368337"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q131547207"
+      },
+      "title" : {
+        "xml:lang" : "hi",
+        "type" : "literal",
+        "value" : "द ओडिसी (2026 फ़िल्म)"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "hiwiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt33764258"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "1368337"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q131547207"
+      },
+      "title" : {
+        "xml:lang" : "te",
+        "type" : "literal",
+        "value" : "ది ఒడిస్సీ (2026)"
+      },
+      "site" : {
+        "type" : "literal",
+        "value" : "tewiki"
+      },
+      "imdb" : {
+        "type" : "literal",
+        "value" : "tt33764258"
+      },
+      "tmdbMovie" : {
+        "type" : "literal",
+        "value" : "1368337"
+      }
+    } ]
+  }
+}

@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
 import type { Db } from "../db/client";
-import type { PoliteFetch } from "../http/polite-fetch";
+import type { HostPolicy, PoliteFetch } from "../http/polite-fetch";
 import { snapshotFrom, type Collector, type CollectorContext, type JobResult } from "./types";
 
 export const TMDB_BASE = "https://api.themoviedb.org/3";
+/** Documented API (bearer token); ~4 req/s keeps well under TMDB's limits. */
+export const TMDB_POLICY: Record<string, HostPolicy> = { "api.themoviedb.org": { minIntervalMs: 250, api: true } };
 /** Indian original languages tracked as core markets (spec §6 title universe). */
 export const INDIAN_LANGS = ["hi", "te", "ta", "ml", "kn", "bn", "mr"] as const;
 

@@ -79,6 +79,22 @@ describe("politeFetch", () => {
     expect(Math.max(...waits)).toBeGreaterThanOrEqual(5000);
   });
 
+  it("documented API hosts skip robots.txt", async () => {
+    const server = fakeServer("User-agent: *\nDisallow: /sparql", {});
+    const pf = createPoliteFetch({
+      userAgent: UA,
+      policies: { "q.test": { minIntervalMs: 0, api: true } },
+      defaultPolicy: { minIntervalMs: 0 },
+      fetchImpl: server.impl,
+      sleep: async () => {},
+    });
+    expect((await pf("https://q.test/sparql?query=x")).status).toBe(200);
+    expect(server.calls.map((c) => c.url)).toEqual(["https://q.test/sparql?query=x"]);
+    await expect(pf("https://other.test/sparql")).rejects.toBeInstanceOf(RobotsDisallowedError);
+    const other = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: server.impl, sleep: async () => {} });
+    await expect(other("https://q.test/sparql")).rejects.toBeInstanceOf(RobotsDisallowedError);
+  });
+
   it("robots 5xx disallows the host for the run", async () => {
     const server = fakeServer(null, {});
     const impl = (async (input: string | URL, init?: RequestInit) =>
