@@ -23,7 +23,7 @@ describe("schedule", () => {
     expect(HOST_POLICIES["wikimedia.org"].api).toBe(true);
     expect(HOST_POLICIES["*.wikipedia.org"].api).toBe(true);
     expect(HOST_POLICIES["www.sacnilk.com"]).toEqual({ minIntervalMs: 5000 });
-    expect(HOST_POLICIES["www.netflix.com"]).toEqual({ minIntervalMs: 2000, api: true }); // published dataset (user decision 2026-11-16)
+    expect(HOST_POLICIES["www.netflix.com"]).toEqual({ minIntervalMs: 2000, api: true, timeoutMs: 300_000 }); // published dataset (user decision 2026-11-16)
   });
 });
 

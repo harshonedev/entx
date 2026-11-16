@@ -13,7 +13,7 @@ export const NETFLIX_FILES = {
  * disallows all non-search bots, but we fetch two known files once a week (a download, not a crawl), so robots is not
  * consulted here (user decision 2026-11-16). Never add other netflix.com paths to this collector.
  */
-export const NETFLIX_POLICY: Record<string, HostPolicy> = { "www.netflix.com": { minIntervalMs: 2000, api: true } };
+export const NETFLIX_POLICY: Record<string, HostPolicy> = { "www.netflix.com": { minIntervalMs: 2000, api: true, timeoutMs: 300_000 } } // countries file is ~33 MB;
 
 const VERSION = "1";
 

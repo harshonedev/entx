@@ -5,7 +5,7 @@ import { parseRobots } from "./robots";
  * REST) or a file the owner publishes for download (Netflix Top 10). Their robots.txt files exclude crawlers, but these
  * endpoints exist for programmatic use, so robots is not consulted there. Scraped websites never set it.
  */
-export type HostPolicy = { minIntervalMs: number; maxRetries?: number; api?: boolean };
+export type HostPolicy = { minIntervalMs: number; maxRetries?: number; api?: boolean; timeoutMs?: number };
 
 export type FetchedResponse = {
   status: number;
@@ -77,11 +77,11 @@ export function createPoliteFetch(opts: {
 
   const raw = (url: string, init?: Parameters<PoliteFetch>[1]) =>
     doFetch(url, {
+      signal: AbortSignal.timeout(policyFor(new URL(url).host).timeoutMs ?? timeoutMs),
       method: init?.method ?? "GET",
       body: init?.body,
       headers: { ...init?.headers, "user-agent": opts.userAgent },
       redirect: "follow",
-      signal: AbortSignal.timeout(timeoutMs),
     });
 
   const robotsFor = (origin: string, host: string) => {

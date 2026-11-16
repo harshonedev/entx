@@ -92,6 +92,29 @@ describe("politeFetch", () => {
     expect(calls).toBe(2);
   });
 
+  it("a host policy timeoutMs overrides the default", async () => {
+    let calls = 0;
+    const impl = (async (input: string | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/robots.txt")) return new Response("", { status: 404 });
+      calls++;
+      // Answers after 40 ms: too slow for the 20 ms default, fine for the host's 200 ms.
+      return new Promise<Response>((resolve, reject) => {
+        const t = setTimeout(() => resolve(new Response("big file", { status: 200 })), 40);
+        init?.signal?.addEventListener("abort", () => (clearTimeout(t), reject(init.signal!.reason)));
+      });
+    }) as typeof fetch;
+    const pf = createPoliteFetch({
+      userAgent: UA,
+      policies: { "slow.test": { minIntervalMs: 0, timeoutMs: 200 } },
+      defaultPolicy: { minIntervalMs: 0 },
+      fetchImpl: impl,
+      sleep: async () => {},
+      timeoutMs: 20,
+    });
+    expect((await pf("https://slow.test/f")).status).toBe(200);
+    expect(calls).toBe(1);
+  });
+
   it("retries when the body stalls mid-download", async () => {
     let calls = 0;
     const impl = (async (input: string | URL, init?: RequestInit) => {
