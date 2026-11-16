@@ -108,7 +108,15 @@ export function createPoliteFetch(opts: {
     const maxRetries = policyFor(u.host).maxRetries ?? 3;
 
     for (let attempt = 0; ; attempt++) {
-      const res = await slot(u.host, () => raw(url, init));
+      let res: Response;
+      try {
+        res = await slot(u.host, () => raw(url, init));
+      } catch (e) {
+        // Dropped connection, reset, DNS blip: retry with backoff like a 503.
+        if (attempt >= maxRetries) throw e;
+        await sleep(2 ** (attempt + 1) * 1000);
+        continue;
+      }
       if ((res.status === 429 || res.status === 503) && attempt < maxRetries) {
         const ra = Number(res.headers.get("retry-after"));
         const wait = Number.isFinite(ra) && ra > 0 ? ra * 1000 : 2 ** (attempt + 1) * 1000;

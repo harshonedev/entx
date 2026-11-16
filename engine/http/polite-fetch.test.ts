@@ -65,6 +65,28 @@ describe("politeFetch", () => {
     expect(waits).toContain(7000);
   });
 
+  it("retries a network error then succeeds", async () => {
+    const server = fakeServer(null, {});
+    let failures = 1;
+    const impl = (async (input: string | URL, init?: RequestInit) => {
+      if (!String(input).endsWith("/robots.txt") && failures-- > 0) throw new TypeError("The socket connection was closed unexpectedly");
+      return server.impl(input, init);
+    }) as typeof fetch;
+    const waits: number[] = [];
+    const pf = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: impl, sleep: async (ms) => void waits.push(ms) });
+    expect((await pf("https://a.test/x")).status).toBe(200);
+    expect(waits).toContain(2000);
+  });
+
+  it("rethrows a network error after 3 retries", async () => {
+    const impl = (async (input: string | URL) => {
+      if (String(input).endsWith("/robots.txt")) return new Response("", { status: 404 });
+      throw new TypeError("connection refused");
+    }) as typeof fetch;
+    const pf = createPoliteFetch({ userAgent: UA, policies: {}, defaultPolicy: { minIntervalMs: 0 }, fetchImpl: impl, sleep: async () => {} });
+    await expect(pf("https://a.test/x")).rejects.toThrow("connection refused");
+  });
+
   it("gives up after 3 retries", async () => {
     const { pf, calls } = harness(null, { "https://a.test/x": [{ status: 503 }] });
     const res = await pf("https://a.test/x");

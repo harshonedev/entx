@@ -67,3 +67,37 @@ Then open each host: the badge in the top bar must read **Live** on `entx.space`
 docker build --build-arg NEXT_PUBLIC_ENTX_MODE=live -t entx:live .
 docker run --rm -p 3100:3000 entx:live
 ```
+
+## EPI data engine (dev environment)
+
+The engine (`engine/`, spec `docs/superpowers/specs/2026-11-16-epi-data-engine-design.md`) runs as its own app in the
+ENTX project's **dev** environment, next to a private Postgres 17 database (`entx-dev-db`). Production apps are not
+involved.
+
+App `entx-engine`:
+
+- Source: public GitHub repo, branch `feat/epi-data-engine`
+- Build pack: Dockerfile, file `Dockerfile.engine`
+- No domain. Health check: `/health` on port `8080`
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | Internal URL of `entx-dev-db` |
+| `ENGINE_USER_AGENT` | `entx-engine/0.1 (https://entx.space)`. Must name a contact; Wikimedia rejects generic agents |
+| `TMDB_TOKEN` | TMDB v4 read token (paste in Coolify, never in chat or git) |
+| `SACNILK_ENABLED` | `true` for dev. Licence required before go-live |
+| `ENGINE_HEALTH_PORT` | Optional, default `8080` |
+
+The worker migrates the database on start, marks runs left `running` by a dead container as `abandoned`, then runs
+collectors on the schedule in `engine/jobs/schedule.ts` (UTC).
+
+Manual runs and backfill (Coolify terminal on the `entx-engine` container):
+
+```bash
+bun engine/cli.ts jobs                                   # last run per job
+bun engine/cli.ts run tmdb.details                       # one job now
+bun engine/cli.ts run tmdb.universe --from 2023-11-01 --to 2026-11-16   # adds cohort titles
+bun engine/cli.ts run wiki.pageviews --from 2023-11-01 --to 2026-11-16
+```
+
+A job already running (scheduled or manual) is skipped with status `skipped_locked`.
