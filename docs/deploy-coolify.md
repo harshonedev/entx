@@ -76,9 +76,11 @@ involved.
 
 App `entx-data-engine`:
 
-- Source: public GitHub repo, branch `feat/epi-data-engine`
+- Source: public GitHub repo, branch **`dev`** (feature branches merge into `dev`; `dev` merges into `main` only at the milestone exit gate)
+- Auto-deploy: its own GitHub push webhook (separate secret from the production apps), so pushes to `dev` redeploy it and never touch production
 - Build pack: Dockerfile, file `Dockerfile.data-engine`
-- No domain. Health check: `/health` on port `8080`
+- No domain. Health check: `/health` on port `8080` (Alpine image, busybox `wget`)
+- UUIDs: app `zudxnqxwzmtagx7c39lpz89d`, database `farak8puayc4krazopgcbbrd` (internal only)
 
 | Variable | Value |
 |----------|-------|
@@ -91,7 +93,8 @@ App `entx-data-engine`:
 The worker migrates the database on start, marks runs left `running` by a dead container as `abandoned`, then runs
 collectors on the schedule in `data-engine/jobs/schedule.ts` (UTC).
 
-Manual runs and backfill (Coolify terminal on the `entx-data-engine` container):
+Manual runs and backfill: Coolify terminal on the container, or the disabled scheduled tasks `engine-jobs-status` and
+`engine-bootstrap-collect` (Scheduled Tasks → Execute now):
 
 ```bash
 bun data-engine/cli.ts jobs                                   # last run per job
@@ -101,3 +104,15 @@ bun data-engine/cli.ts run wiki.pageviews --from 2023-11-01 --to 2026-11-16
 ```
 
 A job already running (scheduled or manual) is skipped with status `skipped_locked`.
+
+### Database viewer (dev)
+
+`entx-db-viewer` (pgweb `sosedoff/pgweb:0.16.2`, app `fr9nlvhrrqowefv2brigrh9y`) at
+`https://fr9nlvhrrqowefv2brigrh9y.harshone.space`, in the dev environment.
+
+- Login: HTTP basic auth, user `entx`, password in Coolify → `entx-db-viewer` → Environment Variables →
+  `PGWEB_AUTH_PASS`. (Old unprefixed `AUTH_USER`/`AUTH_PASS` keys are unused; delete them.)
+- Connects as the read-only `viewer` role (`PGWEB_DATABASE_URL`). The data engine creates/updates that role on start
+  when `VIEWER_DB_PASSWORD` is set on `entx-data-engine`; both values must match. Writes fail with
+  "cannot execute INSERT in a read-only transaction".
+- Postgres itself stays private; only pgweb is exposed.
