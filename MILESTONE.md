@@ -120,6 +120,7 @@ Spec: `docs/superpowers/specs/2026-11-16-epi-data-engine-design.md`. Branch `fea
 | Go-live licence: Sacnilk (Indian box office, currently scraped for dev) | P0 | Before go-live |
 | Go-live licence: TMDB commercial agreement (non-commercial terms, 6-month cache limit) | P0 | Before go-live |
 | Go-live licence: IMDb Data on AWS Data Exchange (Box Office Mojo grosses; scraping Mojo is forbidden) | P0 | Before go-live |
+| Engine storage growth: Sacnilk film pages are ~570 KB each, so a daily run (~80 pages) stores ~45 MB raw / ~5 MB gzipped, about 2 GB a year. Store only changed content (skip when the extracted box-office section is unchanged, or keep diffs) and set a retention policy for unchanged raw HTML. Measured in the 2026-11-16 smoke run | P1 | Before go-live |
 | Demo host publishes simulated news to the same NEAR contract live reads, so live's oracle history mixes in demo events. Give live its own contract or oracle account | P1 | M1 phase 6 |
 | Live asset trading still per-browser simulation ("preview") | P1 | M2 |
 | Put entx.space behind Cloudflare too, then firewall 80/443 to Cloudflare ranges and use `TRUST_PROXY=cloudflare` (per-visitor limits for proxied traffic) | P2 | M5 |
