@@ -1,7 +1,9 @@
 // bun data-engine/cli.ts migrate
 // bun data-engine/cli.ts run <job> [--from YYYY-MM-DD --to YYYY-MM-DD]
 // bun data-engine/cli.ts jobs
+// bun data-engine/cli.ts inspect [--provider tmdb] [--chars 1500]   (read-only overview + latest payload per provider)
 import { migrate } from "./db/migrate";
+import { inspectReport } from "./inspect";
 import { COLLECTORS } from "./jobs/schedule";
 import { runJob } from "./jobs/runner";
 import { createRuntime } from "./runtime";
@@ -17,10 +19,10 @@ const day = (s: string | undefined, name: string) => {
   return new Date(`${s}T00:00:00Z`);
 };
 
-const usage = "usage: engine migrate | run <job> [--from YYYY-MM-DD --to YYYY-MM-DD] | jobs";
+const usage = "usage: data-engine migrate | run <job> [--from YYYY-MM-DD --to YYYY-MM-DD] | jobs | inspect [--provider X] [--chars N]";
 
 async function main() {
-  if (!cmd || !["migrate", "run", "jobs"].includes(cmd)) {
+  if (!cmd || !["migrate", "run", "jobs", "inspect"].includes(cmd)) {
     console.error(usage);
     console.error(`jobs: ${COLLECTORS.map((c) => c.job).join(", ")}`);
     process.exit(2);
@@ -37,6 +39,9 @@ async function main() {
       if (!c) throw new Error(`unknown job ${rest[0]}; one of ${COLLECTORS.map((x) => x.job).join(", ")}`);
       await migrate(db);
       console.log(await runJob(db, c, ctx));
+    } else if (cmd === "inspect") {
+      const chars = Number(flag("chars") ?? 1500);
+      console.log(JSON.stringify(await inspectReport(db, { provider: flag("provider"), sampleChars: chars }), null, 1));
     } else {
       const rows = await db.query(
         `select distinct on (job) job, status, snapshots, skipped, started_at, finished_at, detail
